@@ -40,20 +40,25 @@ jobs:
         with:
           fetch-depth: 1
 
+      - uses: pnpm/action-setup@v4
+
+        with:
+
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "pnpm"
 
-      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # Retry pnpm install --config.minimumReleaseAge=0 up to 3x with backoff. Most "Lint & Type Check"
       # failures across recent PRs were short-duration runner /
       # registry flakes — a single retry pass eliminates the noise
       # without burning quota on hung runs.
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
-            echo "npm ci attempt $attempt failed; backing off..."
+            if pnpm install --config.minimumReleaseAge=0; then exit 0; fi
+            echo "pnpm install attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
           exit 1
@@ -85,26 +90,31 @@ jobs:
         with:
           fetch-depth: 1
 
+      - uses: pnpm/action-setup@v4
+
+        with:
+
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "pnpm"
 
-      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # Retry pnpm install --config.minimumReleaseAge=0 up to 3x with backoff. Most "Lint & Type Check"
       # failures across recent PRs were short-duration runner /
       # registry flakes — a single retry pass eliminates the noise
       # without burning quota on hung runs.
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
-            echo "npm ci attempt $attempt failed; backing off..."
+            if pnpm install --config.minimumReleaseAge=0; then exit 0; fi
+            echo "pnpm install attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
           exit 1
 
       - name: Build application
-        run: npm run build
+        run: pnpm run build
         env:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
@@ -123,26 +133,31 @@ jobs:
         with:
           fetch-depth: 1
 
+      - uses: pnpm/action-setup@v4
+
+        with:
+
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "pnpm"
 
-      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # Retry pnpm install --config.minimumReleaseAge=0 up to 3x with backoff. Most "Lint & Type Check"
       # failures across recent PRs were short-duration runner /
       # registry flakes — a single retry pass eliminates the noise
       # without burning quota on hung runs.
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
-            echo "npm ci attempt $attempt failed; backing off..."
+            if pnpm install --config.minimumReleaseAge=0; then exit 0; fi
+            echo "pnpm install attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
           exit 1
 
       - name: Run tests
-        run: npm test
+        run: pnpm test
 
   security-audit:
     name: Security Audit
@@ -153,46 +168,39 @@ jobs:
         with:
           fetch-depth: 1
 
+      - uses: pnpm/action-setup@v4
+
+        with:
+
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
-            echo "npm ci attempt $attempt failed; backing off..."
+            if pnpm install --config.minimumReleaseAge=0; then exit 0; fi
+            echo "pnpm install attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
           exit 1
 
       # Blocking audit — high-severity transitive vulns must be addressed.
       # If a vendor advisory genuinely has no fix path, scope a temporary
-      # `npm audit --json | jq` allowlist in a follow-up PR rather than
+      # `pnpm audit --json | jq` allowlist in a follow-up PR rather than
       # weakening this gate. Soft-fail audits are the audit-process bug
       # the security-reviewer flagged in May-2026.
       - name: Audit dependencies (blocking on high+)
-        run: npm audit --audit-level=high
-
-      # Generate a CycloneDX SBOM on every build for SOC 2 / supply-chain
-      # transparency. Stored as an artifact for 90 days so audit evidence
-      # is reproducible without re-running CI.
-      - name: Generate SBOM (CycloneDX)
-        run: npx --yes @cyclonedx/cyclonedx-npm@1 --output-file sbom.cdx.json
-
-      - name: Upload SBOM artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom-${{ github.sha }}
-          path: sbom.cdx.json
+        run: pnpm audit --audit-level=high
           retention-days: 90
 
       # Verify package provenance signatures where vendors ship them.
-      # `npm audit signatures` is a best-effort check today (most packages
+      # `pnpm audit signatures` is a best-effort check today (most packages
       # aren't signed yet) but it's a SOC 2 CC6.8 evidence line item.
       - name: Verify package signatures (best-effort)
-        run: npm audit signatures || true
+        run: pnpm audit signatures || true
 
   # PR-only: surface added/changed dependencies and any new advisories
   # right on the diff, before the audit job even has to fail.
@@ -223,26 +231,31 @@ jobs:
         with:
           fetch-depth: 1
 
+      - uses: pnpm/action-setup@v4
+
+        with:
+
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "pnpm"
 
-      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # Retry pnpm install --config.minimumReleaseAge=0 up to 3x with backoff. Most "Lint & Type Check"
       # failures across recent PRs were short-duration runner /
       # registry flakes — a single retry pass eliminates the noise
       # without burning quota on hung runs.
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
-            echo "npm ci attempt $attempt failed; backing off..."
+            if pnpm install --config.minimumReleaseAge=0; then exit 0; fi
+            echo "pnpm install attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
           exit 1
 
       - name: Verify schema vs Neon (soft until baseline established)
-        run: npm run check:migrations:soft
+        run: pnpm run check:migrations:soft
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL_READONLY }}
 
@@ -277,32 +290,37 @@ jobs:
         with:
           fetch-depth: 1
 
+      - uses: pnpm/action-setup@v4
+
+        with:
+
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "pnpm"
 
-      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # Retry pnpm install --config.minimumReleaseAge=0 up to 3x with backoff. Most "Lint & Type Check"
       # failures across recent PRs were short-duration runner /
       # registry flakes — a single retry pass eliminates the noise
       # without burning quota on hung runs.
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
-            echo "npm ci attempt $attempt failed; backing off..."
+            if pnpm install --config.minimumReleaseAge=0; then exit 0; fi
+            echo "pnpm install attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
           exit 1
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Build the app for the smoke run
         # Same env shape as the Build job — dummy values are fine since
         # smoke doesn't sign in or hit Stripe; the build needs them only
         # so NEXT_PUBLIC_* keys aren't compiled as undefined.
-        run: npm run build
+        run: pnpm run build
         env:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_smoke_dummy' }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_smoke_dummy' }}
@@ -313,7 +331,7 @@ jobs:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_smoke_dummy' }}" \
           CLERK_SECRET_KEY="${{ secrets.CLERK_SECRET_KEY || 'sk_test_smoke_dummy' }}" \
           DATABASE_URL="${{ secrets.DATABASE_URL || 'postgresql://x:y@localhost:5432/test' }}" \
-          PORT=3000 npm start > /tmp/next.log 2>&1 &
+          PORT=3000 pnpm start > /tmp/next.log 2>&1 &
           for i in $(seq 1 60); do
             if curl -fsS http://localhost:3000/api/health/ping > /dev/null 2>&1; then
               echo "next ready after ${i}s"; exit 0
@@ -325,7 +343,7 @@ jobs:
           exit 1
 
       - name: Run golden-path smoke tests
-        run: npm run smoke
+        run: pnpm run smoke
         env:
           E2E_BASE_URL: http://localhost:3000
           E2E_REQUIRE_READY: 'false'

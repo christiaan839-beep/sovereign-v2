@@ -63,7 +63,9 @@ function verifySignature(
     : paramString;
 
   const hash = crypto.createHash("md5").update(fullString).digest("hex");
-  return hash === signature;
+  const hashBuf = Buffer.from(hash, "utf8");
+  const sigBuf = Buffer.from(signature, "utf8");
+  return hashBuf.length === sigBuf.length && crypto.timingSafeEqual(hashBuf, sigBuf);
 }
 
 /**
