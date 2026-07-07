@@ -25,7 +25,9 @@ export function FlowExport({ open, onClose, screens }: FlowExportProps) {
   // Close on Escape
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
@@ -45,7 +47,10 @@ export function FlowExport({ open, onClose, screens }: FlowExportProps) {
 
   // Auto-play through screens
   const handlePlay = () => {
-    if (playing) { setPlaying(false); return; }
+    if (playing) {
+      setPlaying(false);
+      return;
+    }
     setPlaying(true);
     setActiveIndex(0);
     let idx = 0;
@@ -86,21 +91,33 @@ export function FlowExport({ open, onClose, screens }: FlowExportProps) {
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06] shrink-0">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-white">Flow Preview</span>
+              <span className="text-sm font-semibold text-white">
+                Flow Preview
+              </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.05] text-neutral-400">
                 {activeIndex + 1} / {screens.length}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={handlePlay} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00B7FF]/10 text-[#00B7FF] text-[10px] font-semibold hover:bg-[#00B7FF]/20 transition-colors">
+              <button
+                onClick={handlePlay}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00B7FF]/10 text-[#00B7FF] text-[10px] font-semibold hover:bg-[#00B7FF]/20 transition-colors"
+              >
                 <Play className="w-3 h-3" />
                 {playing ? "Stop" : "Auto-Play"}
               </button>
-              <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold hover:bg-emerald-500/20 transition-colors">
+              <button
+                onClick={handleExport}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold hover:bg-emerald-500/20 transition-colors"
+              >
                 <Download className="w-3 h-3" />
                 Export All
               </button>
-              <button onClick={onClose} aria-label="Close flow preview" className="p-1.5 rounded-lg hover:bg-white/[0.05] text-neutral-500 hover:text-white transition-colors">
+              <button
+                onClick={onClose}
+                aria-label="Close flow preview"
+                className="p-1.5 rounded-lg hover:bg-white/[0.05] text-neutral-500 hover:text-white transition-colors"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -128,17 +145,26 @@ export function FlowExport({ open, onClose, screens }: FlowExportProps) {
             >
               <ChevronLeft className="w-4 h-4" /> Previous
             </button>
-            <div className="flex items-center gap-1.5">
-              {screens.map((_, i) => (
+            <div
+              className="flex items-center gap-1.5"
+              role="tablist"
+              aria-label="Screens"
+            >
+              {screens.map((screen, i) => (
                 <button
                   key={i}
+                  role="tab"
+                  aria-selected={i === activeIndex}
+                  aria-label={`Go to screen ${i + 1}: ${screen.label}`}
                   onClick={() => setActiveIndex(i)}
                   className={`w-2 h-2 rounded-full transition-gpu ${i === activeIndex ? "bg-[#00B7FF] scale-125" : "bg-white/[0.15] hover:bg-white/[0.3]"}`}
                 />
               ))}
             </div>
             <button
-              onClick={() => setActiveIndex(Math.min(screens.length - 1, activeIndex + 1))}
+              onClick={() =>
+                setActiveIndex(Math.min(screens.length - 1, activeIndex + 1))
+              }
               disabled={activeIndex === screens.length - 1}
               className="flex items-center gap-1 text-xs text-neutral-400 hover:text-white disabled:opacity-30 transition-colors"
             >
