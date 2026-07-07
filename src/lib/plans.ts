@@ -313,6 +313,26 @@ export function getStripePriceId(
   return process.env[plan.stripePriceEnvKey] ?? null;
 }
 
+/**
+ * Reverse of getStripePriceId — resolve a Stripe price ID back to its
+ * PlanId by matching each plan's configured STRIPE_PRICE_* env value.
+ * Used by the subscription.updated webhook so portal upgrades/downgrades
+ * (which carry the new price, not checkout metadata) actually change the
+ * stored tier. Returns null when no plan's env price matches.
+ */
+export function getPlanIdFromStripePriceId(
+  priceId: string | null | undefined,
+): PlanId | null {
+  if (!priceId) return null;
+  for (const id of Object.keys(PLANS) as PlanId[]) {
+    const envKey = PLANS[id].stripePriceEnvKey;
+    if (envKey && process.env[envKey] && process.env[envKey] === priceId) {
+      return id;
+    }
+  }
+  return null;
+}
+
 /** Check if a plan has unlimited runs. */
 export function isUnlimited(planId: string | null | undefined): boolean {
   const limit = getPlanLimit(planId);

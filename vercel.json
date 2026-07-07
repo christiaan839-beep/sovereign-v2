@@ -4,7 +4,7 @@
   "installCommand": "npm install --force && npm run build:packages",
   "regions": ["iad1", "fra1"],
   "functions": {
-    "app/api/**/*.ts": {
+    "src/app/api/**/*.ts": {
       "maxDuration": 60
     }
   },

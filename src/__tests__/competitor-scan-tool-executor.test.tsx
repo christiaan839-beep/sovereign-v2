@@ -53,6 +53,7 @@ vi.mock("@/lib/ai", () => ({
 }));
 vi.mock("@/lib/outbound-fetch", () => ({
   outboundFetch: outboundFetchMock,
+  BOT_USER_AGENT: "SovereignBot/1.0",
 }));
 vi.mock("node:dns/promises", () => ({
   lookup: dnsLookupMock,

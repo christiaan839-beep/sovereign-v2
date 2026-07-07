@@ -30,6 +30,18 @@ const log = createLogger("vector-memory");
 const NIM_EMBED_URL = "https://integrate.api.nvidia.com/v1/embeddings";
 const EMBED_MODEL = "nvidia/llama-3.2-nv-embedqa-1b-v2";
 
+/**
+ * Per-user row cap (BACKLOG H2). Without it, an agent storing memory
+ * in a loop fills Neon storage unbounded and IVFFlat recall degrades
+ * as N grows. Oldest rows beyond the cap are deleted after each
+ * successful write. Overridable via MEMORY_MAX_ROWS_PER_USER; floor
+ * of 100 so a typo can't silently wipe a user's memory.
+ */
+export const MAX_MEMORIES_PER_USER = Math.max(
+  100,
+  Number(process.env.MEMORY_MAX_ROWS_PER_USER) || 10_000,
+);
+
 // ─── Initialize pgvector extension + table ──────────────────────────────────
 
 let _initialized = false;
@@ -55,18 +67,28 @@ async function ensureVectorTable(): Promise<boolean> {
     `);
 
     // Create index for fast similarity search
-    await db.execute(sql`
+    await db
+      .execute(
+        sql`
       CREATE INDEX IF NOT EXISTS agent_memories_embedding_idx
       ON agent_memories USING ivfflat (embedding vector_cosine_ops)
       WITH (lists = 100)
-    `).catch(() => {
-      // IVFFlat index needs some rows first — skip on empty table
-    });
+    `,
+      )
+      .catch(() => {
+        // IVFFlat index needs some rows first — skip on empty table
+      });
 
     // Create index for user lookups
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS agent_memories_user_idx
       ON agent_memories (user_id, agent_name)
+    `);
+
+    // Index for the per-user retention trim (newest-first per user)
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS agent_memories_user_created_idx
+      ON agent_memories (user_id, created_at DESC)
     `);
 
     _initialized = true;
@@ -88,7 +110,7 @@ async function embedText(text: string): Promise<number[] | null> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${nimKey}`,
+        Authorization: `Bearer ${nimKey}`,
       },
       body: JSON.stringify({
         model: EMBED_MODEL,
@@ -109,6 +131,30 @@ async function embedText(text: string): Promise<number[] | null> {
   }
 }
 
+// ─── Per-user retention trim (BACKLOG H2) ───────────────────────────────────
+
+/**
+ * Delete this user's oldest rows beyond MAX_MEMORIES_PER_USER.
+ * Runs after every successful write; a single indexed statement, so
+ * concurrent writers converge on the cap without a count/delete race.
+ * Trim failure never fails the write — the memory was stored.
+ */
+async function trimUserMemories(userId: string): Promise<void> {
+  try {
+    await db.execute(sql`
+      DELETE FROM agent_memories
+      WHERE id IN (
+        SELECT id FROM agent_memories
+        WHERE user_id = ${userId}
+        ORDER BY created_at DESC
+        OFFSET ${MAX_MEMORIES_PER_USER}
+      )
+    `);
+  } catch (err) {
+    log.warn("Failed to trim user memories to cap", { error: String(err) });
+  }
+}
+
 // ─── Public API ─────────────────────────────────────────────────────────────
 
 /**
@@ -119,7 +165,7 @@ export async function storeMemory(
   userId: string,
   agentName: string,
   content: string,
-  metadata: Record<string, unknown> = {}
+  metadata: Record<string, unknown> = {},
 ): Promise<boolean> {
   const ready = await ensureVectorTable();
   if (!ready) return false;
@@ -132,6 +178,7 @@ export async function storeMemory(
         INSERT INTO agent_memories (user_id, agent_name, content, metadata)
         VALUES (${userId}, ${agentName}, ${content.slice(0, 5000)}, ${JSON.stringify(metadata)})
       `);
+      await trimUserMemories(userId);
       return true;
     } catch {
       return false;
@@ -144,6 +191,7 @@ export async function storeMemory(
       INSERT INTO agent_memories (user_id, agent_name, content, metadata, embedding)
       VALUES (${userId}, ${agentName}, ${content.slice(0, 5000)}, ${JSON.stringify(metadata)}, ${vectorStr}::vector)
     `);
+    await trimUserMemories(userId);
     return true;
   } catch (err) {
     log.error("Failed to store memory", { error: String(err) });
@@ -158,8 +206,15 @@ export async function storeMemory(
 export async function searchMemory(
   userId: string,
   query: string,
-  limit: number = 3
-): Promise<Array<{ content: string; agentName: string; similarity: number; createdAt: string }>> {
+  limit: number = 3,
+): Promise<
+  Array<{
+    content: string;
+    agentName: string;
+    similarity: number;
+    createdAt: string;
+  }>
+> {
   const ready = await ensureVectorTable();
   if (!ready) return [];
 
@@ -199,7 +254,7 @@ export async function searchMemory(
  */
 export async function getMemoryContextForPrompt(
   userId: string,
-  query: string
+  query: string,
 ): Promise<string> {
   const memories = await searchMemory(userId, query);
 

@@ -57,7 +57,11 @@ describe("withRetry", () => {
       .mockRejectedValueOnce(new Error("fail-2"))
       .mockResolvedValueOnce("success");
 
-    const promise = withRetry(fn, { maxRetries: 3, baseDelay: 100, label: "test" });
+    const promise = withRetry(fn, {
+      maxRetries: 3,
+      baseDelay: 100,
+      label: "test",
+    });
 
     // Advance through the backoff delays
     // Attempt 0 fails → wait ~100ms
@@ -88,10 +92,12 @@ describe("withRetry", () => {
 
   it("throws after all retries exhausted", async () => {
     vi.useRealTimers();
-    const fn = vi.fn().mockImplementation(() => Promise.reject(new Error("persistent-error")));
+    const fn = vi
+      .fn()
+      .mockImplementation(() => Promise.reject(new Error("persistent-error")));
 
     await expect(
-      withRetry(fn, { maxRetries: 2, baseDelay: 1, label: "exhausted" })
+      withRetry(fn, { maxRetries: 2, baseDelay: 1, label: "exhausted" }),
     ).rejects.toThrow("persistent-error");
     // Initial attempt + 2 retries = 3 calls
     expect(fn).toHaveBeenCalledTimes(3);
@@ -106,7 +112,7 @@ describe("withRetry", () => {
     });
 
     await expect(
-      withRetry(fn, { maxRetries: 2, baseDelay: 1 })
+      withRetry(fn, { maxRetries: 2, baseDelay: 1 }),
     ).rejects.toThrow("error-3");
   });
 
@@ -121,7 +127,9 @@ describe("withRetry", () => {
     // Fix jitter to 0 for deterministic testing
     Math.random = () => 0.5; // yields jitter factor of 0 (midpoint)
 
-    const fn = vi.fn().mockImplementation(() => Promise.reject(new Error("fail")));
+    const fn = vi
+      .fn()
+      .mockImplementation(() => Promise.reject(new Error("fail")));
 
     try {
       await withRetry(fn, { maxRetries: 3, baseDelay: 1, label: "backoff" });
@@ -169,13 +177,64 @@ describe("withRetry", () => {
   it("maxRetries=0 means no retries — fails immediately", async () => {
     vi.useRealTimers();
 
-    const fn = vi.fn().mockImplementation(() => Promise.reject(new Error("no-retry")));
+    const fn = vi
+      .fn()
+      .mockImplementation(() => Promise.reject(new Error("no-retry")));
 
     try {
       await withRetry(fn, { maxRetries: 0, baseDelay: 1 });
     } catch (err) {
       expect((err as Error).message).toBe("no-retry");
     }
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  // ─── BACKLOG retry-4xx: don't retry deterministic client errors ───
+
+  it("does NOT retry a 4xx client error (status property)", async () => {
+    vi.useRealTimers();
+    const err = Object.assign(new Error("Unauthorized"), { status: 401 });
+    const fn = vi.fn().mockRejectedValue(err);
+    await expect(withRetry(fn, { maxRetries: 3, baseDelay: 1 })).rejects.toBe(
+      err,
+    );
+    expect(fn).toHaveBeenCalledTimes(1); // no retries
+  });
+
+  it("does NOT retry a 400 (statusCode property)", async () => {
+    vi.useRealTimers();
+    const err = Object.assign(new Error("Bad Request"), { statusCode: 400 });
+    const fn = vi.fn().mockRejectedValue(err);
+    await expect(withRetry(fn, { maxRetries: 2, baseDelay: 1 })).rejects.toBe(
+      err,
+    );
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it("DOES retry a 429 and a 500 (transient)", async () => {
+    vi.useRealTimers();
+    const err429 = Object.assign(new Error("rate"), { status: 429 });
+    const fn = vi.fn().mockRejectedValue(err429);
+    await expect(withRetry(fn, { maxRetries: 2, baseDelay: 1 })).rejects.toBe(
+      err429,
+    );
+    expect(fn).toHaveBeenCalledTimes(3); // 1 + 2 retries
+
+    const err500 = Object.assign(new Error("boom"), { status: 500 });
+    const fn2 = vi.fn().mockRejectedValue(err500);
+    await expect(withRetry(fn2, { maxRetries: 1, baseDelay: 1 })).rejects.toBe(
+      err500,
+    );
+    expect(fn2).toHaveBeenCalledTimes(2);
+  });
+
+  it("honours an explicit shouldRetry predicate", async () => {
+    vi.useRealTimers();
+    const err = new Error("nope");
+    const fn = vi.fn().mockRejectedValue(err);
+    await expect(
+      withRetry(fn, { maxRetries: 3, baseDelay: 1, shouldRetry: () => false }),
+    ).rejects.toBe(err);
     expect(fn).toHaveBeenCalledTimes(1);
   });
 });

@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "engines": {
-    "node": ">=18.0.0 <=22.x"
+    "node": ">=20.9.0 <=22.x"
   },
   "bin": {
     "sovereign": "./bin/sovereign.mjs"
@@ -26,7 +26,8 @@
     "check:registry": "node scripts/generate-agent-registry.mjs --check",
     "hooks:install": "git config core.hooksPath scripts/git-hooks && chmod +x scripts/git-hooks/pre-push && echo 'hooks installed: pre-push will run lint + tests + migration check'",
     "hooks:uninstall": "git config --unset core.hooksPath && echo 'hooks uninstalled'",
-    "build:packages": "node scripts/build-packages.mjs"
+    "build:packages": "node scripts/build-packages.mjs",
+    "postinstall": "node scripts/build-packages.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.43",

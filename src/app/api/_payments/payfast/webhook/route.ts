@@ -8,6 +8,7 @@ import crypto from "crypto";
 import { getPublicUrl } from "@/lib/base-url";
 import { alreadyProcessed } from "@/lib/idempotency";
 import { PLANS, type PlanId } from "@/lib/plans";
+import { getInternalWebhookSecret } from "@/lib/internal-secret";
 
 const log = createLogger("payfast-webhook");
 
@@ -190,11 +191,14 @@ export async function POST(req: Request) {
         return new NextResponse("OK", { status: 200 });
       }
 
-      // Validate amount against canonical ZAR price (PLANS stores USD;
-      // PayFast charges in ZAR — use a generous +/-10% band to absorb
-      // FX drift between checkout and ITN).
-      const expectedZar = PLANS[plan].priceUsdCents
-        ? (PLANS[plan].priceUsdCents / 100) * 19 // ~ZAR per USD floor
+      // Validate amount against the canonical ZAR price actually
+      // charged (generatePayFastForm → priceZarCents). The old
+      // USD*19 heuristic disagreed with priceZarCents by 4-5x and
+      // rejected every legit array/node/enterprise payment
+      // (BACKLOG payments-2). amountNum is in ZAR rand, so compare
+      // against priceZarCents/100.
+      const expectedZar = PLANS[plan].priceZarCents
+        ? PLANS[plan].priceZarCents / 100
         : 0;
       if (
         expectedZar > 0 &&
@@ -249,27 +253,36 @@ export async function POST(req: Request) {
         });
       }
 
-      // 3. Trigger auto-onboard (best effort) with internal-secret header
+      // 3. Trigger auto-onboard (best effort) with internal-secret header.
+      // Skip entirely when the secret is unconfigured — an empty header
+      // can never authenticate and just burns a request.
       const baseUrl = getPublicUrl();
-      const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
-      try {
-        await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-sovereign-internal-secret": internalSecret,
-          },
-          signal: AbortSignal.timeout(10_000),
-          body: JSON.stringify({
-            clientName:
-              `${data.name_first || ""} ${data.name_last || ""}`.trim() ||
-              "New Client",
-            email,
-            plan,
-          }),
-        });
-      } catch {
-        /* auto-onboard is best-effort */
+      const internalSecret = getInternalWebhookSecret();
+      if (!internalSecret) {
+        log.error(
+          "INTERNAL_WEBHOOK_SECRET not set — skipping auto-onboard trigger",
+          { email, plan },
+        );
+      } else {
+        try {
+          await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-sovereign-internal-secret": internalSecret,
+            },
+            signal: AbortSignal.timeout(10_000),
+            body: JSON.stringify({
+              clientName:
+                `${data.name_first || ""} ${data.name_last || ""}`.trim() ||
+                "New Client",
+              email,
+              plan,
+            }),
+          });
+        } catch {
+          /* auto-onboard is best-effort */
+        }
       }
 
       persistAppend(

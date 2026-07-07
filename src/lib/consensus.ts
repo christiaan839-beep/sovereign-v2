@@ -149,8 +149,15 @@ End with: CONFIDENCE: X/10`,
     };
   }
 
-  // Step 3: If critique found issues, revise
-  const approved = critique.includes("APPROVED") && confidence >= 0.7;
+  // Step 3: If critique found issues, revise.
+  // Word-boundary match that excludes negations — a substring test on
+  // "APPROVED" treats "NOT APPROVED" / "DISAPPROVED" / "UNAPPROVED" as
+  // approval and silently skips the revise pass exactly when the critic
+  // rejected the answer (BACKLOG consensus-approval).
+  const approved =
+    /\bAPPROVED\b/.test(critique) &&
+    !/\b(?:NOT\s+APPROVED|DISAPPROVED|UNAPPROVED)\b/i.test(critique) &&
+    confidence >= 0.7;
 
   if (approved) {
     return {

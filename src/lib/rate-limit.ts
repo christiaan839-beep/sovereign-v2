@@ -69,7 +69,12 @@ async function checkRedis(
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) throw new Error("Redis not configured");
 
-  const key = `rl:${clientId}:${Math.floor(Date.now() / (interval * 1000))}`;
+  // Namespace the key by (interval, limit) — same as the memory store's
+  // storeKey — so routes with different configs don't share one counter.
+  // Without it, every interval:60 route INCRs the same key and a burst
+  // on a high-limit route falsely 429s a low-limit route (BACKLOG rl-ns).
+  const window = Math.floor(Date.now() / (interval * 1000));
+  const key = `rl:${interval}-${limit}:${clientId}:${window}`;
 
   const res = await fetch(`${url}/pipeline`, {
     method: "POST",
@@ -81,9 +86,22 @@ async function checkRedis(
       ["INCR", key],
       ["EXPIRE", key, interval],
     ]),
+    // Bound the call so a hung Upstash falls back to memory instead of
+    // blocking every rate-limited request until the function timeout.
+    signal: AbortSignal.timeout(2000),
   });
 
+  // Upstash returns 200 with a JSON error body on bad token / quota /
+  // command error. Without these guards `data?.[0]?.result ?? 1` yields
+  // count=1 and rate limiting silently fails OPEN forever, and the
+  // catch-based memory fallback in check() never engages (BACKLOG rl-open).
+  if (!res.ok) throw new Error(`Upstash HTTP ${res.status}`);
   const data = await res.json();
+  if (data?.error || data?.[0]?.error) {
+    throw new Error(
+      `Upstash command error: ${data?.error || data?.[0]?.error}`,
+    );
+  }
   const count = data?.[0]?.result ?? 1;
   const remaining = Math.max(0, limit - count);
   const resetIn = interval;

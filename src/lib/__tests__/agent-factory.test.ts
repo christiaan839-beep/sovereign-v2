@@ -151,6 +151,19 @@ vi.mock("@/lib/vector-memory", () => ({
   storeMemory: (...args: unknown[]) => mockStoreMemory(...args),
 }));
 
+// Output verifier is dynamically imported by the factory. Default:
+// approve everything so tests that opt INTO the verifier aren't
+// blocked unless they explicitly make it block (L5 gap d).
+const mockVerifyOutput = vi.fn().mockResolvedValue({
+  approved: true,
+  trustDecision: "trusted",
+  executionTimeMs: 1,
+  safetyResult: {},
+});
+vi.mock("@/lib/output-verifier", () => ({
+  verifyOutput: (...args: unknown[]) => mockVerifyOutput(...args),
+}));
+
 // Wave-111.1 M2 — `after()` from next/server is used by the factory
 // for guaranteed post-response background work. Stub as immediate
 // promise resolution so tests don't have to schedule into a real
@@ -799,6 +812,131 @@ describe("createAgentRoute", () => {
       // the same object the response was built from.
       expect(extractorSawObject).not.toBeNull();
       expect(extractorSawObject).toEqual({ output: "first-pass output" });
+    });
+
+    // ─── BACKLOG L5: memory-hook coverage gaps ───
+
+    it("L5(a): a synchronously-throwing extractor never crashes the response or storeMemory", async () => {
+      const handler = createAgentRoute({
+        name: "test-agent",
+        skipJailbreakCheck: true,
+        skipSafetyCheck: true,
+        skipPiiScan: true,
+        skipQualityCheck: true,
+        memory: {
+          store: {
+            extract: () => {
+              throw new Error("extractor blew up synchronously");
+            },
+          },
+        },
+        handler: async () => ({ ok: true }),
+      });
+      const res = await handler(makeRequest({ q: "x" }));
+      await new Promise((r) => setTimeout(r, 30));
+      expect(res.status).toBe(200);
+      expect(mockStoreMemory).not.toHaveBeenCalled();
+    });
+
+    it("L5(b): extractor returning a non-string scalar (number) stores nothing", async () => {
+      const handler = createAgentRoute({
+        name: "test-agent",
+        skipJailbreakCheck: true,
+        skipSafetyCheck: true,
+        skipPiiScan: true,
+        skipQualityCheck: true,
+        // @ts-expect-error — deliberately wrong return type to pin runtime guard
+        memory: { store: { extract: () => 42 } },
+        handler: async () => ({ ok: true }),
+      });
+      await handler(makeRequest({ q: "x" }));
+      await new Promise((r) => setTimeout(r, 30));
+      expect(mockStoreMemory).not.toHaveBeenCalled();
+    });
+
+    it("L5(b): extractor returning an object / array-of-objects stores only the string members", async () => {
+      const handler = createAgentRoute({
+        name: "test-agent",
+        skipJailbreakCheck: true,
+        skipSafetyCheck: true,
+        skipPiiScan: true,
+        skipQualityCheck: true,
+        memory: {
+          // @ts-expect-error — mixed array pins the typeof-string filter
+          store: { extract: () => [{ a: 1 }, "kept insight", 99] },
+        },
+        handler: async () => ({ ok: true }),
+      });
+      await handler(makeRequest({ q: "x" }));
+      await new Promise((r) => setTimeout(r, 30));
+      expect(mockStoreMemory).toHaveBeenCalledTimes(1);
+      expect(mockStoreMemory.mock.calls[0][2]).toBe("kept insight");
+    });
+
+    it("L5(c): pastContext threads into the retry handler invocation", async () => {
+      mockSearchMemory.mockResolvedValueOnce([
+        {
+          content: "Prior run: focus on enterprise segment",
+          agentName: "test-agent",
+          similarity: 0.9,
+          createdAt: "2026-05-15T00:00:00Z",
+        },
+      ]);
+      // Force a retry: first pass scores below threshold, retry scores
+      // higher. scoreOutput is called (1) first pass (2) retry.
+      const { scoreOutput } = await import("@/lib/quality-scorer");
+      (scoreOutput as unknown as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ overall: 0.2, passed: false })
+        .mockResolvedValueOnce({ overall: 0.95, passed: true });
+
+      const seenPastContext: Array<unknown> = [];
+      let calls = 0;
+      const handler = createAgentRoute({
+        name: "test-agent",
+        skipJailbreakCheck: true,
+        skipSafetyCheck: true,
+        skipPiiScan: true,
+        // quality check ON so the retry path runs
+        memory: { search: { query: () => "q" } },
+        handler: async (ctx) => {
+          calls += 1;
+          seenPastContext.push(ctx.pastContext);
+          return { output: "x".repeat(60) };
+        },
+      });
+      await handler(makeRequest({ q: "x" }));
+      // Handler ran twice (first pass + retry) …
+      expect(calls).toBe(2);
+      // … and BOTH invocations saw the same non-empty pastContext.
+      expect(Array.isArray(seenPastContext[0])).toBe(true);
+      expect(seenPastContext[1]).toBe(seenPastContext[0]);
+      expect(
+        (seenPastContext[1] as Array<{ content: string }>)[0].content,
+      ).toContain("enterprise segment");
+    });
+
+    it("L5(d): post-store hook does NOT run when the output verifier blocks", async () => {
+      mockVerifyOutput.mockResolvedValueOnce({
+        approved: false,
+        trustDecision: "blocked",
+        blockReason: "policy violation",
+        safetyResult: {},
+      });
+      const storeExtract = vi.fn(() => "should never be stored");
+      const handler = createAgentRoute({
+        name: "test-agent",
+        skipJailbreakCheck: true,
+        skipSafetyCheck: true,
+        // Verifier ON (do not skip PII / quality) so it can block.
+        useCritic: false,
+        memory: { store: { extract: storeExtract } },
+        handler: async () => ({ output: "a".repeat(60) }),
+      });
+      const res = await handler(makeRequest({ q: "x" }));
+      await new Promise((r) => setTimeout(r, 30));
+      expect(res.status).toBe(403);
+      expect(storeExtract).not.toHaveBeenCalled();
+      expect(mockStoreMemory).not.toHaveBeenCalled();
     });
   });
 });

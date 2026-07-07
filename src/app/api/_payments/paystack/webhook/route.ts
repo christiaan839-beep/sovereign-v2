@@ -5,6 +5,7 @@ import { createLogger } from "@/lib/logger";
 import { getPublicUrl } from "@/lib/base-url";
 import { alreadyProcessed } from "@/lib/idempotency";
 import { PLANS, type PlanId, normalizePlanId } from "@/lib/plans";
+import { getInternalWebhookSecret } from "@/lib/internal-secret";
 
 const log = createLogger("paystack-webhook");
 
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
     );
 
     const baseUrl = getPublicUrl();
-    const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
+    const internalSecret = getInternalWebhookSecret();
 
     switch (event.event) {
       case "charge.success": {
@@ -100,9 +101,12 @@ export async function POST(req: Request) {
           return NextResponse.json({ received: true });
         }
 
-        // Validate amount against expected price (Paystack amounts are
-        // in the smallest currency unit — kobo for NGN, cents for ZAR).
-        const expectedCents = PLANS[plan].priceUsdCents ?? 0;
+        // Validate amount against expected price. Paystack charges the
+        // ZAR price (initializePaystack → planData.priceZAR, currency
+        // "ZAR"), so the received amount is ZAR cents and MUST be checked
+        // against priceZarCents — NOT priceUsdCents, which is ~18-100x
+        // smaller and rejected every real payment (BACKLOG payments-1).
+        const expectedCents = PLANS[plan].priceZarCents ?? 0;
         if (
           expectedCents > 0 &&
           Math.abs(amount - expectedCents) / expectedCents > 0.5
@@ -128,8 +132,15 @@ export async function POST(req: Request) {
           1000,
         );
 
-        // Trigger auto-onboard (best-effort) with internal-secret header
-        if (email) {
+        // Trigger auto-onboard (best-effort) with internal-secret header.
+        // Skip entirely when the secret is unconfigured — an empty
+        // header can never authenticate and just burns a request.
+        if (!internalSecret) {
+          log.error(
+            "INTERNAL_WEBHOOK_SECRET not set — skipping auto-onboard trigger",
+            { email, plan },
+          );
+        } else if (email) {
           try {
             await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
               method: "POST",

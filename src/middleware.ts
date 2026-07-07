@@ -1,6 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { apiLogger } from "@/lib/api-logger";
 
 /**
@@ -249,14 +248,21 @@ async function getUpstashLimiter(): Promise<UpstashLimiter | null> {
 const rateLimits = new Map<string, { count: number; resetAt: number }>();
 let rateLimitRequestCount = 0;
 
-/** Pre-computed security headers (avoid recreating on every request) */
+/**
+ * Pre-computed security headers (avoid recreating on every request).
+ *
+ * next.config.ts is the single source of truth for Permissions-Policy
+ * and Strict-Transport-Security (BACKLOG header-dup): the old middleware
+ * copies here disagreed with it (microphone allowed vs denied; weaker
+ * HSTS max-age with no `preload`), and whichever won the Next header
+ * merge silently overrode one documented policy. Only headers
+ * next.config.ts does NOT already set remain here.
+ */
 const SECURITY_HEADERS: ReadonlyArray<[string, string]> = [
   ["X-Content-Type-Options", "nosniff"],
   ["X-Frame-Options", "DENY"],
   ["X-XSS-Protection", "1; mode=block"],
   ["Referrer-Policy", "strict-origin-when-cross-origin"],
-  ["Permissions-Policy", "camera=(), microphone=(self), geolocation=()"],
-  ["Strict-Transport-Security", "max-age=31536000; includeSubDomains"],
 ] as const;
 
 /** Apply enterprise security headers to all responses */
@@ -283,20 +289,26 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
+  // The Edge runtime always passes a NextRequest in practice; the guard
+  // (BACKLOG L2) replaces a blind `as` cast so a plain Request could
+  // never flow into nextUrl-dependent code unnoticed.
+  const req =
+    request instanceof NextRequest ? request : new NextRequest(request);
+
   // Wave-107: CSRF/origin check FIRST — before auth lookup. Reject obvious
   // cross-site attacks at the edge with a 403 so they never touch Clerk.
-  const csrfBlock = enforceCsrfOrigin(request as NextRequest);
+  const csrfBlock = enforceCsrfOrigin(req);
   if (csrfBlock) return csrfBlock;
 
-  if (isProtectedRoute(request)) {
+  if (isProtectedRoute(req)) {
     const { userId } = await auth();
     if (!userId) {
-      const signInUrl = new URL("/login", request.url);
-      signInUrl.searchParams.set("redirect_url", request.nextUrl.pathname);
+      const signInUrl = new URL("/login", req.url);
+      signInUrl.searchParams.set("redirect_url", req.nextUrl.pathname);
       return NextResponse.redirect(signInUrl);
     }
   }
-  return sovereignMiddleware(request as NextRequest);
+  return sovereignMiddleware(req);
 });
 
 async function sovereignMiddleware(request: NextRequest) {

@@ -105,6 +105,20 @@ per CI run.**
    fixture's expected outcome.
 4. Commit the fixture; CI runs all three harnesses on every push.
 
+## Regenerating the corpus
+
+The v2 fixtures are signed with a throwaway Ed25519 keypair whose
+public half lives at `public-key.pem` (committed; the private half is
+discarded at generation time). If the corpus ever needs re-signing:
+
+```bash
+node packages/verifiable-receipts/conformance/generate-fixtures.mjs
+```
+
+This rewrites `public-key.pem` and the five `v2-*.json` fixtures in
+one deterministic pass; inclusion-proof fixtures are key-independent
+and untouched. Re-run all three harnesses afterwards.
+
 ## Stability guarantee
 
 Fixtures in this corpus are **frozen**. Once a fixture is published

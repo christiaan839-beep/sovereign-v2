@@ -46,6 +46,14 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("outbound-fetch");
 
+/**
+ * User-Agent for crawler-style agent fetches (competitor-scan,
+ * site-assassin, competitive-radar). Env-configurable (BACKLOG L3) so
+ * operators can brand it per deployment or match a robots.txt policy.
+ */
+export const BOT_USER_AGENT =
+  process.env.OUTBOUND_BOT_USER_AGENT || "SovereignBot/1.0";
+
 export class EgressBlockedError extends Error {
   readonly violation: EgressViolation;
   readonly url: string;
@@ -160,6 +168,8 @@ export interface OutboundFetchResult {
   ok: boolean;
   url: string;
   contentType: string | null;
+  /** Response headers, lower-cased keys (e.g. server, x-powered-by). */
+  headers: Record<string, string>;
   body: string;
   bytes: Uint8Array;
   truncated: boolean;
@@ -360,6 +370,7 @@ export async function outboundFetch(
     ok: res.ok,
     url,
     contentType: res.headers.get("content-type"),
+    headers: Object.fromEntries(res.headers.entries()),
     body: new TextDecoder("utf-8", { fatal: false }).decode(bytes),
     bytes,
     truncated,

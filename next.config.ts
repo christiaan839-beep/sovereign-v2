@@ -94,9 +94,15 @@ const nextConfig: NextConfig = {
               // kept until the nonce middleware ships in a follow-up
               // (would touch every server-component render).
               "script-src 'self' 'unsafe-inline' https://js.stripe.com https://challenges.cloudflare.com https://plausible.io https://*.clerk.com https://*.clerk.accounts.dev https://va.vercel-scripts.com",
-              "style-src 'self' 'unsafe-inline'",
+              // fonts.googleapis.com serves the brand-font stylesheet the
+              // root layout loads (<link rel="stylesheet">). Without it
+              // here the CSP blocks the stylesheet and every custom font
+              // falls back to system defaults in production.
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
-              "font-src 'self' data:",
+              // fonts.gstatic.com serves the actual .woff2 files the above
+              // stylesheet @font-face-references.
+              "font-src 'self' data: https://fonts.gstatic.com",
               "connect-src 'self' https: wss:",
               "frame-src 'self' https://js.stripe.com https://challenges.cloudflare.com https://*.clerk.com https://*.clerk.accounts.dev",
               "frame-ancestors 'none'",
@@ -107,6 +113,25 @@ const nextConfig: NextConfig = {
               "report-uri /api/_security/csp-report",
             ].join("; "),
           },
+        ],
+      },
+      // The badge/embed endpoints exist to be loaded cross-origin from
+      // customers' sites (<script src=".../badge/embed.js">, the
+      // /badge/ping image beacon, /embed/verify.js). The global
+      // Cross-Origin-Resource-Policy: same-site above blocks no-cors
+      // cross-origin loads, killing the free-distribution badge — these
+      // later, more-specific entries override CORP to cross-origin
+      // (BACKLOG corp-badge).
+      {
+        source: "/badge/:path*",
+        headers: [
+          { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
+        ],
+      },
+      {
+        source: "/embed/:path*",
+        headers: [
+          { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
         ],
       },
     ];

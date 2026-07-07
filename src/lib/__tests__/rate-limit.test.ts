@@ -8,7 +8,7 @@
  * We test the in-memory fallback path deterministically. The Redis path
  * is exercised via integration in production.
  */
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // Force in-memory path by unsetting Redis env vars before import.
 async function freshLimiter() {
@@ -205,5 +205,54 @@ describe("rateLimit — in-memory fallback", () => {
     const body = await blocked!.json();
     expect(body).toHaveProperty("retryAfter");
     expect(typeof body.retryAfter).toBe("number");
+  });
+});
+
+// ─── Redis path: fail-CLOSED to the memory limiter on Upstash errors ───
+// (BACKLOG rl-open — an Upstash error body must not be read as "allowed").
+describe("rateLimit — Redis path error handling", () => {
+  async function redisLimiter() {
+    process.env.UPSTASH_REDIS_REST_URL = "https://fake-upstash.example";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "fake-token";
+    vi.resetModules();
+    return (await import("@/lib/rate-limit")).rateLimit;
+  }
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    vi.restoreAllMocks();
+  });
+
+  it("falls back to the memory limiter when Upstash returns a non-OK response", async () => {
+    const rateLimit = await redisLimiter();
+    // Upstash 401 (bad token) — old code read the JSON error body and
+    // returned allowed:true forever. Now checkRedis throws → memory
+    // fallback enforces the limit.
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 }),
+    );
+    const limiter = rateLimit({ interval: 60, limit: 1 });
+    const first = await limiter.check(makeRequest({ ip: "7.7.7.7" }));
+    const second = await limiter.check(makeRequest({ ip: "7.7.7.7" }));
+    expect(first).toBeNull(); // 1st allowed by memory fallback
+    expect(second).not.toBeNull(); // 2nd blocked — NOT failing open
+  });
+
+  it("falls back to memory when Upstash returns a 200 with a command-error body", async () => {
+    const rateLimit = await redisLimiter();
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify([{ error: "ERR bad command" }]), {
+        status: 200,
+      }),
+    );
+    const limiter = rateLimit({ interval: 60, limit: 1 });
+    await limiter.check(makeRequest({ ip: "6.6.6.6" }));
+    const blocked = await limiter.check(makeRequest({ ip: "6.6.6.6" }));
+    expect(blocked).not.toBeNull();
   });
 });

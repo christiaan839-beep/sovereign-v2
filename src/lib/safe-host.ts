@@ -50,11 +50,44 @@ export function resolvedHostIsSafe(address: string): boolean {
   //   ::1        → loopback
   //   fc00::/7   → unique-local (covers fc... and fd...)
   //   fe80::/10  → link-local
+  //   ::         → unspecified
   const lower = address.toLowerCase();
-  if (lower === "::1") return false;
+
+  // IPv4-mapped / IPv4-compatible IPv6 (::ffff:a.b.c.d, ::ffff:hhhh:hhhh,
+  // ::a.b.c.d) tunnel a v4 address past the colon-hex checks below.
+  // An attacker who controls a hostname's DNS can publish an AAAA
+  // record of ::ffff:169.254.169.254 to reach cloud metadata. Extract
+  // the embedded IPv4 and re-run the v4 blocklist on it
+  // (BACKLOG ssrf-v4mapped).
+  const embeddedV4 = extractEmbeddedIpv4(lower);
+  if (embeddedV4 && blockedV4.some((re) => re.test(embeddedV4))) return false;
+
+  if (lower === "::1" || lower === "::") return false;
   if (lower.startsWith("fc") || lower.startsWith("fd")) return false;
   if (lower.startsWith("fe80:")) return false;
   return true;
+}
+
+/**
+ * Pull the embedded IPv4 out of an IPv4-mapped/compatible IPv6 address.
+ * Handles the dotted form (::ffff:169.254.169.254, ::10.0.0.5) and the
+ * hex form (::ffff:a9fe:a9fe). Returns dotted-quad or null.
+ */
+function extractEmbeddedIpv4(lower: string): string | null {
+  // Dotted form: trailing literal a.b.c.d after the last colon.
+  const dotted = lower.match(/:((?:\d{1,3}\.){3}\d{1,3})$/);
+  if (dotted) return dotted[1];
+
+  // Hex form: ::ffff:HHHH:HHHH or ::HHHH:HHHH (all-zero mapping prefix,
+  // optional ffff group).
+  const hex = lower.match(/^::(?:ffff:)?([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  if (hex) {
+    const hi = parseInt(hex[1], 16);
+    const lo = parseInt(hex[2], 16);
+    if (Number.isNaN(hi) || Number.isNaN(lo)) return null;
+    return `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+  }
+  return null;
 }
 
 /**

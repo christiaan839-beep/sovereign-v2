@@ -1,5 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { nimChat } from "@/lib/nvidia";
+import { outboundFetch, BOT_USER_AGENT } from "@/lib/outbound-fetch";
 
 /**
  * COMPETITIVE INTELLIGENCE RADAR
@@ -49,17 +50,25 @@ export const POST = createAgentRoute({
       }),
     },
   },
-  handler: async ({ input, pastContextAsPrompt }) => {
+  handler: async ({ input, userId, pastContextAsPrompt }) => {
     const url = input.url as string;
 
-    // Step 1: Fetch target site metadata
+    // Step 1: Fetch target site metadata. The URL is user-supplied, so
+    // this MUST go through outboundFetch (SSRF guard + egress policy) —
+    // a bare fetch() here let a crafted URL probe internal services.
     let siteData = "";
     try {
-      const res = await fetch(url, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; SovereignBot/1.0)" },
-        signal: AbortSignal.timeout(8000),
-      });
-      const html = await res.text();
+      const res = await outboundFetch(
+        url,
+        { method: "GET", headers: { "User-Agent": BOT_USER_AGENT } },
+        {
+          ruleId: "competitive-radar.fetch_site",
+          userId,
+          maxResponseBytes: 200_000,
+          timeoutMs: 8_000,
+        },
+      );
+      const html = res.body;
 
       // Extract key signals from HTML (first 15KB only)
       const truncated = html.slice(0, 15000);
@@ -87,7 +96,7 @@ export const POST = createAgentRoute({
       if (truncated.includes("hotjar")) techSignals.push("Hotjar");
       if (truncated.includes("segment")) techSignals.push("Segment");
 
-      const headers = Object.fromEntries(res.headers.entries());
+      const headers = res.headers;
       const server = headers["server"] || "Unknown";
       const poweredBy = headers["x-powered-by"] || "";
 

@@ -150,7 +150,10 @@ export const ErrorClassifier = {
    */
   classify(error: unknown): RecoveryError {
     // HTTP Response object
-    if (error instanceof Response || (error && typeof error === "object" && "status" in error)) {
+    if (
+      error instanceof Response ||
+      (error && typeof error === "object" && "status" in error)
+    ) {
       const status = (error as { status: number }).status;
       return ErrorClassifier.fromStatus(status, error);
     }
@@ -450,7 +453,7 @@ export class CircuitOpenError extends Error {
 
   constructor(serviceName: string, retriesInSeconds: number) {
     super(
-      `Circuit breaker "${serviceName}" is OPEN — service unavailable. Retry in ${retriesInSeconds}s.`
+      `Circuit breaker "${serviceName}" is OPEN — service unavailable. Retry in ${retriesInSeconds}s.`,
     );
     this.name = "CircuitOpenError";
     this.retriesInSeconds = retriesInSeconds;
@@ -479,7 +482,7 @@ export class CircuitOpenError extends Error {
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  options: RetryOptions = {}
+  options: RetryOptions = {},
 ): Promise<Result<T>> {
   const {
     maxRetries = 3,
@@ -520,12 +523,15 @@ export async function withRetry<T>(
       const jitter = Math.round(exponentialDelay * 0.25 * Math.random());
       const delay = exponentialDelay + jitter;
 
-      log.warn(`${label} attempt ${attempt + 1} failed — retrying in ${delay}ms`, {
-        attempt: String(attempt + 1),
-        maxRetries: String(maxRetries),
-        delay: String(delay),
-        error: err instanceof Error ? err.message : String(err),
-      });
+      log.warn(
+        `${label} attempt ${attempt + 1} failed — retrying in ${delay}ms`,
+        {
+          attempt: String(attempt + 1),
+          maxRetries: String(maxRetries),
+          delay: String(delay),
+          error: err instanceof Error ? err.message : String(err),
+        },
+      );
 
       // Fire onRetry callback
       if (onRetry) {
@@ -574,7 +580,7 @@ export async function withRetry<T>(
 export async function safeFetch<T = unknown>(
   url: string,
   init?: RequestInit,
-  options: SafeFetchOptions = {}
+  options: SafeFetchOptions = {},
 ): Promise<Result<T>> {
   const {
     maxRetries = 3,
@@ -599,7 +605,10 @@ export async function safeFetch<T = unknown>(
       if (cacheKey) {
         const cached = cacheGet<T>(cacheKey);
         if (cached !== null) {
-          log.info("safeFetch returning cached data (circuit open)", { url, cacheKey });
+          log.info("safeFetch returning cached data (circuit open)", {
+            url,
+            cacheKey,
+          });
           return { ok: true, data: cached, fromCache: true };
         }
       }
@@ -638,14 +647,24 @@ export async function safeFetch<T = unknown>(
           });
 
           if (!response.ok) {
-            const classified = ErrorClassifier.fromStatus(response.status, response);
+            const classified = ErrorClassifier.fromStatus(
+              response.status,
+              response,
+            );
 
-            // For rate limiting, attach Retry-After info
+            // For rate limiting, attach Retry-After info. `status` (not
+            // just statusCode) is required so ErrorClassifier.classify —
+            // which keys off `"status" in error` — routes this back
+            // through fromStatus and marks it retryable. Without it the
+            // 429 fell through to the FATAL branch and was never retried
+            // (BACKLOG recovery-retry).
             if (classified.category === "RATE_LIMITED") {
               const retryErr = new Error(classified.message) as Error & {
+                status: number;
                 statusCode: number;
                 retryAfterMs: number;
               };
+              retryErr.status = response.status;
               retryErr.statusCode = response.status;
               retryErr.retryAfterMs = classified.retryAfterMs ?? 5000;
               throw retryErr;
@@ -654,15 +673,24 @@ export async function safeFetch<T = unknown>(
             // For client errors, do not retry
             if (classified.category === "CLIENT") {
               const clientErr = new Error(
-                `${response.status} ${response.statusText}: ${url}`
+                `${response.status} ${response.statusText}: ${url}`,
               ) as Error & { statusCode: number; nonRetryable: boolean };
               clientErr.statusCode = response.status;
               clientErr.nonRetryable = true;
               throw clientErr;
             }
 
-            // Transient server errors — throw to trigger retry
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            // Transient server errors (5xx) — throw to trigger retry.
+            // Carry `status` so classify() routes through fromStatus and
+            // returns retryable:true; a plain Error message matched no
+            // transient keyword and was misclassified FATAL, so 5xx was
+            // never retried despite maxRetries (BACKLOG recovery-retry).
+            const serverErr = new Error(
+              `HTTP ${response.status}: ${response.statusText}`,
+            ) as Error & { status: number; statusCode: number };
+            serverErr.status = response.status;
+            serverErr.statusCode = response.status;
+            throw serverErr;
           }
 
           // Parse JSON safely
@@ -670,7 +698,9 @@ export async function safeFetch<T = unknown>(
           try {
             return JSON.parse(text) as T;
           } catch {
-            throw new SyntaxError(`Invalid JSON from ${url}: ${text.slice(0, 100)}`);
+            throw new SyntaxError(
+              `Invalid JSON from ${url}: ${text.slice(0, 100)}`,
+            );
           }
         };
 
@@ -694,7 +724,7 @@ export async function safeFetch<T = unknown>(
         }
         return ErrorClassifier.isRetryable(err);
       },
-    }
+    },
   );
 
   // ── Success: populate cache ──
