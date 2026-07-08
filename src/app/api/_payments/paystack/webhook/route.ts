@@ -3,8 +3,9 @@ import { persistAppend } from "@/lib/persist";
 import crypto from "crypto";
 import { createLogger } from "@/lib/logger";
 import { getPublicUrl } from "@/lib/base-url";
-import { alreadyProcessed } from "@/lib/idempotency";
+import { alreadyProcessed, unmarkProcessed } from "@/lib/idempotency";
 import { PLANS, type PlanId, normalizePlanId } from "@/lib/plans";
+import { getInternalWebhookSecret } from "@/lib/internal-secret";
 
 const log = createLogger("paystack-webhook");
 
@@ -25,6 +26,10 @@ function timingSafeHexEqual(a: string, b: string): boolean {
  * logs events with persistence, triggers auto-onboard on successful payments.
  */
 export async function POST(req: Request) {
+  // Hoisted so the catch can release the idempotency marker on failure
+  // (BACKLOG webhook-idempotency) — a const inside the try is not visible
+  // to the catch block.
+  let eventReference: string | undefined;
   try {
     const body = await req.text();
     const signature = req.headers.get("x-paystack-signature") || "";
@@ -49,7 +54,7 @@ export async function POST(req: Request) {
     // Idempotency — Paystack retries on 5xx + supports webhook replay
     // via dashboard. Without dedup, charge.success replays re-onboard
     // the user N times, sending N emails and N agent-fleet deploys.
-    const eventReference = event.data?.reference || event.data?.id || event.id;
+    eventReference = event.data?.reference || event.data?.id || event.id;
     if (eventReference) {
       if (await alreadyProcessed("paystack:event", String(eventReference))) {
         log.info("Skipped: Paystack event already processed", {
@@ -73,7 +78,7 @@ export async function POST(req: Request) {
     );
 
     const baseUrl = getPublicUrl();
-    const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
+    const internalSecret = getInternalWebhookSecret();
 
     switch (event.event) {
       case "charge.success": {
@@ -100,9 +105,12 @@ export async function POST(req: Request) {
           return NextResponse.json({ received: true });
         }
 
-        // Validate amount against expected price (Paystack amounts are
-        // in the smallest currency unit — kobo for NGN, cents for ZAR).
-        const expectedCents = PLANS[plan].priceUsdCents ?? 0;
+        // Validate amount against expected price. Paystack charges the
+        // ZAR price (initializePaystack → planData.priceZAR, currency
+        // "ZAR"), so the received amount is ZAR cents and MUST be checked
+        // against priceZarCents — NOT priceUsdCents, which is ~18-100x
+        // smaller and rejected every real payment (BACKLOG payments-1).
+        const expectedCents = PLANS[plan].priceZarCents ?? 0;
         if (
           expectedCents > 0 &&
           Math.abs(amount - expectedCents) / expectedCents > 0.5
@@ -128,8 +136,15 @@ export async function POST(req: Request) {
           1000,
         );
 
-        // Trigger auto-onboard (best-effort) with internal-secret header
-        if (email) {
+        // Trigger auto-onboard (best-effort) with internal-secret header.
+        // Skip entirely when the secret is unconfigured — an empty
+        // header can never authenticate and just burns a request.
+        if (!internalSecret) {
+          log.error(
+            "INTERNAL_WEBHOOK_SECRET not set — skipping auto-onboard trigger",
+            { email, plan },
+          );
+        } else if (email) {
           try {
             await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
               method: "POST",
@@ -179,6 +194,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ received: true });
   } catch (err) {
+    // Release the marker so Paystack's retry reprocesses instead of being
+    // skipped as a duplicate (BACKLOG webhook-idempotency).
+    if (eventReference) {
+      await unmarkProcessed("paystack:event", String(eventReference));
+    }
     log.error("Paystack webhook processing failed", {
       error: (err as Error).message,
     });

@@ -7,7 +7,7 @@ import {
   type WebhookEvent,
   verifyWebhookSignature,
 } from "@/lib/moonpay";
-import { alreadyProcessed } from "@/lib/idempotency";
+import { alreadyProcessed, unmarkProcessed } from "@/lib/idempotency";
 import { rateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
 
@@ -104,6 +104,8 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ received: true });
   } catch (err) {
+    // Release the marker so MoonPay's retry reprocesses (BACKLOG webhook-idempotency).
+    await unmarkProcessed("moonpay:transaction", event.data.id);
     log.error("MoonPay webhook handler failed", {
       err: err instanceof Error ? err.message : String(err),
       txId: event.data.id,

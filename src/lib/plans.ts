@@ -279,8 +279,17 @@ const LEGACY_MAP: Record<LegacyPlanId, PlanId> = {
 export function normalizePlanId(raw: string | null | undefined): PlanId {
   if (!raw) return "free";
   const lower = raw.toLowerCase().trim();
-  if (lower in PLANS) return lower as PlanId;
-  if (lower in LEGACY_MAP) return LEGACY_MAP[lower as LegacyPlanId];
+  // `in` walks the prototype chain, so `"__proto__" in PLANS` (and
+  // "constructor", "toString", …) is TRUE and would smuggle a bogus
+  // "plan" past this guard — a prototype-pollution vector for every
+  // webhook that maps attacker-controlled metadata to a plan
+  // (BACKLOG plan-proto). Own-property checks close it.
+  if (Object.prototype.hasOwnProperty.call(PLANS, lower)) {
+    return lower as PlanId;
+  }
+  if (Object.prototype.hasOwnProperty.call(LEGACY_MAP, lower)) {
+    return LEGACY_MAP[lower as LegacyPlanId];
+  }
   return "free";
 }
 
@@ -311,6 +320,26 @@ export function getStripePriceId(
   const plan = getPlan(planId);
   if (!plan.stripePriceEnvKey) return null;
   return process.env[plan.stripePriceEnvKey] ?? null;
+}
+
+/**
+ * Reverse of getStripePriceId — resolve a Stripe price ID back to its
+ * PlanId by matching each plan's configured STRIPE_PRICE_* env value.
+ * Used by the subscription.updated webhook so portal upgrades/downgrades
+ * (which carry the new price, not checkout metadata) actually change the
+ * stored tier. Returns null when no plan's env price matches.
+ */
+export function getPlanIdFromStripePriceId(
+  priceId: string | null | undefined,
+): PlanId | null {
+  if (!priceId) return null;
+  for (const id of Object.keys(PLANS) as PlanId[]) {
+    const envKey = PLANS[id].stripePriceEnvKey;
+    if (envKey && process.env[envKey] && process.env[envKey] === priceId) {
+      return id;
+    }
+  }
+  return null;
 }
 
 /** Check if a plan has unlimited runs. */

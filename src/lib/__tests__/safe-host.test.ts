@@ -88,6 +88,40 @@ describe("resolvedHostIsSafe — RFC1918 / loopback / link-local classifier", ()
     expect(resolvedHostIsSafe("2606:2800:220:1:248:1893:25c8:1946")).toBe(true);
     expect(resolvedHostIsSafe("2001:4860:4860::8888")).toBe(true); // Google DNS
   });
+
+  // ─── IPv4-mapped IPv6 SSRF bypass (BACKLOG ssrf-v4mapped) ───
+
+  it("BLOCKS IPv4-mapped IPv6 of cloud metadata (::ffff:169.254.169.254)", () => {
+    expect(resolvedHostIsSafe("::ffff:169.254.169.254")).toBe(false);
+    expect(resolvedHostIsSafe("::FFFF:169.254.169.254")).toBe(false);
+  });
+
+  it("BLOCKS IPv4-mapped IPv6 of RFC1918 ranges", () => {
+    expect(resolvedHostIsSafe("::ffff:10.0.0.5")).toBe(false);
+    expect(resolvedHostIsSafe("::ffff:192.168.1.1")).toBe(false);
+    expect(resolvedHostIsSafe("::ffff:172.16.0.1")).toBe(false);
+    expect(resolvedHostIsSafe("::ffff:127.0.0.1")).toBe(false);
+  });
+
+  it("BLOCKS hex-form IPv4-mapped IPv6 of metadata (::ffff:a9fe:a9fe)", () => {
+    // a9fe:a9fe == 169.254.169.254
+    expect(resolvedHostIsSafe("::ffff:a9fe:a9fe")).toBe(false);
+    // 0a00:0005 == 10.0.0.5
+    expect(resolvedHostIsSafe("::ffff:0a00:0005")).toBe(false);
+  });
+
+  it("BLOCKS IPv4-compatible IPv6 (::a.b.c.d) of private ranges", () => {
+    expect(resolvedHostIsSafe("::169.254.169.254")).toBe(false);
+    expect(resolvedHostIsSafe("::10.0.0.5")).toBe(false);
+  });
+
+  it("BLOCKS the unspecified address (::)", () => {
+    expect(resolvedHostIsSafe("::")).toBe(false);
+  });
+
+  it("still ALLOWS a mapped PUBLIC IPv4 (::ffff:8.8.8.8)", () => {
+    expect(resolvedHostIsSafe("::ffff:8.8.8.8")).toBe(true);
+  });
 });
 
 describe("safeResolveOrNull — DNS-resolution + safety check", () => {

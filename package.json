@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "engines": {
-    "node": ">=18.0.0 <=22.x"
+    "node": ">=20.9.0 <=22.x"
   },
   "bin": {
     "sovereign": "./bin/sovereign.mjs"
@@ -26,7 +26,8 @@
     "check:registry": "node scripts/generate-agent-registry.mjs --check",
     "hooks:install": "git config core.hooksPath scripts/git-hooks && chmod +x scripts/git-hooks/pre-push && echo 'hooks installed: pre-push will run lint + tests + migration check'",
     "hooks:uninstall": "git config --unset core.hooksPath && echo 'hooks uninstalled'",
-    "build:packages": "node scripts/build-packages.mjs"
+    "build:packages": "node scripts/build-packages.mjs",
+    "postinstall": "node scripts/build-packages.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.43",
@@ -60,12 +61,13 @@
     "lenis": "^1.3.21",
     "lucide-react": "^0.577.0",
     "next": "^16.2.6",
-    "nodemailer": "^8.0.7",
+    "nodemailer": "^9.0.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
     "resend": "^6.9.4",
     "stripe": "^20.4.1",
+    "svix": "^1.96.1",
     "twilio": "^5.13.0",
     "ws": "^8.20.0"
   },

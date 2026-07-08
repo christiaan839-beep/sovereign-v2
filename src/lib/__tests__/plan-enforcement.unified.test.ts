@@ -30,12 +30,15 @@ function makeSelectChain(table: unknown) {
           }
           return Promise.resolve([]);
         },
-        // For aggregation queries — count(*) — drizzle awaits the where chain
-        // directly. Both forms resolve to the same shape.
-        then: (resolve: (rows: Array<{ count: number }>) => void) => {
+        // For aggregation queries drizzle awaits the where chain directly.
+        // The usage counter now selects SUM(tokens_used) AS used over the
+        // platform run-marker rows; the playbook counter still uses count(*).
+        then: (
+          resolve: (rows: Array<{ count?: number; used?: number }>) => void,
+        ) => {
           if (table === usageTable) {
             if (usageThrows) throw new Error("usage table missing");
-            resolve([{ count: usageCount }]);
+            resolve([{ used: usageCount }]);
           } else if (table === playbookRunsTable) {
             if (playbookThrows) throw new Error("playbookRuns table missing");
             resolve([{ count: playbookCount }]);

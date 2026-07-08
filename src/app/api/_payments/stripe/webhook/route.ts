@@ -4,9 +4,22 @@ import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
-import { alreadyProcessed } from "@/lib/idempotency";
+import { alreadyProcessed, unmarkProcessed } from "@/lib/idempotency";
+import { getPlanIdFromStripePriceId } from "@/lib/plans";
 
 const log = createLogger("stripe-webhook");
+
+/**
+ * Map a Stripe subscription status to our stored status. `trialing`
+ * counts as active — getUserPlan only entitles status='active', so
+ * collapsing trials to inactive treated paying trial users as free
+ * (BACKLOG stripe-trialing).
+ */
+function mapSubStatus(status: string): "active" | "past_due" | "inactive" {
+  if (status === "active" || status === "trialing") return "active";
+  if (status === "past_due") return "past_due";
+  return "inactive";
+}
 
 // Reject events older than 5 minutes (replay protection).
 const MAX_EVENT_AGE_SECONDS = 5 * 60;
@@ -135,21 +148,33 @@ export async function POST(req: Request) {
         const sub = event.data.object as Stripe.Subscription;
         const stripeCustomerId = stripeId(sub.customer);
         if (stripeCustomerId) {
+          // Derive the new tier from the subscription's active price —
+          // portal upgrades/downgrades and prorations fire THIS event
+          // (not checkout.session.completed) and don't carry checkout
+          // metadata, so only writing `status` left the user's plan
+          // frozen at its old tier (BACKLOG stripe-plan-update).
+          const priceId = sub.items?.data?.[0]?.price?.id ?? null;
+          const derivedPlan = getPlanIdFromStripePriceId(priceId);
+          const currentPeriodEnd = sub.items?.data?.[0]?.current_period_end
+            ? new Date(sub.items.data[0].current_period_end * 1000)
+            : null;
+
           await db
             .update(subscriptions)
             .set({
-              status:
-                sub.status === "active"
-                  ? "active"
-                  : sub.status === "past_due"
-                    ? "past_due"
-                    : "inactive",
+              status: mapSubStatus(sub.status),
+              // Only overwrite the plan when we can resolve it — never
+              // clobber a good tier with a fallback if the price is
+              // unknown (e.g. an add-on price).
+              ...(derivedPlan ? { plan: derivedPlan } : {}),
+              ...(currentPeriodEnd ? { currentPeriodEnd } : {}),
               updatedAt: new Date(),
             })
             .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
           log.info("Subscription updated", {
             stripeCustomerId,
             status: sub.status,
+            plan: derivedPlan ?? "(unchanged)",
           });
         }
         break;
@@ -194,6 +219,11 @@ export async function POST(req: Request) {
       }
     }
   } catch (err) {
+    // Release the idempotency marker so Stripe's retry (fired on this 500)
+    // reprocesses the event instead of being skipped as a duplicate —
+    // otherwise a transient failure mid-handler permanently drops a paid
+    // event (BACKLOG webhook-idempotency).
+    await unmarkProcessed("stripe:event", event.id);
     log.error("Webhook handler error", {
       eventType: event.type,
       error: (err as Error).message,

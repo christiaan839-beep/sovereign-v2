@@ -15,19 +15,27 @@ vi.mock("@/db", () => {
     select: vi.fn().mockReturnThis(),
     from: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue(undefined) }),
+    insert: vi
+      .fn()
+      .mockReturnValue({ values: vi.fn().mockResolvedValue(undefined) }),
   };
-  // Make select() return a thenable chain
+  // Make select() return a thenable chain. `used` mirrors the
+  // SUM(tokens_used) run-unit counter (BACKLOG usage-count).
   mockDb.select.mockReturnValue({
     from: vi.fn().mockReturnValue({
-      where: vi.fn().mockResolvedValue([{ count: 0 }]),
+      where: vi.fn().mockResolvedValue([{ used: 0 }]),
     }),
   });
   return { db: mockDb };
 });
 
 vi.mock("@/db/schema", () => ({
-  usage: { userId: "userId", createdAt: "createdAt" },
+  usage: {
+    userId: "userId",
+    createdAt: "createdAt",
+    model: "model",
+    tokensUsed: "tokensUsed",
+  },
   subscriptions: { userId: "userId" },
 }));
 
@@ -64,17 +72,19 @@ import {
 // ── Helpers ──
 
 function mockUsageCount(count: number) {
+  // The counter now sums tokens_used over platform run-marker rows and
+  // reads `.used` (net runs), not `.count` (rows).
   (db.select as ReturnType<typeof vi.fn>).mockReturnValue({
     from: vi.fn().mockReturnValue({
-      where: vi.fn().mockResolvedValue([{ count }]),
+      where: vi.fn().mockResolvedValue([{ used: count }]),
     }),
   });
 }
 
 function mockUserTier(plan: string | null) {
-  (db.query.subscriptions.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-    plan ? { plan } : null
-  );
+  (
+    db.query.subscriptions.findFirst as ReturnType<typeof vi.fn>
+  ).mockResolvedValue(plan ? { plan } : null);
 }
 
 // ── Tests ──
@@ -105,6 +115,19 @@ describe("free-tier", () => {
       const result = await checkFreeUsage("user_exhausted");
       expect(result.allowed).toBe(false);
       expect(result.remaining).toBe(0);
+    });
+
+    it("clamps net-negative usage (bonus credits exceed consumption) to 0 used", async () => {
+      // addBonusRuns writes a platform row with tokens_used = -runs, so a
+      // freshly-credited user can sum to a negative net. The counter must
+      // clamp to 0 so remaining never exceeds the plan limit
+      // (BACKLOG bonus-runs).
+      mockUsageCount(-30);
+      mockUserTier(null);
+
+      const result = await checkFreeUsage("user_bonus_credited");
+      expect(result.allowed).toBe(true);
+      expect(result.remaining).toBe(FREE_MONTHLY_LIMIT);
     });
 
     it("should return allowed=true for a pro user under the pro limit", async () => {
@@ -155,7 +178,9 @@ describe("free-tier", () => {
       }));
 
       // Should not throw
-      await expect(incrementUsage("user_123", "seo-agent")).resolves.not.toThrow();
+      await expect(
+        incrementUsage("user_123", "seo-agent"),
+      ).resolves.not.toThrow();
     });
   });
 
@@ -193,7 +218,9 @@ describe("free-tier", () => {
   describe("addBonusRuns", () => {
     it("should insert a negative-token credit row for bonus runs", async () => {
       const valuesMock = vi.fn().mockResolvedValue(undefined);
-      (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({ values: valuesMock });
+      (db.insert as ReturnType<typeof vi.fn>).mockReturnValue({
+        values: valuesMock,
+      });
 
       await addBonusRuns("user_referral", 50);
 
@@ -203,7 +230,7 @@ describe("free-tier", () => {
           userId: "user_referral",
           agentId: "referral-bonus",
           tokensUsed: -50,
-        })
+        }),
       );
     });
 

@@ -224,10 +224,22 @@ async function _aiInternal(
   }
 
   // 3. NVIDIA NIM open-source models (cost: $0)
-  if (
-    model === "nim" ||
-    (userKeys.nvidia && model !== "claude" && model !== "gemini")
-  ) {
+  // The nvidia-BYOK shortcut must NOT swallow models that have their own
+  // handler below — an explicit ai(prompt, {model:'mistral'|'groq'|
+  // 'deepseek'|'qwen'}) was being silently rerouted to the NIM default
+  // for any user with an nvidia key, making those handlers unreachable
+  // and mis-attributing cost (BACKLOG router-hijack). Registry-picked
+  // open models with no dedicated handler still fall through to NIM.
+  const HAS_OWN_HANDLER = new Set([
+    "claude",
+    "gemini",
+    "cerebras",
+    "mistral",
+    "groq",
+    "deepseek",
+    "qwen",
+  ]);
+  if (model === "nim" || (userKeys.nvidia && !HAS_OWN_HANDLER.has(model))) {
     recordModel("nvidia-nim-default");
     return nimText(prompt, system, maxTokens);
   }
@@ -429,8 +441,15 @@ Then give your final answer after your reasoning.`
     }
   }
 
-  // Strip thinking traces from the final answer if present
-  const cleanAnswer = answer.replace(/^(Step \d+:.*\n)+/gm, "").trim();
+  // Strip a leading chain-of-thought preamble ("Step 1:...\nStep 2:...")
+  // ONLY when thinking mode produced it, and ONLY at the very start of
+  // the answer. The old /gm regex matched every line anywhere, so a
+  // legitimate "here are the setup steps" answer had its actual step
+  // list silently deleted (BACKLOG smartai-strip). No g/m flags → the
+  // anchor is the true start of the string.
+  const cleanAnswer = thinking
+    ? answer.replace(/^(?:Step \d+:.*\n)+\n?/, "").trim()
+    : answer;
 
   return {
     answer: cleanAnswer || answer,
@@ -493,6 +512,11 @@ async function ollamaText(
             system: system || "",
             stream: false,
           }),
+          // A wedged Ollama endpoint (SYN blackhole, dead tunnel) would
+          // otherwise hang every ai() call for this user until the
+          // function timeout, since rule 1 routes ALL their traffic to
+          // Ollama (BACKLOG ollama-timeout).
+          signal: AbortSignal.timeout(20_000),
         });
         if (!res.ok) throw new Error("Ollama request failed");
         const data = await res.json();
@@ -592,7 +616,13 @@ async function claudeText(
         ]
       : prompt;
 
-  // Extended thinking and max_tokens are incompatible — use one or the other
+  // max_tokens is a REQUIRED Messages API parameter — it must ALWAYS be
+  // set. With extended thinking it must be strictly greater than
+  // thinking.budget_tokens (the model needs room for both the thinking
+  // scratch space and the final answer). The old code set `thinking`
+  // WITHOUT max_tokens, so every thinking call 400'd and, via the shared
+  // claudeBreaker, could open the circuit for all Claude traffic
+  // (BACKLOG claude-thinking).
   // Opus 4.7: strongest reasoning, 1M context, 128K output — only when caller
   //   explicitly opts in via useOpus AND BYOK Anthropic key is present.
   // Sonnet 4.6: default for everything else (~15x cheaper, same quality on
@@ -600,14 +630,17 @@ async function claudeText(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const requestParams: any = {
     model: useOpus ? "claude-opus-4-7" : "claude-sonnet-4-6",
+    max_tokens: maxTokens,
     ...(systemParam ? { system: systemParam } : {}),
     messages: [{ role: "user", content: userMessage }],
   };
 
   if (thinking) {
-    requestParams.thinking = { type: "enabled", budget_tokens: 10000 };
-  } else {
-    requestParams.max_tokens = maxTokens;
+    const budgetTokens = 10000;
+    // Guarantee max_tokens > budget_tokens, keeping the caller's
+    // requested output budget on top of the thinking allowance.
+    requestParams.max_tokens = budgetTokens + Math.max(maxTokens, 4000);
+    requestParams.thinking = { type: "enabled", budget_tokens: budgetTokens };
   }
 
   return claudeBreaker.execute(() =>
@@ -900,9 +933,14 @@ export async function groqTranscribe(
 
   const client = new Groq({ apiKey });
 
-  const blob = new Blob([audioBuffer.buffer as ArrayBuffer], {
-    type: "audio/wav",
-  });
+  // Respect the view's window. Buffers under 4KiB come from a shared
+  // pool and subarray()/slice() views carry a nonzero byteOffset —
+  // `audioBuffer.buffer` would upload the whole underlying pool (wrong
+  // length + garbage + potentially other requests' bytes) to Groq
+  // (BACKLOG groq-blob). `new Uint8Array(view)` copies exactly the
+  // view's logical bytes into a fresh, standalone ArrayBuffer.
+  const view = new Uint8Array(audioBuffer);
+  const blob = new Blob([view], { type: "audio/wav" });
   const file = new File([blob], filename, { type: "audio/wav" });
 
   const transcription = await client.audio.transcriptions.create({
@@ -923,6 +961,47 @@ export async function groqTranscribe(
  * feeds results back, and repeats until stop_reason === "end_turn" or max iterations.
  * Falls back to single-call mode when no toolExecutor is provided (legacy compat).
  */
+/**
+ * Token-cost bounds for the claudeToolUse loop (BACKLOG M7).
+ * Without them a long loop re-sends every historical tool result on
+ * every iteration, so cost grows quadratically with iteration count.
+ */
+const MAX_TOOL_RESULT_CHARS = 20_000; // per-result cap at insertion time
+const TOOL_RESULT_KEEP_TURNS = 2; // most-recent tool-result turns kept verbatim
+const TOOL_RESULT_SUMMARY_CHARS = 300; // older results collapse to this
+const TOOL_RESULT_TRUNCATION_MARKER =
+  "\n[tool result truncated — superseded by newer turns]";
+
+/**
+ * Collapse tool_result contents older than TOOL_RESULT_KEEP_TURNS to a
+ * short prefix. Mutates messages in place; idempotent (already-collapsed
+ * results are marked and skipped).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function compactOldToolResults(messages: any[]): void {
+  const toolResultTurns = messages
+    .map((m, idx) => ({ m, idx }))
+    .filter(({ m }) => m.role === "user" && Array.isArray(m.content));
+  const staleTurns = toolResultTurns.slice(
+    0,
+    Math.max(0, toolResultTurns.length - TOOL_RESULT_KEEP_TURNS),
+  );
+  for (const { m } of staleTurns) {
+    for (const block of m.content) {
+      if (
+        block?.type === "tool_result" &&
+        typeof block.content === "string" &&
+        block.content.length > TOOL_RESULT_SUMMARY_CHARS &&
+        !block.content.endsWith(TOOL_RESULT_TRUNCATION_MARKER)
+      ) {
+        block.content =
+          block.content.slice(0, TOOL_RESULT_SUMMARY_CHARS) +
+          TOOL_RESULT_TRUNCATION_MARKER;
+      }
+    }
+  }
+}
+
 export async function claudeToolUse(
   prompt: string,
   tools: Array<{
@@ -1026,10 +1105,15 @@ export async function claudeToolUse(
       toolResults.push({
         type: "tool_result",
         tool_use_id: tc.id,
-        content: result,
+        content:
+          result.length > MAX_TOOL_RESULT_CHARS
+            ? result.slice(0, MAX_TOOL_RESULT_CHARS) +
+              "\n[tool result capped at 20,000 chars]"
+            : result,
       });
     }
     messages.push({ role: "user", content: toolResults });
+    compactOldToolResults(messages);
   }
 
   // Max iterations reached — return whatever text we have

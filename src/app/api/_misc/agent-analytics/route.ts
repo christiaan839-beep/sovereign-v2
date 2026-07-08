@@ -1,20 +1,29 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { auditLogs } from "@/db/schema";
 import { sql, desc, gte, and, count } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { requireAdmin } from "@/lib/admin-auth";
 
 const log = createLogger("agent-analytics");
 
-export const runtime = "edge";
+// NOTE: no `runtime = "edge"` — requireAdmin lazy-imports the WebAuthn
+// (Node) module, so this route runs on the Node runtime.
 
 /**
  * GET /api/_misc/agent-analytics
  *
  * Returns aggregated agent execution analytics from audit_logs.
  * Filters on action = 'agent.execute' (or any action starting with 'agent.').
+ *
+ * Admin-only: this aggregates platform-wide, cross-tenant operational
+ * intelligence. Exposed publicly via [...catchall] (/api/agent-analytics),
+ * so without this gate any anonymous caller could read it
+ * (BACKLOG unauth-agent-analytics).
  */
-export async function GET(_req: NextRequest) {
+export async function GET() {
+  const gate = await requireAdmin();
+  if (gate instanceof Response) return gate;
   try {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -30,8 +39,8 @@ export async function GET(_req: NextRequest) {
       .where(
         and(
           sql`${auditLogs.action} LIKE 'agent.%'`,
-          gte(auditLogs.createdAt, startOfMonth)
-        )
+          gte(auditLogs.createdAt, startOfMonth),
+        ),
       )
       .groupBy(auditLogs.resource)
       .orderBy(desc(count()))
@@ -54,11 +63,13 @@ export async function GET(_req: NextRequest) {
       .where(
         and(
           sql`${auditLogs.action} LIKE 'agent.%'`,
-          gte(auditLogs.createdAt, startOfMonth)
-        )
+          gte(auditLogs.createdAt, startOfMonth),
+        ),
       )
       .groupBy(auditLogs.resource)
-      .orderBy(sql`AVG(CAST(NULLIF(${auditLogs.details}::json->>'durationMs', '') AS DOUBLE PRECISION)) ASC NULLS LAST`)
+      .orderBy(
+        sql`AVG(CAST(NULLIF(${auditLogs.details}::json->>'durationMs', '') AS DOUBLE PRECISION)) ASC NULLS LAST`,
+      )
       .limit(10);
 
     const avgDuration = avgDurationRaw.map((r) => ({
@@ -79,8 +90,8 @@ export async function GET(_req: NextRequest) {
       .where(
         and(
           sql`${auditLogs.action} LIKE 'agent.%'`,
-          gte(auditLogs.createdAt, startOfMonth)
-        )
+          gte(auditLogs.createdAt, startOfMonth),
+        ),
       )
       .groupBy(auditLogs.resource)
       .orderBy(desc(count()))
@@ -90,7 +101,9 @@ export async function GET(_req: NextRequest) {
       agent: r.resource || "unknown",
       total: Number(r.total),
       successes: Number(r.successes),
-      rate: r.total ? Math.round((Number(r.successes) / Number(r.total)) * 100) : 0,
+      rate: r.total
+        ? Math.round((Number(r.successes) / Number(r.total)) * 100)
+        : 0,
     }));
 
     // 4. Daily counts for last 7 days
@@ -103,8 +116,8 @@ export async function GET(_req: NextRequest) {
       .where(
         and(
           sql`${auditLogs.action} LIKE 'agent.%'`,
-          gte(auditLogs.createdAt, sevenDaysAgo)
-        )
+          gte(auditLogs.createdAt, sevenDaysAgo),
+        ),
       )
       .groupBy(sql`TO_CHAR(${auditLogs.createdAt}, 'YYYY-MM-DD')`)
       .orderBy(sql`TO_CHAR(${auditLogs.createdAt}, 'YYYY-MM-DD') ASC`);
@@ -116,7 +129,11 @@ export async function GET(_req: NextRequest) {
       const key = d.toISOString().split("T")[0];
       const label = d.toLocaleDateString("en-US", { weekday: "short" });
       const found = dailyCountsRaw.find((r) => r.day === key);
-      dailyCounts.push({ day: key, label, count: found ? Number(found.total) : 0 });
+      dailyCounts.push({
+        day: key,
+        label,
+        count: found ? Number(found.total) : 0,
+      });
     }
 
     // 5. Total executions this month
@@ -126,8 +143,8 @@ export async function GET(_req: NextRequest) {
       .where(
         and(
           sql`${auditLogs.action} LIKE 'agent.%'`,
-          gte(auditLogs.createdAt, startOfMonth)
-        )
+          gte(auditLogs.createdAt, startOfMonth),
+        ),
       );
 
     const totalMonth = Number(totalMonthRaw[0]?.total || 0);
@@ -142,13 +159,16 @@ export async function GET(_req: NextRequest) {
         and(
           sql`${auditLogs.action} LIKE 'agent.%'`,
           gte(auditLogs.createdAt, startOfLastMonth),
-          sql`${auditLogs.createdAt} <= ${endOfLastMonth}`
-        )
+          sql`${auditLogs.createdAt} <= ${endOfLastMonth}`,
+        ),
       );
     const totalLastMonth = Number(totalLastMonthRaw[0]?.total || 0);
-    const trend = totalLastMonth > 0
-      ? Math.round(((totalMonth - totalLastMonth) / totalLastMonth) * 100)
-      : totalMonth > 0 ? 100 : 0;
+    const trend =
+      totalLastMonth > 0
+        ? Math.round(((totalMonth - totalLastMonth) / totalLastMonth) * 100)
+        : totalMonth > 0
+          ? 100
+          : 0;
 
     return NextResponse.json({
       topAgents,
@@ -161,8 +181,16 @@ export async function GET(_req: NextRequest) {
   } catch (err) {
     log.error("Failed to fetch agent analytics", { error: String(err) });
     return NextResponse.json(
-      { error: "Failed to fetch analytics", topAgents: [], avgDuration: [], successRate: [], dailyCounts: [], totalMonth: 0, trend: 0 },
-      { status: 500 }
+      {
+        error: "Failed to fetch analytics",
+        topAgents: [],
+        avgDuration: [],
+        successRate: [],
+        dailyCounts: [],
+        totalMonth: 0,
+        trend: 0,
+      },
+      { status: 500 },
     );
   }
 }

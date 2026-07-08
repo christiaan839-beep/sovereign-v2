@@ -8,7 +8,7 @@ import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
-import { alreadyProcessed } from "@/lib/idempotency";
+import { alreadyProcessed, unmarkProcessed } from "@/lib/idempotency";
 import { normalizePlanId, PLANS } from "@/lib/plans";
 
 const log = createLogger("yoco-webhook");
@@ -157,6 +157,8 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ received: true });
   } catch (err) {
+    // Release the marker so Yoco's retry reprocesses (BACKLOG webhook-idempotency).
+    if (id) await unmarkProcessed("yoco:event", id);
     log.error("Yoco webhook processing failed", err as Record<string, unknown>);
     return NextResponse.json(
       { error: "Webhook processing failed" },

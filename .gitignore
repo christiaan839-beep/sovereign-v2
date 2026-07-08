@@ -34,6 +34,10 @@ node_modules
 # throwaway demo keypair (the secret was discarded after generation).
 # It's safe to commit; the .pem extension is misleading here.
 !public/sample-bundle.ed25519.pem
+# Conformance-corpus verification key — public half only, required by
+# the TS/Python/Go harnesses on every fresh clone. Regenerate with
+# packages/verifiable-receipts/conformance/generate-fixtures.mjs.
+!packages/verifiable-receipts/conformance/public-key.pem
 
 # debug
 npm-debug.log*

@@ -113,11 +113,27 @@ async function countMonthlyUsage(userId: string): Promise<number> {
   }
 
   try {
+    // Count RUN UNITS, not rows. Each agent run writes one run-marker row
+    // (model='platform', tokens_used=1 via incrementUsage) PLUS one or
+    // more cost-telemetry rows (recordSpend / per-LLM-call, model=<real
+    // model id>). A plain count(*) over the table therefore charged 2+
+    // quota per run (BACKLOG usage-count). Summing tokens_used over ONLY
+    // the platform rows gives net runs, and because addBonusRuns writes a
+    // platform row with tokens_used=-runs, referral credits now correctly
+    // REDUCE the count instead of adding one (BACKLOG bonus-runs).
     const result = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({
+        used: sql<number>`COALESCE(SUM(${usage.tokensUsed}), 0)::int`,
+      })
       .from(usage)
-      .where(and(eq(usage.userId, userId), gte(usage.createdAt, start)));
-    const count = result[0]?.count ?? 0;
+      .where(
+        and(
+          eq(usage.userId, userId),
+          eq(usage.model, "platform"),
+          gte(usage.createdAt, start),
+        ),
+      );
+    const count = Math.max(0, result[0]?.used ?? 0);
     usageCache.set(cacheKey, { count, cachedAt: Date.now() });
     return count;
   } catch (err) {
@@ -152,7 +168,10 @@ export async function checkFreeUsage(userId: string): Promise<UsageCheck> {
  * Uses atomic DB insert as source of truth — cache is invalidated, not incremented.
  * This prevents race conditions where concurrent requests both read the same count.
  */
-export async function incrementUsage(userId: string, agentId: string = "unknown"): Promise<void> {
+export async function incrementUsage(
+  userId: string,
+  agentId: string = "unknown",
+): Promise<void> {
   const { key } = getCurrentPeriod();
   const cacheKey = `${userId}:${key}`;
 
@@ -193,7 +212,10 @@ export async function getUsageStats(userId: string): Promise<UsageStats> {
  * Grants extra runs by inserting a negative-token "credit" row in usage,
  * effectively raising the user's limit for the current period.
  */
-export async function addBonusRuns(userId: string, runs: number): Promise<void> {
+export async function addBonusRuns(
+  userId: string,
+  runs: number,
+): Promise<void> {
   try {
     // Insert a credit row (negative tokens = bonus runs)
     await db.insert(usage).values({
@@ -235,7 +257,9 @@ export interface SmartUpgradeInfo {
 /**
  * Build a structured upgrade prompt with plan comparison details.
  */
-export async function getSmartUpgradeInfo(userId: string): Promise<SmartUpgradeInfo> {
+export async function getSmartUpgradeInfo(
+  userId: string,
+): Promise<SmartUpgradeInfo> {
   const [used, tier] = await Promise.all([
     countMonthlyUsage(userId),
     getUserTier(userId),

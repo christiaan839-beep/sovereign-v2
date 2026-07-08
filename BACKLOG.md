@@ -5,7 +5,180 @@
 > updates this. If something is shipped, move it to the bottom log; if
 > something new is discovered, add it under the right severity band.
 
-Last refreshed: **2026-05-20** after wave 107.2.
+Last refreshed: **2026-07-08** after wave 121 (deferred-flaw closeout + dependency hardening).
+
+---
+
+## Wave 121 — deferred-flaw closeout + PayPal-only enablement (2026-07-08)
+
+Closed the items wave 120 deferred as "needs its own tested wave," plus made
+PayPal a complete standalone billing path. Typecheck + full suite (294 files,
+4491 passing) + production build + `npm audit --audit-level=high` (0 highs) all
+green.
+
+**Revenue-counting correctness (the deferred cluster):**
+
+- **Usage double-counting FIXED** — `free-tier.countMonthlyUsage` and
+  `plan-enforcement.getMonthlyUsage` now `SUM(tokens_used)` over the
+  `model='platform'` run-marker rows instead of `count(*)` over the whole
+  table, so a run's cost-telemetry rows no longer each burn quota.
+- **`addBonusRuns` FIXED** — the same SUM counts the bonus row's negative
+  `tokens_used` as a credit (was `count(*) → +1 consumption`); net usage is
+  clamped to ≥0.
+- **Quota check-then-act race** — still a bounded over-serve (concurrent burst
+  at the limit boundary); correct fix is an atomic reservation on the quota hot
+  path tangled with the 5–10s usage caches. Documented, not rushed (blocking
+  paying users would be worse than the bounded over-serve).
+
+**Webhook idempotency (crash-drop) FIXED** — new `unmarkProcessed()` releases
+the marker in the error path so a provider retry reprocesses instead of being
+skipped. Wired into all 7 payment webhooks (stripe, paystack, payfast, crypto,
+yoco, paypal, moonpay); paystack/payfast hoist their id so the catch can see it.
+
+**PayPal is now a complete billing path (enables PayPal-only operation)** —
+the webhook previously provisioned add-ons ONLY; a `plan` capture fell through
+to "no provisioning hook", charging the customer without upgrading them. Now
+`activatePaypalPlan` upserts a 30-day subscription (mirrors the crypto one-time
+model, with amount-tampering defense), and `currentPeriodEnd` enforcement
+downgrades it afterwards. Route test added.
+
+**Prototype-pollution in `normalizePlanId` FIXED** — `lower in PLANS` was true
+for `"__proto__"`/`"constructor"` (prototype chain), smuggling a bogus "plan"
+past every webhook. Now uses `hasOwnProperty`. Central fix for all callers.
+
+**`_billing/webhook` node-default FIXED** — the legacy duplicate defaulted plan
+to `node` on `subscription.updated`; now derives from the price id and only
+overwrites when resolvable (same fix as `_payments/stripe`).
+
+**`isEncrypted` hardened** — now requires canonical base64 + exact round-trip
+before the length check, so long plaintext secrets (`sk_live_…`, JSON blobs) are
+no longer misclassified as ciphertext. Backward-compatible (no format change).
+
+**SSR invariants reconciled** — CLAUDE.md claimed ClerkProvider must be
+`dynamic ssr:false` and cinematic components must use `ClientOnlyEffects`, but
+the shipped, build-green code deliberately SSRs Clerk via `SafeClerkProvider`
+and imports mount-guarded `"use client"` cinematic components directly. Updated
+the docs to match reality and removed the dead, contradictory `ClientOnlyEffects`
+(zero importers).
+
+**Dependency hardening (greens the Security Audit CI gate)** — `npm audit fix`
+(non-breaking) + surgical `nodemailer@9` bump cleared all 8 high-severity
+advisories (8 → 0; total 29 → 10 moderate). Re-added `svix` as an explicit
+dependency (the resend bump dropped it; the Clerk webhook imports it directly).
+
+**Deferred (documented, not shipped):**
+
+- **page-builder preview CSP** — generated previews load the Tailwind **Play
+  CDN**, which needs `unsafe-eval` (deliberately removed from the site CSP), and
+  `srcDoc` iframes inherit the parent CSP. Correct fix: a scoped-CSP preview
+  route serving generated HTML via `src=` with its own relaxed policy (4 builder
+  UI touch points). Not weakening the global CSP for a cosmetic internal-tool fix.
+- **Quota atomic reservation** (see above) and the **two-state `stripe_events`
+  table** (the `unmarkProcessed` release-on-error fix covers the reported
+  crash-drop; the full received→completed table remains a nice-to-have).
+- **ZAR price inconsistency** — a pricing/business decision, needs operator input.
+
+---
+
+## Wave 120 — repo-revival flaw sweep (2026-07-07)
+
+A multi-agent audit (7 finders × adversarial verify) plus a green-baseline
+pass. Every fix below ships with typecheck + full test suite (293 files,
+4484 passing) + production build all green. New/updated tests: vector-memory
+cap, claudeToolUse M7 bounds, agent-factory L5 (5 cases), safe-host IPv4-mapped
+IPv6, retry 4xx, rate-limit Redis fail-closed.
+
+**Liveness / build (was silently broken):**
+
+- **Workspace packages never built on clone.** `postinstall → build-packages`
+  added to `package.json` so `@sovereign-matrix/*` dist exists after a plain
+  `npm install` (typecheck failed on a fresh clone before this).
+- **Conformance corpus unrunnable on clone** — `public-key.pem` was swallowed
+  by the root `*.pem` gitignore, so the TS/Py/Go harnesses ENOENT'd. Added a
+  deterministic `generate-fixtures.mjs`, committed the public key, gitignore
+  exception, README section. Suite 1-failed → green.
+- **Dockerfile 100% broken** (Railway/self-host): `npm ci` ENOENT on workspace
+  manifests + `--omit=dev` stripped `next build` deps + missing `scripts/`.
+  Rewrote to a correct full-install builder stage.
+- **`vercel.json` functions glob** `app/api/**` → `src/app/api/**` (matched
+  nothing; 60s maxDuration never applied).
+- **CSP blocked all brand fonts** — added `fonts.googleapis.com` (style-src) +
+  `fonts.gstatic.com` (font-src).
+- **CORP `same-site` killed the embeddable badge** — added `cross-origin`
+  overrides for `/badge/:path*` and `/embed/:path*`.
+- **`engines.node`** `>=18` → `>=20.9.0` (Next 16 floor).
+- **Middleware headers contradicted next.config.ts** (mic policy, HSTS
+  preload) — removed the duplicate keys; next.config.ts is now sole source.
+
+**Payments (revenue was silently broken):**
+
+- **CRITICAL — Paystack rejected every real payment**: validated the
+  ZAR-charged amount against `priceUsdCents` (~18-100× off). Now `priceZarCents`.
+- **PayFast rejected legit array/node/enterprise**: `USD*19` heuristic →
+  canonical `priceZarCents`.
+- **Stripe `subscription.updated` never wrote `plan`** — portal
+  upgrades/downgrades didn't change tier. Now derives plan from the price ID
+  (`getPlanIdFromStripePriceId`) + treats `trialing` as active.
+- **`currentPeriodEnd` never enforced** — one-time crypto payments granted the
+  tier forever. `getUserPlan` now downgrades expired subs.
+
+**Security:**
+
+- **IDOR — `/api/scheduled-runs` & `/api/inbox`** trusted a spoofable
+  `x-user-id` header for cross-user CRUD. Now Clerk `auth()` only.
+- **Unauth disclosure** — `/api/agent-analytics` (platform analytics) →
+  `requireAdmin`; `/api/errors` GET (stack traces) → `requireAdmin`, POST
+  (injection/DoS) → internal-secret.
+- **SSRF — IPv4-mapped IPv6 bypass** (`::ffff:169.254.169.254`) in
+  `safe-host.ts` now decodes the embedded v4 and re-checks it; `::` blocked.
+
+**Reliability / correctness:**
+
+- **Claude thinking mode always 400'd** (no `max_tokens`, poisoned the shared
+  breaker) — always set `max_tokens > budget_tokens`.
+- **`error-recovery.safeFetch` never retried 5xx/429** — thrown errors now
+  carry `status` so `classify` routes them retryable.
+- **Upstash rate-limit failed OPEN** on any error (+ shared key namespace, no
+  timeout) — now checks `res.ok`/error body → memory fallback, namespaced key,
+  2s timeout.
+- **`verifiedAi` treated "NOT APPROVED" as approval** — word-boundary +
+  negation-exclusion regex.
+- **Router hijacked pinned `mistral`/`groq`/`deepseek`/`qwen`** to NIM for
+  nvidia-BYOK users — exempted models with their own handler.
+- **`groqTranscribe` uploaded whole pooled buffer** (byteOffset ignored) —
+  copies the view's bytes.
+- **`ollamaText` had no timeout** (a wedged endpoint hung every call) — 20s.
+- **`smartAi` stripped legit "Step N:" content** anywhere — anchored to start +
+  gated on thinking mode.
+- **`withRetry` retried deterministic 4xx** — added `shouldRetry` + default
+  4xx-skip (except 408/429).
+- **H3 / H2 / M7 / L2 / L3 / L4 / L5** (pre-tracked below) all shipped.
+
+**Deferred (documented, not fixed — need their own tested wave):**
+
+- **Usage double-counting** — each run writes ≥2 usage rows; `getMonthlyUsage`
+  uses `count(*)`, so quota burns 2×+ per run. Needs a canonical run counter
+  (distinct requestId / runs table). Signed-column refactor — high blast radius,
+  do NOT rush.
+- **`addBonusRuns` backfires** — inserts a negative-token row that `count(*)`
+  reads as +1 consumption. Same counting refactor as above.
+- **Check-then-act quota race** — concurrent runs can exceed the cap (no atomic
+  reservation).
+- **Stripe (+ all provider) idempotency marks-before-process** — a handler crash
+  - provider retry permanently drops the event. Use the two-state
+    `stripe_events` table (received→completed).
+- **ZAR prices internally inconsistent** with USD (array R4997 for a $49 plan)
+  — a pricing/business decision; needs operator input, not a silent code change.
+- **`_billing/webhook` duplicate** defaults plan to `node` on
+  `subscription.updated` — retire in favour of `_payments`.
+- **`isEncrypted` misclassifies long plaintext** as ciphertext — current sole
+  caller survives via a JSON fallback; tighten before a new caller relies on it.
+- **Root layout imports browser-only cinematic components directly** (bypasses
+  `ClientOnlyEffects`) and **`SafeClerkProvider` SSRs Clerk** — both contradict
+  CLAUDE.md invariants; code and docs must be reconciled deliberately (one is
+  wrong) rather than auto-"fixed".
+- **page-builder previews reference `cdn.tailwindcss.com`** (CSP-blocked in
+  srcDoc) — fix by inlining styles in the generator, not by weakening CSP.
 
 ---
 
@@ -65,11 +238,11 @@ The platform is production-deployable RIGHT NOW for: agency operators automating
 
 ### HIGH — security gaps the audit found that aren't fully closed yet
 
-| ID     | Item                                                                                                                                                                                                                                                                                                   | Effort   | Notes                                                                                                                             |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| ~~H1~~ | ~~DNS-rebinding hardening at `outboundFetch` layer~~ — **SHIPPED in wave 107.2.** `safeResolveOrNull` + `resolvedHostIsSafe` promoted to `src/lib/safe-host.ts`; wired into `outboundFetch` so every caller inherits the defense. Federation-puller re-exports the shared symbols for backward-compat. | DONE     | 17 tests pin the contract.                                                                                                        |
-| H2     | **Per-user `storeMemory` write cap.** No row limit, TTL, or quota on `agent_memories`. A user running a memory-storing agent in a loop fills Neon storage. IVFFlat recall degrades as N grows. Flagged by wave-110 + wave-111 reviews.                                                                 | half-day | Add `SELECT COUNT(*) WHERE user_id = $1` pre-flight in storeMemory, DELETE oldest when > 10K, OR a metadata-aware retention cron. |
-| H3     | **`INTERNAL_WEBHOOK_SECRET \|\| ""` fallback** in 3 webhook files (`_payments/paystack/webhook`, `_payments/payfast/webhook`, `_agents/auto-onboard`). Not exploitable today (length-zero compare fails closed) but a footgun.                                                                         | 30 min   | Throw on startup when env missing; remove fallback.                                                                               |
+| ID     | Item                                                                                                                                                                                                                                                                                                   | Effort | Notes                                            |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | ------------------------------------------------ |
+| ~~H1~~ | ~~DNS-rebinding hardening at `outboundFetch` layer~~ — **SHIPPED in wave 107.2.** `safeResolveOrNull` + `resolvedHostIsSafe` promoted to `src/lib/safe-host.ts`; wired into `outboundFetch` so every caller inherits the defense. Federation-puller re-exports the shared symbols for backward-compat. | DONE   | 17 tests pin the contract.                       |
+| ~~H2~~ | ~~Per-user `storeMemory` write cap.~~ — **SHIPPED (wave 120).** `trimUserMemories` deletes oldest rows beyond `MAX_MEMORIES_PER_USER` (env `MEMORY_MAX_ROWS_PER_USER`, default 10K, floor 100) after every write; new index `agent_memories_user_created_idx`; 6 tests.                                | DONE   | Trim is fire-and-forget — never fails the write. |
+| ~~H3~~ | ~~`INTERNAL_WEBHOOK_SECRET \|\| ""` fallback~~ — **SHIPPED (wave 120).** New `src/lib/internal-secret.ts`: `getInternalWebhookSecret()` returns null when unset (senders skip), `verifyInternalSecretHeader()` fails closed. Wired into paystack/payfast/auto-onboard.                                 | DONE   | Documented in `.env.example`.                    |
 
 ### MEDIUM — quality/cost/architecture improvements that aren't blockers
 

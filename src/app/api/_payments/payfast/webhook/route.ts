@@ -6,8 +6,9 @@ import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import crypto from "crypto";
 import { getPublicUrl } from "@/lib/base-url";
-import { alreadyProcessed } from "@/lib/idempotency";
+import { alreadyProcessed, unmarkProcessed } from "@/lib/idempotency";
 import { PLANS, type PlanId } from "@/lib/plans";
+import { getInternalWebhookSecret } from "@/lib/internal-secret";
 
 const log = createLogger("payfast-webhook");
 
@@ -71,6 +72,9 @@ function verifySignature(
  * On COMPLETE: records payment in DB + upgrades tenant plan.
  */
 export async function POST(req: Request) {
+  // Hoisted so the catch can release the idempotency marker on failure
+  // (BACKLOG webhook-idempotency).
+  let mPaymentId: string | undefined;
   try {
     // --- IP validation (best-effort, non-blocking in dev) ---
     const forwardedFor = req.headers.get("x-forwarded-for");
@@ -109,7 +113,7 @@ export async function POST(req: Request) {
     const status = data.payment_status;
     const email = data.email_address || "";
     const amountRaw = data.amount_gross;
-    const mPaymentId = data.m_payment_id;
+    mPaymentId = data.m_payment_id;
     // PayFast checkout MUST stuff the buyer's Clerk userId into
     // custom_str1. Without this binding the handler used to upgrade
     // the FIRST free tenant on signed-but-stranger PayFast notifications
@@ -190,11 +194,14 @@ export async function POST(req: Request) {
         return new NextResponse("OK", { status: 200 });
       }
 
-      // Validate amount against canonical ZAR price (PLANS stores USD;
-      // PayFast charges in ZAR — use a generous +/-10% band to absorb
-      // FX drift between checkout and ITN).
-      const expectedZar = PLANS[plan].priceUsdCents
-        ? (PLANS[plan].priceUsdCents / 100) * 19 // ~ZAR per USD floor
+      // Validate amount against the canonical ZAR price actually
+      // charged (generatePayFastForm → priceZarCents). The old
+      // USD*19 heuristic disagreed with priceZarCents by 4-5x and
+      // rejected every legit array/node/enterprise payment
+      // (BACKLOG payments-2). amountNum is in ZAR rand, so compare
+      // against priceZarCents/100.
+      const expectedZar = PLANS[plan].priceZarCents
+        ? PLANS[plan].priceZarCents / 100
         : 0;
       if (
         expectedZar > 0 &&
@@ -249,27 +256,36 @@ export async function POST(req: Request) {
         });
       }
 
-      // 3. Trigger auto-onboard (best effort) with internal-secret header
+      // 3. Trigger auto-onboard (best effort) with internal-secret header.
+      // Skip entirely when the secret is unconfigured — an empty header
+      // can never authenticate and just burns a request.
       const baseUrl = getPublicUrl();
-      const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
-      try {
-        await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-sovereign-internal-secret": internalSecret,
-          },
-          signal: AbortSignal.timeout(10_000),
-          body: JSON.stringify({
-            clientName:
-              `${data.name_first || ""} ${data.name_last || ""}`.trim() ||
-              "New Client",
-            email,
-            plan,
-          }),
-        });
-      } catch {
-        /* auto-onboard is best-effort */
+      const internalSecret = getInternalWebhookSecret();
+      if (!internalSecret) {
+        log.error(
+          "INTERNAL_WEBHOOK_SECRET not set — skipping auto-onboard trigger",
+          { email, plan },
+        );
+      } else {
+        try {
+          await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-sovereign-internal-secret": internalSecret,
+            },
+            signal: AbortSignal.timeout(10_000),
+            body: JSON.stringify({
+              clientName:
+                `${data.name_first || ""} ${data.name_last || ""}`.trim() ||
+                "New Client",
+              email,
+              plan,
+            }),
+          });
+        } catch {
+          /* auto-onboard is best-effort */
+        }
       }
 
       persistAppend(
@@ -287,6 +303,8 @@ export async function POST(req: Request) {
 
     return new NextResponse("OK", { status: 200 });
   } catch (err) {
+    // Release the marker so PayFast's retry reprocesses (BACKLOG webhook-idempotency).
+    if (mPaymentId) await unmarkProcessed("payfast:itn", mPaymentId);
     log.error("PayFast webhook error", err as Record<string, unknown>);
     return new NextResponse("Server error", { status: 500 });
   }

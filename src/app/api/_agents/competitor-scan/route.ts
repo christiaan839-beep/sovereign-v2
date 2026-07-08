@@ -39,7 +39,7 @@ import { createAgentRoute } from "@/lib/agent-factory";
 import { z } from "zod";
 import { claudeToolUse, research_ai } from "@/lib/ai";
 import { searchMemory, storeMemory } from "@/lib/vector-memory";
-import { outboundFetch } from "@/lib/outbound-fetch";
+import { outboundFetch, BOT_USER_AGENT } from "@/lib/outbound-fetch";
 import { resolvedHostIsSafe } from "@/lib/federation-puller";
 import { lookup as dnsLookup } from "node:dns/promises";
 import { createLogger } from "@/lib/logger";
@@ -283,7 +283,7 @@ export function buildToolExecutor(ctx: CompetitorScanContext) {
           try {
             const result = await outboundFetch(
               url,
-              { method: "GET", headers: { "User-Agent": "SovereignBot/1.0" } },
+              { method: "GET", headers: { "User-Agent": BOT_USER_AGENT } },
               {
                 ruleId: "competitor-scan.fetch_page",
                 tenantId: ctx.userId,
@@ -366,7 +366,11 @@ export function buildToolExecutor(ctx: CompetitorScanContext) {
       });
       output = `ERROR: tool "${name}" threw — ${err instanceof Error ? err.message : String(err)}`;
     }
-    ctx.trace.push({ tool: name, input, output: output.slice(0, 400) });
+    // Bounded trace (BACKLOG L4): long error-retry loops must not grow
+    // the array without limit — only the response slices to 12 anyway.
+    if (ctx.trace.length < 50) {
+      ctx.trace.push({ tool: name, input, output: output.slice(0, 400) });
+    }
     return output;
   };
 }

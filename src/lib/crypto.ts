@@ -74,11 +74,30 @@ export function decrypt(ciphertext: string): string {
 }
 
 /**
- * Check if a string looks like it was encrypted by us (base64 with correct min length).
+ * Check if a string looks like it was encrypted by us — CANONICAL base64
+ * of at least IV+TAG bytes.
+ *
+ * `Buffer.from(value, "base64")` never throws and silently DROPS non-
+ * base64 characters, so the old length-only check misclassified any
+ * plaintext secret ≳38 chars (e.g. `sk_live_…`, legacy JSON key blobs) as
+ * ciphertext — safeDecrypt would then hand it to decrypt() and throw on
+ * the GCM auth-tag check instead of passing it through (BACKLOG isencrypted).
+ *
+ * Requiring the value to be canonical base64 (correct charset, padding,
+ * and an exact round-trip) rejects realistic plaintext while still
+ * accepting every string encrypt() produces — and stays backward-
+ * compatible with existing ciphertext rows (no format/prefix change).
  */
 export function isEncrypted(value: string): boolean {
+  if (typeof value !== "string" || value.length === 0) return false;
+  // Standard base64 is 4-char aligned; our encrypt() emits padded base64.
+  if (value.length % 4 !== 0) return false;
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(value)) return false;
   try {
     const data = Buffer.from(value, "base64");
+    // Exact round-trip — plaintext that merely *contains* base64 chars
+    // won't re-encode to itself.
+    if (data.toString("base64") !== value) return false;
     return data.length > IV_LENGTH + TAG_LENGTH;
   } catch {
     return false;
@@ -104,7 +123,6 @@ export function safeEncrypt(plaintext: string): string {
       );
     }
     if (!_devWarned) {
-       
       console.warn(
         "[crypto] ENCRYPTION_KEY unset in development — values are stored in plaintext. NEVER ship without setting it.",
       );

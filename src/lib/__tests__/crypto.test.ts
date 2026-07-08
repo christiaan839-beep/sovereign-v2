@@ -148,6 +148,23 @@ describe("crypto", () => {
       expect(isEncrypted("short")).toBe(false);
     });
 
+    it("rejects LONG plaintext secrets that decode to >28 bytes (BACKLOG isencrypted)", async () => {
+      const { isEncrypted } = await import("@/lib/crypto");
+      // 48-char realistic API key — long enough that the old length-only
+      // check misclassified it as ciphertext. `_` isn't standard base64.
+      expect(isEncrypted("sk_live_" + "a".repeat(40))).toBe(false);
+      // A legacy JSON key blob (contains { " : } — non-base64).
+      expect(isEncrypted('{"key":"' + "x".repeat(40) + '"}')).toBe(false);
+    });
+
+    it("rejects near-base64 plaintext that isn't 4-char aligned or doesn't round-trip", async () => {
+      const { isEncrypted } = await import("@/lib/crypto");
+      // Valid charset but wrong length alignment (not % 4).
+      expect(isEncrypted("abcdeExtraNotAligned123")).toBe(false);
+      // Contains a space — outside the base64 charset.
+      expect(isEncrypted("aaaa bbbb cccc dddd eeee ffff gggg")).toBe(false);
+    });
+
     it("rejects empty strings", async () => {
       const { isEncrypted } = await import("@/lib/crypto");
       expect(isEncrypted("")).toBe(false);

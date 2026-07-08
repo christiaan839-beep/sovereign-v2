@@ -39,7 +39,11 @@ async function getUserPlan(userId: string): Promise<PlanId> {
   // 1. Check subscriptions table for active Stripe subscription
   try {
     const [sub] = await db
-      .select({ plan: subscriptions.plan, status: subscriptions.status })
+      .select({
+        plan: subscriptions.plan,
+        status: subscriptions.status,
+        currentPeriodEnd: subscriptions.currentPeriodEnd,
+      })
       .from(subscriptions)
       .where(
         and(
@@ -50,8 +54,18 @@ async function getUserPlan(userId: string): Promise<PlanId> {
       .limit(1);
 
     if (sub?.plan) {
-      const planId = normalizePlanId(sub.plan);
-      if (planId !== "free") return planId;
+      // Honour the paid period. One-time payments (crypto/Coinbase)
+      // stamp currentPeriodEnd = now+30d; nothing flips the row to free
+      // on expiry, so without this check a single payment granted the
+      // tier forever (BACKLOG period-end). A null end means an
+      // open-ended recurring sub — treat as valid.
+      const expired =
+        sub.currentPeriodEnd != null &&
+        new Date(sub.currentPeriodEnd).getTime() < Date.now();
+      if (!expired) {
+        const planId = normalizePlanId(sub.plan);
+        if (planId !== "free") return planId;
+      }
     }
   } catch (err: unknown) {
     const pgCode = (err as { code?: string })?.code;
@@ -95,11 +109,24 @@ async function getMonthlyUsage(userId: string): Promise<number> {
   let playbookCount = 0;
 
   try {
+    // Sum RUN UNITS from the platform run-marker rows only (tokens_used
+    // = +1 per run, -runs per referral bonus). A plain count(*) over the
+    // usage table double-counted every run (one marker row + one or more
+    // cost-telemetry rows) and treated bonus credits as consumption
+    // (BACKLOG usage-count / bonus-runs). Must match free-tier's counter.
     const [row] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({
+        used: sql<number>`COALESCE(SUM(${usage.tokensUsed}), 0)::int`,
+      })
       .from(usage)
-      .where(and(eq(usage.userId, userId), gte(usage.createdAt, monthStart)));
-    agentCount = Number(row?.count ?? 0);
+      .where(
+        and(
+          eq(usage.userId, userId),
+          eq(usage.model, "platform"),
+          gte(usage.createdAt, monthStart),
+        ),
+      );
+    agentCount = Math.max(0, Number(row?.used ?? 0));
   } catch (err: unknown) {
     const pgCode = (err as { code?: string })?.code;
     const msg = err instanceof Error ? err.message : String(err);
