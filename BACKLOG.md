@@ -5,7 +5,78 @@
 > updates this. If something is shipped, move it to the bottom log; if
 > something new is discovered, add it under the right severity band.
 
-Last refreshed: **2026-07-07** after wave 120 (repo-revival flaw sweep).
+Last refreshed: **2026-07-08** after wave 121 (deferred-flaw closeout + dependency hardening).
+
+---
+
+## Wave 121 — deferred-flaw closeout + PayPal-only enablement (2026-07-08)
+
+Closed the items wave 120 deferred as "needs its own tested wave," plus made
+PayPal a complete standalone billing path. Typecheck + full suite (294 files,
+4491 passing) + production build + `npm audit --audit-level=high` (0 highs) all
+green.
+
+**Revenue-counting correctness (the deferred cluster):**
+
+- **Usage double-counting FIXED** — `free-tier.countMonthlyUsage` and
+  `plan-enforcement.getMonthlyUsage` now `SUM(tokens_used)` over the
+  `model='platform'` run-marker rows instead of `count(*)` over the whole
+  table, so a run's cost-telemetry rows no longer each burn quota.
+- **`addBonusRuns` FIXED** — the same SUM counts the bonus row's negative
+  `tokens_used` as a credit (was `count(*) → +1 consumption`); net usage is
+  clamped to ≥0.
+- **Quota check-then-act race** — still a bounded over-serve (concurrent burst
+  at the limit boundary); correct fix is an atomic reservation on the quota hot
+  path tangled with the 5–10s usage caches. Documented, not rushed (blocking
+  paying users would be worse than the bounded over-serve).
+
+**Webhook idempotency (crash-drop) FIXED** — new `unmarkProcessed()` releases
+the marker in the error path so a provider retry reprocesses instead of being
+skipped. Wired into all 7 payment webhooks (stripe, paystack, payfast, crypto,
+yoco, paypal, moonpay); paystack/payfast hoist their id so the catch can see it.
+
+**PayPal is now a complete billing path (enables PayPal-only operation)** —
+the webhook previously provisioned add-ons ONLY; a `plan` capture fell through
+to "no provisioning hook", charging the customer without upgrading them. Now
+`activatePaypalPlan` upserts a 30-day subscription (mirrors the crypto one-time
+model, with amount-tampering defense), and `currentPeriodEnd` enforcement
+downgrades it afterwards. Route test added.
+
+**Prototype-pollution in `normalizePlanId` FIXED** — `lower in PLANS` was true
+for `"__proto__"`/`"constructor"` (prototype chain), smuggling a bogus "plan"
+past every webhook. Now uses `hasOwnProperty`. Central fix for all callers.
+
+**`_billing/webhook` node-default FIXED** — the legacy duplicate defaulted plan
+to `node` on `subscription.updated`; now derives from the price id and only
+overwrites when resolvable (same fix as `_payments/stripe`).
+
+**`isEncrypted` hardened** — now requires canonical base64 + exact round-trip
+before the length check, so long plaintext secrets (`sk_live_…`, JSON blobs) are
+no longer misclassified as ciphertext. Backward-compatible (no format change).
+
+**SSR invariants reconciled** — CLAUDE.md claimed ClerkProvider must be
+`dynamic ssr:false` and cinematic components must use `ClientOnlyEffects`, but
+the shipped, build-green code deliberately SSRs Clerk via `SafeClerkProvider`
+and imports mount-guarded `"use client"` cinematic components directly. Updated
+the docs to match reality and removed the dead, contradictory `ClientOnlyEffects`
+(zero importers).
+
+**Dependency hardening (greens the Security Audit CI gate)** — `npm audit fix`
+(non-breaking) + surgical `nodemailer@9` bump cleared all 8 high-severity
+advisories (8 → 0; total 29 → 10 moderate). Re-added `svix` as an explicit
+dependency (the resend bump dropped it; the Clerk webhook imports it directly).
+
+**Deferred (documented, not shipped):**
+
+- **page-builder preview CSP** — generated previews load the Tailwind **Play
+  CDN**, which needs `unsafe-eval` (deliberately removed from the site CSP), and
+  `srcDoc` iframes inherit the parent CSP. Correct fix: a scoped-CSP preview
+  route serving generated HTML via `src=` with its own relaxed policy (4 builder
+  UI touch points). Not weakening the global CSP for a cosmetic internal-tool fix.
+- **Quota atomic reservation** (see above) and the **two-state `stripe_events`
+  table** (the `unmarkProcessed` release-on-error fix covers the reported
+  crash-drop; the full received→completed table remains a nice-to-have).
+- **ZAR price inconsistency** — a pricing/business decision, needs operator input.
 
 ---
 

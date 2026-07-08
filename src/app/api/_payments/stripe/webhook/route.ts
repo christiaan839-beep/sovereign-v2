@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
-import { alreadyProcessed } from "@/lib/idempotency";
+import { alreadyProcessed, unmarkProcessed } from "@/lib/idempotency";
 import { getPlanIdFromStripePriceId } from "@/lib/plans";
 
 const log = createLogger("stripe-webhook");
@@ -219,6 +219,11 @@ export async function POST(req: Request) {
       }
     }
   } catch (err) {
+    // Release the idempotency marker so Stripe's retry (fired on this 500)
+    // reprocesses the event instead of being skipped as a duplicate —
+    // otherwise a transient failure mid-handler permanently drops a paid
+    // event (BACKLOG webhook-idempotency).
+    await unmarkProcessed("stripe:event", event.id);
     log.error("Webhook handler error", {
       eventType: event.type,
       error: (err as Error).message,

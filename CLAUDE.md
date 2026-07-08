@@ -76,8 +76,8 @@ This is how the engineering memory survives context resets.
 
 ### SSR / Client Components
 
-- ClerkProvider must be lazy-loaded (`dynamic` + `ssr:false`) inside a `"use client"` wrapper — crashes during static prerendering
-- Browser-only components (framer-motion `useSpring`, canvas, WebGL) must use `ClientOnlyEffects` wrapper — NOT direct imports in server component layout
+- ClerkProvider is rendered during SSR **on purpose** — `auth()`/session context needs it — via `SafeClerkProvider` (a `"use client"` wrapper: React error boundary + Clerk/Framer console-noise suppression). Do NOT "fix" this back to `dynamic` + `ssr:false`; that was an older architecture and the current SSR path is deliberate and build-verified. (An unused `ClientOnlyEffects` dynamic-`ssr:false` wrapper was removed in wave 121 — it contradicted the shipped approach and had zero importers.)
+- Browser-only cinematic components (framer-motion `useSpring`, canvas, WebGL) are plain `"use client"` components imported directly in the server-component `layout.tsx`. This is valid because each is SSR-safe: it guards browser-only work behind `useEffect`/mount state and returns `null` on mobile / before mount. If you add a NEW browser-only effect, follow that pattern (mount-guarded `"use client"`), not a dynamic-`ssr:false` wrapper.
 - `next/dynamic` with `ssr: false` is NOT allowed in server components (Next.js 16) — must wrap in a `"use client"` component first
 - All cinematic effects respect `prefers-reduced-motion` and auto-disable on mobile
 

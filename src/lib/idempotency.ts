@@ -96,3 +96,48 @@ export async function alreadyProcessed(
   memoryStore.set(key, now + ttlSeconds * 1000);
   return false;
 }
+
+async function delRedis(key: string): Promise<void> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) throw new Error("Redis not configured");
+  await fetch(`${url}/del/${encodeURIComponent(key)}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+/**
+ * Release an idempotency marker so the event can be processed again.
+ *
+ * `alreadyProcessed` marks an event the first time it is seen, BEFORE the
+ * handler runs. That prevents concurrent duplicates, but if the handler
+ * then throws, the marker is left in place and the provider's retry is
+ * silently skipped — the paid event is permanently dropped
+ * (BACKLOG webhook-idempotency). Call this in the handler's error path so
+ * the marker is cleared and the retry reprocesses:
+ *
+ *   if (await alreadyProcessed(ns, id)) return duplicate;
+ *   try { ...handler... }
+ *   catch (e) { await unmarkProcessed(ns, id); throw e; }
+ *
+ * Never throws — a failed release must not mask the original handler error.
+ * On success the marker is intentionally left to provide the dedup window.
+ */
+export async function unmarkProcessed(
+  namespace: string,
+  id: string,
+): Promise<void> {
+  const key = `idem:${namespace}:${id}`;
+  const useRedis = !!(
+    process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  );
+  if (useRedis) {
+    try {
+      await delRedis(key);
+    } catch {
+      // Best-effort — fall through to also clear any memory entry.
+    }
+  }
+  memoryStore.delete(key);
+}

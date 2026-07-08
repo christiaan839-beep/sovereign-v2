@@ -5,6 +5,7 @@ import { subscriptions, tenants } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { auditLog } from "@/lib/audit-log";
 import { createLogger } from "@/lib/logger";
+import { getPlanIdFromStripePriceId } from "@/lib/plans";
 const log = createLogger("stripe-webhook");
 
 /**
@@ -12,7 +13,9 @@ const log = createLogger("stripe-webhook");
  * Never use `.toString()` on Stripe objects — it returns "[object Object]" and silently
  * breaks DB queries. Also protects against accidentally adding `expand: [...]` later.
  */
-function stripeId<T extends { id: string }>(field: string | T | null | undefined): string | null {
+function stripeId<T extends { id: string }>(
+  field: string | T | null | undefined,
+): string | null {
   if (!field) return null;
   return typeof field === "string" ? field : field.id;
 }
@@ -29,19 +32,28 @@ function stripeId<T extends { id: string }>(field: string | T | null | undefined
 export async function POST(request: Request) {
   const stripe = getStripe();
   if (!stripe) {
-    return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
+    return NextResponse.json(
+      { error: "Stripe not configured" },
+      { status: 503 },
+    );
   }
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {
-    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 503 });
+    return NextResponse.json(
+      { error: "Webhook secret not configured" },
+      { status: 503 },
+    );
   }
 
   const body = await request.text();
   const sig = request.headers.get("stripe-signature");
 
   if (!sig) {
-    return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing stripe-signature header" },
+      { status: 400 },
+    );
   }
 
   let event;
@@ -63,14 +75,19 @@ export async function POST(request: Request) {
           client_reference_id?: string | null;
         };
 
-        const userId = session.client_reference_id || session.metadata?.userId || "";
+        const userId =
+          session.client_reference_id || session.metadata?.userId || "";
         const plan = session.metadata?.plan || "node";
         const customerId = stripeId(session.customer);
         const subscriptionId = stripeId(session.subscription);
 
         // Upsert subscription
         const existing = userId
-          ? await db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1)
+          ? await db
+              .select()
+              .from(subscriptions)
+              .where(eq(subscriptions.userId, userId))
+              .limit(1)
           : [];
 
         if (existing.length > 0) {
@@ -119,15 +136,25 @@ export async function POST(request: Request) {
           status: string;
           current_period_end: number;
           metadata?: Record<string, string>;
+          items?: { data?: Array<{ price?: { id?: string } }> };
         };
 
-        const plan = sub.metadata?.plan || "node";
+        // Derive the tier from the subscription's active PRICE — Stripe
+        // does NOT copy Checkout Session metadata onto the Subscription
+        // object, so `sub.metadata.plan` is empty on nearly every
+        // subscription.updated (renewal / proration / card update). The
+        // old `|| "node"` fallback therefore silently upgraded every
+        // customer to the $199 tier (BACKLOG billing-node-default). Only
+        // overwrite plan when the price resolves to a known tier;
+        // otherwise leave the stored plan untouched.
+        const priceId = sub.items?.data?.[0]?.price?.id ?? null;
+        const derivedPlan = getPlanIdFromStripePriceId(priceId);
         const customerId = stripeId(sub.customer);
 
         await db
           .update(subscriptions)
           .set({
-            plan,
+            ...(derivedPlan ? { plan: derivedPlan } : {}),
             status: sub.status,
             currentPeriodEnd: new Date(sub.current_period_end * 1000),
             updatedAt: new Date(),
@@ -138,14 +165,21 @@ export async function POST(request: Request) {
           userId: customerId || "unknown",
           action: "subscription.change",
           resource: sub.id,
-          details: { event: "customer.subscription.updated", plan, status: sub.status },
+          details: {
+            event: "customer.subscription.updated",
+            plan: derivedPlan ?? "(unchanged)",
+            status: sub.status,
+          },
         });
 
         break;
       }
 
       case "customer.subscription.deleted": {
-        const sub = event.data.object as { id: string; customer: string | { id: string } | null };
+        const sub = event.data.object as {
+          id: string;
+          customer: string | { id: string } | null;
+        };
         const customerId = stripeId(sub.customer);
 
         await db
@@ -177,7 +211,11 @@ export async function POST(request: Request) {
           userId: subRow[0]?.userId || customerId || "unknown",
           action: "subscription.change",
           resource: sub.id,
-          details: { event: "customer.subscription.deleted", plan: "free", status: "canceled" },
+          details: {
+            event: "customer.subscription.deleted",
+            plan: "free",
+            status: "canceled",
+          },
         });
 
         break;
@@ -187,6 +225,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true });
   } catch (err) {
     log.error("Processing error", err as Record<string, unknown>);
-    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Webhook processing failed" },
+      { status: 500 },
+    );
   }
 }

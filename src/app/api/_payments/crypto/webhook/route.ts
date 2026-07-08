@@ -37,7 +37,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
-import { alreadyProcessed } from "@/lib/idempotency";
+import { alreadyProcessed, unmarkProcessed } from "@/lib/idempotency";
 import { rateLimit } from "@/lib/rate-limit";
 import {
   verifyCommerceWebhookSignature,
@@ -193,6 +193,8 @@ export async function POST(req: Request) {
       periodEnd: periodEnd.toISOString(),
     });
   } catch (err) {
+    // Release the marker so Coinbase's retry reprocesses (BACKLOG webhook-idempotency).
+    await unmarkProcessed("coinbase:event", event.id);
     log.error("Crypto webhook handler error", {
       eventId: event.id,
       error: (err as Error).message,

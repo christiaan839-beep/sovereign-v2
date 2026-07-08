@@ -3,7 +3,7 @@ import { persistAppend } from "@/lib/persist";
 import crypto from "crypto";
 import { createLogger } from "@/lib/logger";
 import { getPublicUrl } from "@/lib/base-url";
-import { alreadyProcessed } from "@/lib/idempotency";
+import { alreadyProcessed, unmarkProcessed } from "@/lib/idempotency";
 import { PLANS, type PlanId, normalizePlanId } from "@/lib/plans";
 import { getInternalWebhookSecret } from "@/lib/internal-secret";
 
@@ -26,6 +26,10 @@ function timingSafeHexEqual(a: string, b: string): boolean {
  * logs events with persistence, triggers auto-onboard on successful payments.
  */
 export async function POST(req: Request) {
+  // Hoisted so the catch can release the idempotency marker on failure
+  // (BACKLOG webhook-idempotency) — a const inside the try is not visible
+  // to the catch block.
+  let eventReference: string | undefined;
   try {
     const body = await req.text();
     const signature = req.headers.get("x-paystack-signature") || "";
@@ -50,7 +54,7 @@ export async function POST(req: Request) {
     // Idempotency — Paystack retries on 5xx + supports webhook replay
     // via dashboard. Without dedup, charge.success replays re-onboard
     // the user N times, sending N emails and N agent-fleet deploys.
-    const eventReference = event.data?.reference || event.data?.id || event.id;
+    eventReference = event.data?.reference || event.data?.id || event.id;
     if (eventReference) {
       if (await alreadyProcessed("paystack:event", String(eventReference))) {
         log.info("Skipped: Paystack event already processed", {
@@ -190,6 +194,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ received: true });
   } catch (err) {
+    // Release the marker so Paystack's retry reprocesses instead of being
+    // skipped as a duplicate (BACKLOG webhook-idempotency).
+    if (eventReference) {
+      await unmarkProcessed("paystack:event", String(eventReference));
+    }
     log.error("Paystack webhook processing failed", {
       error: (err as Error).message,
     });

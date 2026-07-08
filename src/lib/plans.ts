@@ -279,8 +279,17 @@ const LEGACY_MAP: Record<LegacyPlanId, PlanId> = {
 export function normalizePlanId(raw: string | null | undefined): PlanId {
   if (!raw) return "free";
   const lower = raw.toLowerCase().trim();
-  if (lower in PLANS) return lower as PlanId;
-  if (lower in LEGACY_MAP) return LEGACY_MAP[lower as LegacyPlanId];
+  // `in` walks the prototype chain, so `"__proto__" in PLANS` (and
+  // "constructor", "toString", …) is TRUE and would smuggle a bogus
+  // "plan" past this guard — a prototype-pollution vector for every
+  // webhook that maps attacker-controlled metadata to a plan
+  // (BACKLOG plan-proto). Own-property checks close it.
+  if (Object.prototype.hasOwnProperty.call(PLANS, lower)) {
+    return lower as PlanId;
+  }
+  if (Object.prototype.hasOwnProperty.call(LEGACY_MAP, lower)) {
+    return LEGACY_MAP[lower as LegacyPlanId];
+  }
   return "free";
 }
 
