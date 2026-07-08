@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { validateEnvironment } from "@/lib/env-check";
 import { SafeClerkProvider } from "@/components/ui/SafeClerkProvider";
 import { CustomCursor } from "@/components/cinematic/CustomCursor";
@@ -200,8 +198,6 @@ export default function RootLayout({
           <CookieConsent />
           <LiveActivityTicker />
           <FounderCTA />
-          {process.env.NODE_ENV === "production" && <Analytics />}
-          {process.env.NODE_ENV === "production" && <SpeedInsights />}
           <Script
             id="json-ld"
             type="application/ld+json"

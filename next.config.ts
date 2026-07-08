@@ -93,7 +93,7 @@ const nextConfig: NextConfig = {
               // Clerk + Stripe do not require eval(). 'unsafe-inline'
               // kept until the nonce middleware ships in a follow-up
               // (would touch every server-component render).
-              "script-src 'self' 'unsafe-inline' https://js.stripe.com https://challenges.cloudflare.com https://plausible.io https://*.clerk.com https://*.clerk.accounts.dev https://va.vercel-scripts.com",
+              "script-src 'self' 'unsafe-inline' https://js.stripe.com https://challenges.cloudflare.com https://plausible.io https://*.clerk.com https://*.clerk.accounts.dev",
               // fonts.googleapis.com serves the brand-font stylesheet the
               // root layout loads (<link rel="stylesheet">). Without it
               // here the CSP blocks the stylesheet and every custom font

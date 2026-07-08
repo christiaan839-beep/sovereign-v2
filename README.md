@@ -14,22 +14,33 @@ Apache 2.0.
 [![MCP](https://img.shields.io/badge/MCP-Claude_Code_%E2%9C%93-7c3aed)](./packages/mcp)
 [![Post-quantum](https://img.shields.io/badge/PQ-ML--DSA--65-orange)](./packages/verifiable-receipts)
 
-## The 12-package stack
+## The 23-package stack
 
 | Package                                                                   | Purpose                                                                                                                                                                                              | Status |
 | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
 | [`@sovereign-matrix/verifiable-receipts`](./packages/verifiable-receipts) | Core: Ed25519 + ML-DSA-65 (FIPS 204) post-quantum dual-signing, RFC 9162 transparency log, 42 Guardian rule packs, 3-language verifier (TS / Python / Go) with byte-deterministic conformance corpus | v0.3.0 |
+| [`verifiable-receipts-py`](./packages/verifiable-receipts-py)             | Python reference verifier for the conformance corpus (pytest harness, no runtime deps)                                                                                                               | —      |
+| [`verifiable-receipts-go`](./packages/verifiable-receipts-go)             | Go reference verifier for the conformance corpus (`go test`)                                                                                                                                         | —      |
+| [`@sovereign-matrix/vaos-verifier`](./packages/vaos-verifier)             | Reference implementation of the Verifiable Agent Output Specification (VAOS) 1.0 — zero dependencies, Node/browser/edge                                                                              | v1.0.0 |
 | [`@sovereign-matrix/openai-receipts`](./packages/openai-receipts)         | OpenAI SDK wrapper — 3 lines to mint signed receipts around chat completions                                                                                                                         | v0.1.0 |
 | [`@sovereign-matrix/anthropic-receipts`](./packages/anthropic-receipts)   | Anthropic SDK wrapper                                                                                                                                                                                | v0.1.0 |
 | [`@sovereign-matrix/google-receipts`](./packages/google-receipts)         | Google Gemini SDK wrapper                                                                                                                                                                            | v0.1.0 |
 | [`@sovereign-matrix/ai-sdk-receipts`](./packages/ai-sdk-receipts)         | Vercel AI SDK universal wrapper (OpenAI / Anthropic / Google / Mistral / Cohere)                                                                                                                     | v0.1.0 |
+| [`@sovereign-matrix/agent-sdk`](./packages/agent-sdk)                     | Build verifiable AI agents on the platform — HMAC-signed receipts, 8-provider router, guardrail enforcement, tool execution                                                                          | v0.1.0 |
+| [`@sovereign/ai-router`](./packages/ai-router)                            | Multi-provider inference router with cost-aware fallback and per-user budget caps (Anthropic/OpenAI/Google/Cerebras/NIM/Groq/DeepSeek/Ollama)                                                        | v0.1.0 |
 | [`@sovereign-matrix/annex-iv`](./packages/annex-iv)                       | **EU AI Act Article 11 + Annex IV** technical-documentation exporter                                                                                                                                 | v0.1.0 |
+| [`@sovereign-matrix/eu-cra`](./packages/eu-cra)                           | **EU Cyber Resilience Act (2024/2847)** essential-requirements exporter (enforcement begins 2027)                                                                                                    | v0.1.0 |
 | [`@sovereign-matrix/iso-42001`](./packages/iso-42001)                     | **ISO/IEC 42001:2023 AIMS** — clauses 4-10 + 38-control Annex A                                                                                                                                      | v0.1.0 |
+| [`@sovereign-matrix/iso-23894`](./packages/iso-23894)                     | **ISO/IEC 23894:2023** AI risk-management report, aligned to ISO 31000                                                                                                                               | v0.1.0 |
 | [`@sovereign-matrix/nist-ai-rmf`](./packages/nist-ai-rmf)                 | **NIST AI RMF 1.0** — GOVERN / MAP / MEASURE / MANAGE profile                                                                                                                                        | v0.1.0 |
 | [`@sovereign-matrix/soc2-evidence`](./packages/soc2-evidence)             | **SOC 2 AICPA Trust Service Criteria 2017** evidence binder                                                                                                                                          | v0.1.0 |
 | [`@sovereign-matrix/gdpr-dpia`](./packages/gdpr-dpia)                     | **GDPR Article 35 DPIA + Article 30 RoPA**                                                                                                                                                           | v0.1.0 |
 | [`@sovereign-matrix/hipaa-security`](./packages/hipaa-security)           | **HIPAA Security Rule** (45 CFR § 164.308-318)                                                                                                                                                       | v0.1.0 |
+| [`@sovereign-matrix/ai-constitution`](./packages/ai-constitution)         | Cryptographically-anchored AI policy documents — every receipt commits to the policy hash                                                                                                            | v0.1.0 |
+| [`@sovereign-matrix/zk-compliance`](./packages/zk-compliance)             | Zero-knowledge compliance proofs over receipt sets — prove policy compliance without revealing the underlying receipts                                                                               | v0.1.0 |
 | [`@sovereign-matrix/mcp`](./packages/mcp)                                 | MCP server exposing all of the above as tools to Claude Code / Cursor / Zed                                                                                                                          | v0.1.0 |
+| [`@sovereignmatrix/cli`](./packages/cli)                                  | CLI for verifying agent-run receipts from your terminal                                                                                                                                              | v1.0.0 |
+| [`@sovereignmatrix/verify-action`](./packages/verify-action)              | GitHub Action to verify agent-run receipts referenced in PRs/commits                                                                                                                                 | v1.0.0 |
 
 ## Three lines to start
 
@@ -279,7 +290,7 @@ Email: `security@sovereignmatrix.agency`.
 
 ## What's next
 
-- npm publishing: `./scripts/publish-all.sh` (12 packages → live on npm)
+- npm publishing: `./scripts/publish-all.sh` (16 packages → live on npm; `agent-sdk`/`ai-router`/`cli`/`verify-action`/`vaos-verifier` publish separately, `verifiable-receipts-go`/`-py` aren't npm packages)
 - Show HN: draft at `docs/launch/SHOW-HN.md` (Variant A — regulatory framing)
 - IETF submission: `docs/specs/ietf-draft-vaos-00.md`
 - Partnership outreach: 5 sender-ready briefs in `docs/partnerships/`

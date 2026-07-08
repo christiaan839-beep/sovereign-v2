@@ -70,3 +70,11 @@ next-env.d.ts
 .idea/
 .vscode/
 .playwright-mcp/
+
+# python (server/python-agents) — a full virtualenv + third-party
+# site-packages had been accidentally committed (188K lines, ~680K
+# with pycache). Dependencies belong in requirements.txt, not in git.
+venv/
+.venv/
+__pycache__/
+*.pyc

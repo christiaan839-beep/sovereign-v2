@@ -5,7 +5,62 @@
 > updates this. If something is shipped, move it to the bottom log; if
 > something new is discovered, add it under the right severity band.
 
-Last refreshed: **2026-07-08** after wave 121 (deferred-flaw closeout + dependency hardening).
+Last refreshed: **2026-07-08** after wave 122 (repo hygiene: platform lock-in + committed venv + doc accuracy).
+
+---
+
+## Wave 122 — repo hygiene sweep (2026-07-08)
+
+Follow-up to wave 120/121 (PR #95, merged). Scoped to platform lock-in reduction
+and repo-hygiene items previously queued as low-stakes.
+
+- **Removed `@vercel/analytics` + `@vercel/speed-insights`** from `layout.tsx` and
+  `package.json` (also dropped the now-unused `va.vercel-scripts.com` CSP
+  allowance). Vercel remains the hosting platform — this only removes the two
+  telemetry packages, per explicit scope confirmation. Plausible Analytics
+  (already wired, privacy-friendly, no cookies) is unaffected.
+- **Untracked the committed Python virtualenv.** `server/python-agents/venv/`
+  (4,661 files, ~188K lines of third-party code — langchain, fastapi,
+  google-genai, etc.) was git-tracked with no `.gitignore` rule. `git rm -r
+--cached` + added `venv/`, `.venv/`, `__pycache__/`, `*.pyc` to
+  `.gitignore`. Zero functional loss — `server/python-agents/requirements.txt`
+  already exists and reproduces the environment.
+- **README package table was stale** — listed 12 packages, repo has 23
+  (`packages/` gained 11 since the table was last updated: `agent-sdk`,
+  `ai-router`, `cli`, `verify-action`, `vaos-verifier`, `eu-cra`, `iso-23894`,
+  `ai-constitution`, `zk-compliance`, `verifiable-receipts-go/-py`). Table
+  rewritten with all 23, verified against each package's actual
+  `package.json`. Also fixed `publish-all.sh` package count (said 12, script
+  actually lists 16 — the other 7 npm/non-npm packages publish separately or
+  aren't npm packages).
+- **`DOMINATION_PLAN.md` overclaimed enterprise readiness.** "Enterprise
+  Requirements (already built)" checked off `SOC 2 narrative` and
+  `HIPAA-ready (Ollama local execution)` as done. Neither is true — no signed
+  SOC 2 report exists, and local execution is one HIPAA control, not HIPAA
+  compliance (no BAA, no breach-notification process). Split the section into
+  what's genuinely built vs. infrastructure-that-is-not-a-substitute-for-the-
+  real-requirement, matching the honesty standard already set by the wave-111
+  C1 marketing-language fix. Also flagged the missing-SSO gap. The
+  quantitative "already built" counts (pages/routes/agents/models) were
+  checked against the live repo and found **understated**, not inflated — left
+  as-is.
+- **`server/python-agents/` scratch scripts investigated, left untouched.**
+  9 files flagged for alarming names (`synthetic_traffic.py`,
+  `nemotron_voice_cartel.py`, `openclaw_payload.py`, etc.) were read in full.
+  Verdict: most are inert stub/demo code (no real network calls). Two real
+  issues found and NOT auto-fixed pending an explicit disposal decision:
+  (1) `openclaw_payload.py` is an unauthenticated `subprocess.run(shell=True)`
+  HTTP bridge — a local RCE backdoor if ever exposed; (2) the Telegram bots
+  (`telegram_closer.py`, `multi_agent_cartel.py`) are functional and
+  instructed to "sound human, never reveal you're AI" to real users — an
+  undisclosed-AI-impersonation problem if ever put in front of real
+  customers. Neither is wired into the deployed Next.js app.
+
+**Still queued, not part of this wave:** deleting/fixing the python-agents
+issues above (needs explicit go-ahead on disposal), enabling GitHub
+Dependabot alerts + Dependency Graph (repo-settings change, needs account
+owner), and the atomic-quota-reservation / two-state-idempotency items
+already documented in wave 120.
 
 ---
 
