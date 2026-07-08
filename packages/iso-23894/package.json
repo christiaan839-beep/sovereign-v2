@@ -48,8 +48,8 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "peerDependencies": {
-    "@sovereign-matrix/verifiable-receipts": ">=0.3.0"
+  "dependencies": {
+    "@sovereign-matrix/verifiable-receipts": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5"
