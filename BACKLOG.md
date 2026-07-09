@@ -5,7 +5,61 @@
 > updates this. If something is shipped, move it to the bottom log; if
 > something new is discovered, add it under the right severity band.
 
-Last refreshed: **2026-07-09** after wave 123 (GEO/AEO: SSR the site-wide JSON-LD, dedupe pricing FAQ, add llms.txt).
+Last refreshed: **2026-07-09** after wave 124 (fixed a fake-success content-scheduling stub; mapped real gaps against 5 named competitor products for a future wave).
+
+---
+
+## Wave 124 — competitor-blueprint audit: content-scheduling fake-success fix (2026-07-09)
+
+A user shared a mapped architecture of 5 competitor products (Draftly, GetAutoSEO,
+Amadora.ai, CustomEsignature, Saleh Consulting) and asked how Sovereign Matrix's
+existing agents compare. Scoped explicitly to improving existing agents in this
+repo, not building a separate product. Research pass mapped what already exists
+vs. what's a real gap; one concrete bug came out of it and was fixed this wave,
+two larger feature gaps are queued below for a future wave/decision.
+
+- **`/api/_content/schedule` returned a fake `"QUEUED"` success without persisting
+  anything or checking auth.** The route validated the payload with zod, then
+  returned `{success: true, status: "QUEUED"}` unconditionally — no DB write, no
+  webhook fired, and despite a comment claiming "1. Authenticate Commander" there
+  was no actual auth check. Nothing in the app currently calls this route (no
+  frontend caller found), so it wasn't actively deceiving real users today, but
+  it was a live, unauthenticated, do-nothing endpoint. Fixed by wiring it to the
+  `scheduled_content` table the cron publisher (`src/app/api/_cron/
+content-publisher/route.ts`) already polls — same infrastructure
+  `/api/_content/generate` already uses successfully. Added `requireAuth()`,
+  tightened `executeAt` validation to `.datetime()`, removed `runtime = "edge"`
+  (DB access needs Node runtime — same fix class as wave-120's
+  `agent-analytics` route). 5 new tests in
+  `src/__tests__/api/content-schedule.test.ts`.
+
+**Real gaps identified, not fixed this wave (queued for a decision):**
+
+1. **No GEO / AI-answer-engine citation tracking exists at all** — the single
+   biggest gap vs. Amadora.ai's core value prop (tracking whether ChatGPT/
+   Perplexity/Claude cite a brand, "share of voice" over time). Wave 123 built
+   the technical prerequisites (visible JSON-LD, llms.txt) but nothing
+   _monitors_ citation over time. Would need a new DB table (historical
+   tracking has real value over a one-shot check) and a scheduled agent —
+   real infra decision, not folded into this wave.
+2. **Orchestrator pipelines don't chain agent output into the next step's
+   input.** `src/agents/orchestrator.ts`'s `content-blitz` pipeline (and
+   similar) run agents sequentially but each step gets the same static
+   input params — a prior step's `output` (e.g. an SEO/competitor finding)
+   is never fed into the next step's prompt (e.g. content generation). This
+   is exactly the "unified context" idea the competitor-blueprint discussion
+   raised as the differentiator over point-solution competitors. Real
+   behavior change to existing pipeline output, not just a bug fix — flagged
+   for a scoped follow-up rather than done blind.
+
+Also noted, lower priority: `seo-dominator.ts`'s four exported functions
+(`competitorXRay`, `contentGapKiller`, `schemaAudit`, `gbpOptimize`) are only
+called from `orchestrator.ts`; the live `/api/_agents/seo-dominator` route
+reimplements the same logic independently instead of importing them —
+duplicated logic, not a functional bug. `content-factory.ts`'s LinkedIn
+carousel output is text-only (5 slide headlines), not rendered visuals, unlike
+Draftly. No branded-email-signature feature exists (CustomEsignature) —
+questionable fit for an AI-agent platform, deprioritized.
 
 ---
 
