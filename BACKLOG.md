@@ -5,7 +5,50 @@
 > updates this. If something is shipped, move it to the bottom log; if
 > something new is discovered, add it under the right severity band.
 
-Last refreshed: **2026-07-08** after wave 122 (repo hygiene: platform lock-in + committed venv + doc accuracy).
+Last refreshed: **2026-07-09** after wave 123 (GEO/AEO: SSR the site-wide JSON-LD, dedupe pricing FAQ, add llms.txt).
+
+---
+
+## Wave 123 — GEO/AEO technical fix (2026-07-09)
+
+Scoped to genuine, verifiable structured-data correctness — no fabricated
+metrics, no synthetic personas, no AI-detection-evasion tactics.
+
+- **Root layout's site-wide JSON-LD was invisible to non-JS crawlers.**
+  `src/app/layout.tsx` rendered the `SoftwareApplication` + `Organization` +
+  8-question `FAQPage` schema (present on every page) via `next/script
+strategy="afterInteractive"`, which Next.js injects client-side _after_
+  hydration. Most declared GEO/AI crawlers (GPTBot, ClaudeBot, PerplexityBot,
+  CCBot) and even a classic raw-HTML fetch never execute JS, so this schema
+  was never actually visible to them — on every single page, since day one.
+  Fixed by rendering it as a plain server-rendered `<script
+type="application/ld+json">`, matching the pattern already used correctly
+  in 14 other files (`src/components/seo/JsonLd.tsx` and its callers).
+  Verified present in the static-rendered HTML post-build
+  (`.next/server/app/index.html`).
+- **`/pricing` rendered two contradictory `FAQPage` blocks.** Because
+  `pricing/layout.tsx` nests inside the root layout, its own 4-question
+  `FAQPage` co-existed with root's 8-question one on the same URL — both
+  answering "What is Sovereign Matrix?" with different text. (This was
+  latent/unobservable before the fix above, since root's block wasn't
+  actually rendering server-side.) Removed the duplicate question from
+  `pricing/layout.tsx`; root layout's answer now reliably covers it.
+  Verified the question appears exactly once in the built pricing HTML.
+- **Added `public/llms.txt`** — the emerging llms.txt convention for
+  LLM/GEO crawlers. Content sourced only from facts already verified
+  elsewhere in this repo (`src/lib/plans.ts` pricing, confirmed-existing
+  routes `/api/verify`, `/docs`, `/developers`). Deliberately did **not**
+  add an npm-org `sameAs` link to the `Organization` schema — couldn't
+  independently verify the npm page is live (npmjs.com blocks the fetch
+  tool used to check), and citing an unverified URL in structured data is
+  worse than omitting it.
+
+**Explicitly out of scope for this wave** (per user decision): AI-persona /
+digital-avatar marketing tactics, automated social posting designed to read
+as human, and any AI-detection-evasion technique — all raised in a separate
+marketing-strategy conversation but excluded as conflicting with the
+no-synthetic-engagement line already drawn for the python-agents disposal
+question (wave 122).
 
 ---
 

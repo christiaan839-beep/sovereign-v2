@@ -1,0 +1,26 @@
+# Sovereign Matrix
+
+> Audit-grade AI agent infrastructure. Every agent run produces a cryptographically signed receipt — Ed25519 v2, ML-DSA-65 v3 post-quantum dual-sign (FIPS 204), RFC 6962-style transparency log, Merkle inclusion + consistency proofs, OpenTimestamps Bitcoin anchoring — that any auditor can independently verify without an account or API key.
+
+Sovereign Matrix is an agent operating system, not a chatbot: 140 specialized agents (lead generation, content creation, competitor analysis, SEO, voice calls, research) running behind an 8-provider unified AI router (Ollama, Cerebras, NVIDIA NIM, Claude, Gemini, Groq, Mistral, DeepSeek/Qwen via Groq) with a 5-layer safety pipeline (jailbreak detection, topic control, content safety, PII scanning, quality scoring). Built for AI deployments in regulated industries where compliance teams need to prove what an agent did.
+
+## Pricing
+
+- Free — $0/mo. 50 verified agent runs/month, all 140 agents, HMAC-signed receipts, public verifier API, no credit card.
+- Pro — $49/mo. 500 verified runs/month. Adds Ed25519 v2 signatures, Merkle inclusion proofs, audit-bundle export.
+- Team — $199/mo. 2,000 verified runs/month. Adds white-label, OpenTimestamps Bitcoin notarization, SOC2-ready evidence export.
+- Enterprise — custom pricing. 10,000+ runs/month, SAML SSO, dedicated account manager, private support channel.
+
+All paid plans are month-to-month with no long-term contract; the Free plan never expires.
+
+## Verification
+
+- Public verifier (no signup): https://sovereignmatrix.agency/api/verify
+- Open-source verifier, Apache-2.0, on npm: @sovereign-matrix/verifiable-receipts
+- Independent implementations in TypeScript, Python, and Go, with cross-language conformance tests against the same fixture corpus
+
+## Key pages
+
+- Pricing: https://sovereignmatrix.agency/pricing
+- Docs: https://sovereignmatrix.agency/docs
+- Developer / API docs: https://sovereignmatrix.agency/developers
