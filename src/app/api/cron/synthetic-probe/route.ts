@@ -79,10 +79,10 @@ const PROBES: ProbeSpec[] = [
     budgetMs: 2_000,
   },
   {
-    name: "stripe-checkout-stub",
+    name: "paypal-checkout-stub",
     // GET on the checkout endpoint should reject (405 / 401 / 400)
     // quickly — proves the route exists and isn't 5xxing.
-    path: "/api/payments/stripe/checkout",
+    path: "/api/payments/paypal/checkout",
     okStatuses: [400, 401, 405],
     timeoutMs: 5_000,
     budgetMs: 1_000,

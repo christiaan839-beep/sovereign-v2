@@ -75,9 +75,8 @@ describe("enforceCsrfOrigin — wave 107", () => {
     const cases = [
       "/api/webhooks/clerk",
       "/api/_webhooks/twilio/voice",
-      "/api/_payments/stripe/webhook",
-      "/api/_payments/paystack/webhook",
-      "/api/_payments/payfast/webhook",
+      "/api/_payments/paypal/webhook",
+      "/api/payments/paypal/webhook",
       "/api/_billing/webhook",
     ];
     for (const pathname of cases) {

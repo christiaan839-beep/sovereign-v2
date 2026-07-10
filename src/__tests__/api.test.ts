@@ -22,8 +22,24 @@ vi.mock("@/db", () => ({
   testConnection: vi.fn().mockResolvedValue({ connected: true, latencyMs: 5 }),
   db: {
     execute: vi.fn().mockResolvedValue([{ "?column?": 1 }]),
-    insert: vi.fn().mockReturnValue({ values: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([]) }) }),
-    select: vi.fn().mockReturnValue({ from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) }) }) }),
+    insert: vi
+      .fn()
+      .mockReturnValue({
+        values: vi
+          .fn()
+          .mockReturnValue({ returning: vi.fn().mockResolvedValue([]) }),
+      }),
+    select: vi
+      .fn()
+      .mockReturnValue({
+        from: vi
+          .fn()
+          .mockReturnValue({
+            where: vi
+              .fn()
+              .mockReturnValue({ limit: vi.fn().mockResolvedValue([]) }),
+          }),
+      }),
   },
 }));
 
@@ -89,7 +105,9 @@ describe("Rate Limiter", () => {
   it("should allow requests under the limit", async () => {
     const { rateLimit } = await import("@/lib/rate-limit");
     const limiter = rateLimit({ interval: 60, limit: 5 });
-    const req = new Request("http://localhost/api/test", { headers: { "x-forwarded-for": "192.168.1.100" } });
+    const req = new Request("http://localhost/api/test", {
+      headers: { "x-forwarded-for": "192.168.1.100" },
+    });
     const result = await limiter.check(req);
     // null means allowed (no 429 response)
     expect(result).toBeNull();
@@ -98,7 +116,10 @@ describe("Rate Limiter", () => {
   it("should block excessive requests", async () => {
     const { rateLimit } = await import("@/lib/rate-limit");
     const limiter = rateLimit({ interval: 60, limit: 3 });
-    const makeReq = () => new Request("http://localhost/api/test", { headers: { "x-forwarded-for": "10.0.0.1" } });
+    const makeReq = () =>
+      new Request("http://localhost/api/test", {
+        headers: { "x-forwarded-for": "10.0.0.1" },
+      });
     // Exhaust the limit
     for (let i = 0; i < 3; i++) {
       await limiter.check(makeReq());
@@ -168,30 +189,20 @@ describe("Agent API Routes", () => {
 // Payment Routes — Export Verification
 // ============================================================
 describe("Payment Routes", () => {
-  // Direct re-export routes (Vercel-compatible static bundling).
-  // Catch-all was removed because webpackIgnore dynamic imports don't bundle on Vercel.
-  it("Yoco checkout route should export POST handler", async () => {
-    const mod = await import("@/app/api/payments/yoco/checkout/route");
+  // PayPal is the sole payment gateway. Direct re-export routes
+  // (Vercel-compatible static bundling) mirror the _payments handlers.
+  it("PayPal checkout route should export POST handler", async () => {
+    const mod = await import("@/app/api/payments/paypal/checkout/route");
     expect(mod.POST).toBeDefined();
   });
 
-  it("Yoco webhook route should export POST handler", async () => {
-    const mod = await import("@/app/api/payments/yoco/webhook/route");
-    expect(mod.POST).toBeDefined();
-  });
-
-  it("PayFast checkout route should export POST handler", async () => {
-    const mod = await import("@/app/api/payments/payfast/checkout/route");
-    expect(mod.POST).toBeDefined();
-  });
-
-  it("PayStack callback route should export GET handler", async () => {
-    const mod = await import("@/app/api/payments/paystack/callback/route");
+  it("PayPal capture route should export GET handler", async () => {
+    const mod = await import("@/app/api/payments/paypal/capture/route");
     expect(mod.GET).toBeDefined();
   });
 
-  it("Stripe webhook route should export POST handler", async () => {
-    const mod = await import("@/app/api/payments/stripe/webhook/route");
+  it("PayPal webhook route should export POST handler", async () => {
+    const mod = await import("@/app/api/payments/paypal/webhook/route");
     expect(mod.POST).toBeDefined();
   });
 });
