@@ -40,12 +40,10 @@ pip install fastapi uvicorn pyautogui playwright chromadb ollama aider-chat
 playwright install chromium
 
 echo ""
-echo "[5/5] Activating the Local Node Bridge..."
-echo "Dependencies satisfied. To link Sovereign Matrix Vercel dashboard to this physical Mac:"
-echo "1. cd server/python-agents"
-2. source venv/bin/activate
-3. python openclaw_payload.py"
-echo ""
-echo "NemoClaw is now capable of local OS-control, autonomous mouse movement, and zero-fee inference."
+echo "[5/5] Local Node Bridge"
+echo "The local edge bridge (openclaw_payload.py) was removed: it exposed an"
+echo "unauthenticated HTTP endpoint that executed arbitrary shell commands on the host."
+echo "If you need a local bridge, build one that authenticates every request and"
+echo "dispatches to a fixed, non-shell command allowlist."
 echo ""
 echo "SYSTEM READY."
