@@ -139,11 +139,11 @@ const FAQS = [
   },
   {
     q: "Can I cancel anytime?",
-    a: "Yes. No contracts, no cancellation fees. Monthly billing via Stripe — cancel whenever you want from Settings → Billing.",
+    a: "Yes. No contracts, no cancellation fees. Monthly billing via PayPal — cancel whenever you want from Settings → Billing.",
   },
   {
     q: "What payment methods do you accept?",
-    a: "Credit and debit cards via Stripe. All prices shown in USD. Enterprise invoicing available on request.",
+    a: "PayPal — pay with any major credit/debit card or your PayPal balance. All prices shown in USD. Enterprise invoicing available on request.",
   },
 ];
 
@@ -181,7 +181,7 @@ export default function PricingPage() {
     }
   }, []);
 
-  const checkout = async (plan: string, method: "card" | "crypto" = "card") => {
+  const checkout = async (plan: string) => {
     if (plan === "free") {
       window.location.assign("/signup");
       return;
@@ -193,58 +193,21 @@ export default function PricingPage() {
       return;
     }
 
-    // Crypto path — Coinbase Commerce hosted checkout. Pays once for
-    // 30 days of access; the webhook stamps the period end.
-    if (method === "crypto") {
-      try {
-        const res = await fetch("/api/payments/crypto/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan }),
-        });
-        const data = await res.json();
-        if (res.ok && data.url) {
-          window.location.assign(data.url);
-          return;
-        }
-        setError(
-          data.error || "Crypto checkout unavailable. Try card instead.",
-        );
-      } catch {
-        setError("Crypto checkout failed. Please try again.");
-      }
-      return;
-    }
-
-    // Card path — Stripe first (USD/global), Yoco fallback (ZAR/SA).
+    // PayPal is the sole checkout path. A v2 order is created server-side and
+    // we redirect to PayPal for approval; the capture route finalises it and
+    // the webhook provisions on return.
     try {
-      const stripeRes = await fetch("/api/payments/stripe/checkout", {
+      const res = await fetch("/api/payments/paypal/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ intent: "plan", itemId: plan }),
       });
-      const stripeData = await stripeRes.json();
-      if (stripeRes.ok && stripeData.url) {
-        window.location.assign(stripeData.url);
+      const data = await res.json();
+      if (res.ok && data.approvalUrl) {
+        window.location.assign(data.approvalUrl);
         return;
       }
-
-      const yocoRes = await fetch("/api/payments/yoco/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
-      });
-      const yocoData = await yocoRes.json();
-      if (yocoRes.ok && yocoData.redirectUrl) {
-        window.location.assign(yocoData.redirectUrl);
-        return;
-      }
-
-      setError(
-        stripeData.error ||
-          yocoData.error ||
-          "Payment is being set up. Please try again.",
-      );
+      setError(data.error || "Checkout is being set up. Please try again.");
     } catch {
       setError("Checkout failed. Please try again.");
     }
@@ -484,23 +447,6 @@ export default function PricingPage() {
                 >
                   {t.cta} <ArrowRight className="w-4 h-4" />
                 </button>
-                {/* Crypto CTA hidden — centralized-only checkout for now.
-                    Backend (Coinbase Commerce + self-custody path) stays
-                    wired in `/api/payments/crypto/*` so flipping
-                    NEXT_PUBLIC_CRYPTO_PAYMENTS_ENABLED=true re-enables
-                    this affordance without a redeploy of the routes. */}
-                {t.plan !== "free" &&
-                  t.plan !== "enterprise" &&
-                  process.env.NEXT_PUBLIC_CRYPTO_PAYMENTS_ENABLED ===
-                    "true" && (
-                    <button
-                      onClick={() => checkout(t.plan, "crypto")}
-                      className="mt-2 w-full py-2 text-xs font-medium rounded-lg border border-white/[0.06] bg-white/[0.02] text-neutral-400 hover:text-white hover:bg-white/5 hover:border-white/10 transition-colors"
-                      aria-label={`Pay for ${t.name} with crypto`}
-                    >
-                      or pay with crypto (BTC · ETH · USDC)
-                    </button>
-                  )}
               </motion.div>
             ))}
           </div>
@@ -537,7 +483,7 @@ export default function PricingPage() {
             </p>
             <div className="flex items-center justify-center gap-4 mt-4">
               <span className="flex items-center gap-1 text-[10px] text-cyan-300/80 font-mono uppercase tracking-[0.2em]">
-                <Shield className="w-3 h-3" /> Stripe secured
+                <Shield className="w-3 h-3" /> PayPal secured
               </span>
               <span className="flex items-center gap-1 text-[10px] text-cyan-300/80 font-mono uppercase tracking-[0.2em]">
                 <Shield className="w-3 h-3" /> Cancel anytime

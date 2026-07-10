@@ -54,7 +54,7 @@ describe("GET /api/cron/synthetic-probe", () => {
 
   it("returns overall=ok when all probes succeed within budget", async () => {
     // Each probe has its own list of acceptable statuses — the routes
-    // that don't allow GET (stripe checkout, verify) want 400/405, while
+    // that don't allow GET (paypal checkout, verify) want 400/405, while
     // the marketing pages want 200. Return a status per URL that matches.
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
       const url =
@@ -65,7 +65,7 @@ describe("GET /api/cron/synthetic-probe", () => {
             : input.url;
       let status = 200;
       if (
-        url.includes("/api/payments/stripe/checkout") ||
+        url.includes("/api/payments/paypal/checkout") ||
         url.includes("/api/verify")
       ) {
         status = 405;
@@ -108,7 +108,7 @@ describe("GET /api/cron/synthetic-probe", () => {
   });
 
   it("accepts non-200 statuses listed in the probe's okStatuses", async () => {
-    // /api/payments/stripe/checkout has okStatuses: [400, 401, 405]
+    // /api/payments/paypal/checkout has okStatuses: [400, 401, 405]
     // /api/verify has okStatuses: [400, 405]
     // /api/health/ready has okStatuses: [200, 503]
     // Returning 405 should pass for the stripe + verify probes but
@@ -127,8 +127,8 @@ describe("GET /api/cron/synthetic-probe", () => {
     const body = (await res.json()) as {
       probes: { name: string; ok: boolean; status: number | null }[];
     };
-    const stripe = body.probes.find((p) => p.name === "stripe-checkout-stub");
-    expect(stripe?.ok).toBe(true);
+    const paypal = body.probes.find((p) => p.name === "paypal-checkout-stub");
+    expect(paypal?.ok).toBe(true);
     const home = body.probes.find((p) => p.name === "marketing-home");
     expect(home?.ok).toBe(false);
 

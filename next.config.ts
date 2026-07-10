@@ -36,7 +36,6 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "**.googleusercontent.com" },
       { protocol: "https", hostname: "**.clerk.com" },
-      { protocol: "https", hostname: "**.stripe.com" },
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "**.nvidia.com" },
       { protocol: "https", hostname: "**.googleapis.com" },
@@ -89,11 +88,12 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // 'unsafe-eval' removed (Cook 182) — modern Next.js +
-              // Clerk + Stripe do not require eval(). 'unsafe-inline'
-              // kept until the nonce middleware ships in a follow-up
-              // (would touch every server-component render).
-              "script-src 'self' 'unsafe-inline' https://js.stripe.com https://challenges.cloudflare.com https://plausible.io https://*.clerk.com https://*.clerk.accounts.dev https://va.vercel-scripts.com",
+              // 'unsafe-eval' removed (Cook 182) — modern Next.js + Clerk do
+              // not require eval(). 'unsafe-inline' kept until the nonce
+              // middleware ships in a follow-up (would touch every
+              // server-component render). PayPal checkout is a full-page
+              // redirect, so it needs no script/frame allowance here.
+              "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://plausible.io https://*.clerk.com https://*.clerk.accounts.dev https://va.vercel-scripts.com",
               // fonts.googleapis.com serves the brand-font stylesheet the
               // root layout loads (<link rel="stylesheet">). Without it
               // here the CSP blocks the stylesheet and every custom font
@@ -104,7 +104,7 @@ const nextConfig: NextConfig = {
               // stylesheet @font-face-references.
               "font-src 'self' data: https://fonts.gstatic.com",
               "connect-src 'self' https: wss:",
-              "frame-src 'self' https://js.stripe.com https://challenges.cloudflare.com https://*.clerk.com https://*.clerk.accounts.dev",
+              "frame-src 'self' https://challenges.cloudflare.com https://*.clerk.com https://*.clerk.accounts.dev",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",

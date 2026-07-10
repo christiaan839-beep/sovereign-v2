@@ -67,20 +67,8 @@ const COOKIE_INDEPENDENT_PREFIXES: readonly string[] = [
   "/api/_webhooks/", // Twilio, Slack, Zapier, GitHub etc. (HMAC-verified)
   "/api/cron/", // Vercel cron (CRON_SECRET-verified)
   "/api/_cron/", // legacy cron paths (CRON_SECRET-verified)
-  "/api/_payments/stripe/webhook", // stripe-signature HMAC
-  "/api/_payments/paystack/webhook", // x-paystack-signature HMAC
-  "/api/_payments/payfast/webhook", // PayFast signature
-  "/api/_payments/paypal/webhook", // PayPal Transmission-Signature
-  "/api/_payments/yoco/webhook", // Yoco signature
-  "/api/_payments/crypto/webhook", // crypto provider signature
-  "/api/_payments/moonpay/webhook", // MoonPay signature
-  "/api/payments/stripe/webhook", // legacy stripe path
-  "/api/payments/paystack/webhook",
-  "/api/payments/payfast/webhook",
-  "/api/payments/paypal/webhook",
-  "/api/payments/yoco/webhook",
-  "/api/payments/crypto/webhook",
-  "/api/payments/moonpay/webhook",
+  "/api/_payments/paypal/webhook", // PayPal Transmission-Signature (verified server-side)
+  "/api/payments/paypal/webhook", // public alias of the PayPal webhook
   "/api/_billing/webhook", // internal billing pipeline
 ];
 
