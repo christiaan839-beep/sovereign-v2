@@ -115,6 +115,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Marketing pages
     { path: "/about", priority: 0.7, changeFreq: "monthly" },
     { path: "/partner", priority: 0.7, changeFreq: "monthly" },
+    { path: "/learning", priority: 0.7, changeFreq: "monthly" }, // Anthropic Partner Academy — credibility surface for governance buyers
     { path: "/blog", priority: 0.8, changeFreq: "daily" },
     { path: "/marketplace", priority: 0.8, changeFreq: "weekly" },
     { path: "/developers", priority: 0.8, changeFreq: "weekly" },
