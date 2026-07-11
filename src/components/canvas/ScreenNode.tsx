@@ -45,25 +45,25 @@ export function ScreenNode({ id, data }: NodeProps) {
               <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#00B7FF]/10 text-[#00B7FF] border border-[#00B7FF]/20 shrink-0">{d.vibe}</span>
             )}
           </div>
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             {/* Device toggles */}
             {d.status === "ready" && (
               <div className="flex items-center gap-0.5 mr-1 px-1 py-0.5 rounded bg-white/[0.03] border border-white/[0.04]">
                 {([["desktop", Monitor], ["tablet", Tablet], ["mobile", Smartphone]] as const).map(([dev, Icon]) => (
-                  <button key={dev} onClick={(e) => { e.stopPropagation(); setDevice(dev); }}
+                  <button key={dev} aria-label={`Preview on ${dev}`} onClick={(e) => { e.stopPropagation(); setDevice(dev); }}
                     className={`p-0.5 rounded transition-colors ${device === dev ? "text-[#00B7FF]" : "text-neutral-600 hover:text-neutral-400"}`}>
                     <Icon className="w-2.5 h-2.5" />
                   </button>
                 ))}
               </div>
             )}
-            <button onClick={handleCopy} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors">
+            <button aria-label="Copy HTML" onClick={handleCopy} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors">
               {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
             </button>
-            <button onClick={(e) => { e.stopPropagation(); d.onExpand?.(id); }} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors">
+            <button aria-label="Expand view" onClick={(e) => { e.stopPropagation(); d.onExpand?.(id); }} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors">
               <Maximize2 className="w-3 h-3" />
             </button>
-            <button onClick={(e) => { e.stopPropagation(); d.onDelete?.(id); }} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-red-400 transition-colors">
+            <button aria-label="Delete screen" onClick={(e) => { e.stopPropagation(); d.onDelete?.(id); }} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-red-400 transition-colors">
               <X className="w-3 h-3" />
             </button>
           </div>
