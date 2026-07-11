@@ -1,0 +1,3 @@
+## 2026-07-11 - Improve Notification Actions Accessibility
+**Learning:** Hidden actions (like dismiss/mark read buttons in notifications) that only appear on hover must also appear on keyboard focus. Using `focus-within:opacity-100` on the container alongside `group-hover:opacity-100` ensures keyboard users can access the actions. Interactive elements need explicit `focus-visible` rings to be properly indicated.
+**Action:** Always check interactive elements hidden behind hover states, ensuring they have proper focus-within visibility on their parent container, and valid focus-visible rings on the items themselves.
