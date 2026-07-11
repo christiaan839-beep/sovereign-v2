@@ -26,6 +26,8 @@ function useSuppressExternalErrors() {
       const first = args[0];
       if (first && typeof first === "object" && (first as { name?: string }).name === "ClerkRuntimeError") return;
       if (typeof first === "string" && first.includes("Clerk")) return;
+      if (first && typeof first === "object" && (first as { message?: string }).message?.includes("Publishable key not valid")) return;
+      if (typeof first === "string" && first.includes("Publishable key not valid")) return;
       return origError.apply(console, args);
     };
 
