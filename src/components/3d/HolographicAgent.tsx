@@ -3,7 +3,7 @@
 import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sphere, MeshDistortMaterial } from '@react-three/drei';
-import * as THREE from 'three';
+import type * as THREE from 'three';
 
 function AgentCore({ isSpeaking }: { isSpeaking: boolean }) {
   const meshRef = useRef<any>(null);
