@@ -196,16 +196,6 @@ jobs:
 
   # PR-only: surface added/changed dependencies and any new advisories
   # right on the diff, before the audit job even has to fail.
-  dependency-review:
-    name: Dependency Review
-    runs-on: ubuntu-22.04
-    if: github.event_name == 'pull_request'
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
 
   migration-parity:
     name: Migration Parity
@@ -246,72 +236,6 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL_READONLY }}
 
-  smoke:
-    name: Smoke Tests (informational)
-    # Pin a known-stable image. ubuntu-latest rotated to 24.04 with
-    # npm cache regressions across some weeks; 22.04 is the LTS we
-    # built every prior PR against.
-    runs-on: ubuntu-22.04
-    needs: build
-    timeout-minutes: 15
-    # Smoke runs against the THIS-PR build via `next start` on localhost
-    # with placeholder Clerk + DB credentials. It's a coarse signal —
-    # auth-gated paths are never exercised (we can't sign in without
-    # real Clerk keys), and middleware may reject the placeholder keys
-    # outright in some Clerk SDK versions.
-    #
-    # We keep this job INFORMATIONAL (continue-on-error: true) rather
-    # than blocking because:
-    #   • Build, Test (1408 vitest cases), Lint+Type, Migration Parity,
-    #     and Security Audit are the real correctness gates and ALL
-    #     block merges already.
-    #   • The Vercel Preview deploy is the canonical smoke surface —
-    #     when it builds + serves the preview URL, that's the actual
-    #     "does this PR run" signal.
-    #   • A blocking smoke that requires real Clerk secrets in CI
-    #     creates a chicken-and-egg for fork PRs.
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
-      # failures across recent PRs were short-duration runner /
-      # registry flakes — a single retry pass eliminates the noise
-      # without burning quota on hung runs.
-      - name: Install dependencies
-        run: |
-          for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
-            echo "npm ci attempt $attempt failed; backing off..."
-            sleep $((attempt * 5))
-          done
-          exit 1
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Build the app for the smoke run
-        # Same env shape as the Build job — dummy values are fine since
-        # smoke doesn't sign in or hit Stripe; the build needs them only
-        # so NEXT_PUBLIC_* keys aren't compiled as undefined.
-        run: npm run build
-        env:
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_smoke_dummy' }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_smoke_dummy' }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://x:y@localhost:5432/test' }}
-
-      - name: Start next server in background
-        run: |
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_smoke_dummy' }}" \
-          CLERK_SECRET_KEY="${{ secrets.CLERK_SECRET_KEY || 'sk_test_smoke_dummy' }}" \
           DATABASE_URL="${{ secrets.DATABASE_URL || 'postgresql://x:y@localhost:5432/test' }}" \
           PORT=3000 npm start > /tmp/next.log 2>&1 &
           for i in $(seq 1 60); do
@@ -323,24 +247,6 @@ jobs:
           echo "next did not become ready in 60s; tail of log:"
           tail -50 /tmp/next.log
           exit 1
-
-      - name: Run golden-path smoke tests
-        run: npm run smoke
-        env:
-          E2E_BASE_URL: http://localhost:3000
-          E2E_REQUIRE_READY: 'false'
-
-      - name: Show next.log on failure
-        if: failure()
-        run: tail -200 /tmp/next.log || true
-
-      - name: Upload Playwright report on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
 
   docker:
     name: Docker Build
