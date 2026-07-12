@@ -1,12 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  ArrowLeft,
-  BarChart3,
-  TrendingUp,
-  Zap,
-} from "lucide-react";
+import { ArrowLeft, BarChart3, TrendingUp, Zap } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, use } from "react";
 
@@ -75,6 +70,8 @@ export default function RevenuePage({
   const { clientId } = use(params);
   const [data, setData] = useState<AgentRevenue[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unauthorized, setUnauthorized] = useState(false);
+  const [tokenQS, setTokenQS] = useState("");
   const [agencyName, setAgencyName] = useState("Your Agency");
 
   useEffect(() => {
@@ -83,13 +80,23 @@ export default function RevenuePage({
   }, []);
 
   useEffect(() => {
+    // Signed portal token from the shared link (wave 122) — read from
+    // window.location so the page needs no Suspense boundary.
+    const token =
+      new URLSearchParams(window.location.search).get("token") ?? "";
+    setTokenQS(token ? `?token=${encodeURIComponent(token)}` : "");
+
     async function load() {
       try {
         const res = await fetch(
           `/api/portal/metrics?clientId=${encodeURIComponent(
-            decodeURIComponent(clientId)
-          )}`
+            decodeURIComponent(clientId),
+          )}&token=${encodeURIComponent(token)}`,
         );
+        if (res.status === 401) {
+          setUnauthorized(true);
+          return;
+        }
         const json = await res.json();
         if (json.success && json.metrics.revenueByAgent) {
           setData(json.metrics.revenueByAgent);
@@ -136,7 +143,10 @@ export default function RevenuePage({
   // Agent totals for summary
   const agentTotals = new Map<string, number>();
   for (const row of data) {
-    agentTotals.set(row.tool, (agentTotals.get(row.tool) || 0) + row.executions);
+    agentTotals.set(
+      row.tool,
+      (agentTotals.get(row.tool) || 0) + row.executions,
+    );
   }
   const sortedAgents = [...agentTotals.entries()].sort((a, b) => b[1] - a[1]);
   const grandTotal = sortedAgents.reduce((s, [, v]) => s + v, 0);
@@ -147,7 +157,7 @@ export default function RevenuePage({
       <nav className="fixed top-0 inset-x-0 z-50 bg-[#030303]/80 backdrop-blur-xl border-b border-white/[0.06]">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link
-            href={`/portal/${clientId}`}
+            href={`/portal/${clientId}${tokenQS}`}
             className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -176,7 +186,21 @@ export default function RevenuePage({
           </p>
         </motion.div>
 
-        {loading ? (
+        {unauthorized ? (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-md mx-auto mt-16 text-center backdrop-blur-xl bg-white/[0.03] rounded-2xl border border-white/[0.06] p-10"
+          >
+            <h2 className="text-xl font-bold text-white mb-2">
+              This portal link is invalid or has expired
+            </h2>
+            <p className="text-sm text-neutral-500 leading-relaxed">
+              Ask your agency for a fresh link — portal links expire for your
+              protection.
+            </p>
+          </motion.div>
+        ) : loading ? (
           <div className="space-y-6">
             {[...Array(3)].map((_, i) => (
               <div

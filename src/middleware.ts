@@ -74,14 +74,13 @@ const COOKIE_INDEPENDENT_PREFIXES: readonly string[] = [
   "/api/_payments/yoco/webhook", // Yoco signature
   "/api/_payments/crypto/webhook", // crypto provider signature
   "/api/_payments/moonpay/webhook", // MoonPay signature
-  "/api/payments/stripe/webhook", // legacy stripe path
+  "/api/payments/stripe/webhook", // canonical routable path (shim → _payments handler)
   "/api/payments/paystack/webhook",
   "/api/payments/payfast/webhook",
   "/api/payments/paypal/webhook",
   "/api/payments/yoco/webhook",
   "/api/payments/crypto/webhook",
   "/api/payments/moonpay/webhook",
-  "/api/_billing/webhook", // internal billing pipeline
 ];
 
 function isCookieIndependentRoute(pathname: string): boolean {
@@ -283,7 +282,6 @@ const MAIN_DOMAINS = new Set([
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/api/_agents(.*)",
-  "/api/_billing(.*)",
   "/api/_misc/admin(.*)",
   "/api/_settings(.*)",
 ]);

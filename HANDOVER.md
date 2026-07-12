@@ -133,7 +133,7 @@ The money flow is:
    `/api/payments/stripe/checkout` which creates a Stripe Checkout
    Session and redirects.
 3. Stripe collects the card and fires
-   `checkout.session.completed` → POST `/api/_payments/stripe/webhook`.
+   `checkout.session.completed` → POST `/api/payments/stripe/webhook`.
 4. The webhook handler verifies the Stripe signature, dedupes the
    `evt_*` id via `src/lib/idempotency.ts`, and writes a row to the
    `subscriptions` table.
@@ -144,7 +144,9 @@ The money flow is:
 
 - Stripe webhook URL not configured → check Stripe Dashboard
   → Developers → Webhooks. Should point to
-  `https://sovereignmatrix.agency/api/_payments/stripe/webhook`.
+  `https://sovereignmatrix.agency/api/payments/stripe/webhook` (no
+  underscore — `_payments` is a private folder whose URL 404s; the
+  routable path is the `payments/` shim).
 - `STRIPE_WEBHOOK_SECRET` env var stale → re-copy from the Stripe
   Webhook details page into Vercel project env.
 - Stripe price IDs missing → see `STRIPE_PRICE_*` in

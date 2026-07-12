@@ -91,7 +91,7 @@ This is how the engineering memory survives context resets.
 
 - plans.ts is single source of truth for pricing: free=50, starter=200, founder=10K, array=500, node=2K, enterprise=10K runs/month
 - plan-enforcement.ts reads from subscriptions table → falls back to founder check → falls back to free
-- Stripe webhook at `/api/_payments/stripe/webhook` handles full lifecycle: checkout.session.completed, subscription.updated/deleted, invoice.payment_failed
+- Stripe webhook at `/api/payments/stripe/webhook` (routable shim → handler in `_payments/stripe/webhook`; underscore URLs 404) handles full lifecycle: checkout.session.completed, subscription.updated/deleted, invoice.payment_failed + mirrors plan onto tenants.plan
 - Checkout flow: Pricing.tsx → `/api/payments/stripe/checkout` → Stripe → webhook → subscriptions table
 - Model names must include version suffix (e.g., nemotron-ultra-253b-v1, not just 253b)
 

@@ -108,7 +108,8 @@ Without this, checkouts complete but plans never sync — users pay and
 stay on the free tier. Worst-case customer experience.
 
 - [ ] Stripe Dashboard → **Developers → Webhooks → Add endpoint**.
-- [ ] Endpoint URL: `https://sovereignmatrix.agency/api/_payments/stripe/webhook`
+- [ ] Endpoint URL: `https://sovereignmatrix.agency/api/payments/stripe/webhook`
+      (no underscore — the `_payments` URL is unroutable and 404s)
 - [ ] Events to send (select these specifically — avoid "All events"
       to limit blast radius):
   - `checkout.session.completed`
@@ -212,7 +213,7 @@ within ~30 seconds. Hard-refresh the homepage to verify.
 - [ ] Confirm in Stripe Dashboard → **Customers** → your record →
       one `subscription.active` row.
 - [ ] Confirm in Neon Console → `SELECT * FROM subscriptions ORDER
-    BY created_at DESC LIMIT 1;` → matching row.
+  BY created_at DESC LIMIT 1;` → matching row.
 - [ ] **Refund yourself** in Stripe to validate the dunning flow
       (also gives you a clean state to restart from).
 

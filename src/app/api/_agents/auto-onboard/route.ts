@@ -78,13 +78,37 @@ const handler = createAgentRoute({
       });
     }
 
-    // Step 2: Create portal access
-    const portalUrl = `${baseUrl}/portal/${clientId}`;
-    onboardingSteps.push({
-      step: "Create Portal Access",
-      status: "done",
-      detail: `Portal ready at ${portalUrl}`,
-    });
+    // Step 2: Create portal access — the emailed link carries a signed
+    // portal token (wave 122, BACKLOG H4): /api/portal/metrics rejects
+    // tokenless requests, so an unsigned URL would render an empty
+    // "link invalid" portal.
+    //
+    // The portal IDENTITY is the client's email, not the company slug:
+    // /api/portal/metrics keys leads/generations/bookings on `userEmail`,
+    // so a slug-keyed portal always rendered zeros. Falls back to the
+    // slug only when no email was supplied.
+    const portalClientId =
+      typeof email === "string" && email.trim() ? email.trim() : clientId;
+    let portalUrl = `${baseUrl}/portal/${encodeURIComponent(portalClientId)}`;
+    try {
+      const { mintPortalToken } = await import("@/lib/portal-tokens");
+      const minted = mintPortalToken({ clientId: portalClientId });
+      portalUrl = `${portalUrl}?token=${encodeURIComponent(minted.token)}`;
+      onboardingSteps.push({
+        step: "Create Portal Access",
+        status: "done",
+        detail: `Signed portal link ready (expires ${minted.expiresAt})`,
+      });
+    } catch {
+      // No signing secret configured — surface it instead of emailing a
+      // link that will show an unauthorized state.
+      onboardingSteps.push({
+        step: "Create Portal Access",
+        status: "partial",
+        detail:
+          "Portal link is UNSIGNED (set PORTAL_TOKEN_SIGNING_SECRET or AGENT_RUN_SIGNING_SECRET) — recipients will see an access-denied state",
+      });
+    }
 
     // Step 3: Send welcome email
     const resendKey = process.env.RESEND_API_KEY;

@@ -57,6 +57,8 @@ export default function ClientDashboard({
     recentActivity: [],
   });
   const [loading, setLoading] = useState(true);
+  const [unauthorized, setUnauthorized] = useState(false);
+  const [tokenQS, setTokenQS] = useState("");
   const [agencyName, setAgencyName] = useState("Your Agency");
 
   useEffect(() => {
@@ -65,11 +67,25 @@ export default function ClientDashboard({
   }, []);
 
   useEffect(() => {
+    // Signed portal token from the shared link (wave 122). Read from
+    // window.location instead of useSearchParams so the page needs no
+    // Suspense boundary; effects only run client-side.
+    const token =
+      new URLSearchParams(window.location.search).get("token") ?? "";
+    setTokenQS(token ? `?token=${encodeURIComponent(token)}` : "");
+
+    let stop = false;
     async function load() {
+      if (stop) return;
       try {
         const res = await fetch(
-          `/api/portal/metrics?clientId=${encodeURIComponent(decodedId)}`
+          `/api/portal/metrics?clientId=${encodeURIComponent(decodedId)}&token=${encodeURIComponent(token)}`,
         );
+        if (res.status === 401) {
+          stop = true;
+          setUnauthorized(true);
+          return;
+        }
         const data = await res.json();
         if (data.success) {
           setMetrics({
@@ -88,7 +104,10 @@ export default function ClientDashboard({
     }
     load();
     const interval = setInterval(load, 30_000);
-    return () => clearInterval(interval);
+    return () => {
+      stop = true;
+      clearInterval(interval);
+    };
   }, [decodedId]);
 
   const kpis = [
@@ -142,7 +161,7 @@ export default function ClientDashboard({
           </div>
           <div className="flex items-center gap-4">
             <Link
-              href={`/portal/${clientId}/revenue`}
+              href={`/portal/${clientId}/revenue${tokenQS}`}
               className="text-xs text-neutral-400 hover:text-white transition-colors flex items-center gap-1.5"
             >
               <BarChart3 className="w-3.5 h-3.5" />
@@ -162,175 +181,196 @@ export default function ClientDashboard({
         </div>
       </nav>
 
-      <main className="pt-24 pb-20 px-6 max-w-6xl mx-auto">
-        {/* ── Header ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-10"
-        >
-          <h1 className="text-3xl font-bold text-white mb-1">Dashboard</h1>
-          <p className="text-sm text-neutral-500">
-            Client:{" "}
-            <span className="font-mono text-neutral-400">{decodedId}</span>
-          </p>
-        </motion.div>
+      {unauthorized ? (
+        <main className="pt-24 pb-20 px-6 max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-md mx-auto mt-16 text-center backdrop-blur-xl bg-white/[0.03] rounded-2xl border border-white/[0.06] p-10"
+          >
+            <div className="w-12 h-12 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center mx-auto mb-5">
+              <Clock className="w-5 h-5 text-amber-400" />
+            </div>
+            <h1 className="text-xl font-bold text-white mb-2">
+              This portal link is invalid or has expired
+            </h1>
+            <p className="text-sm text-neutral-500 leading-relaxed">
+              Portal access works through a secure link issued by your agency.
+              Ask them to send you a fresh one — links expire for your
+              protection.
+            </p>
+          </motion.div>
+        </main>
+      ) : (
+        <main className="pt-24 pb-20 px-6 max-w-6xl mx-auto">
+          {/* ── Header ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-10"
+          >
+            <h1 className="text-3xl font-bold text-white mb-1">Dashboard</h1>
+            <p className="text-sm text-neutral-500">
+              Client:{" "}
+              <span className="font-mono text-neutral-400">{decodedId}</span>
+            </p>
+          </motion.div>
 
-        {/* ── KPI Cards ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-          {kpis.map((kpi, i) => (
-            <motion.div
-              key={kpi.label}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
-              className={`backdrop-blur-xl bg-white/[0.03] rounded-2xl p-6 border border-white/[0.06] relative overflow-hidden group hover:border-white/[0.12] transition-colors`}
-            >
-              <div className="absolute -top-4 -right-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity">
-                <kpi.icon className={`w-28 h-28 ${kpi.color}`} />
-              </div>
-              <div
-                className={`w-10 h-10 rounded-xl ${kpi.bg} flex items-center justify-center mb-4`}
+          {/* ── KPI Cards ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            {kpis.map((kpi, i) => (
+              <motion.div
+                key={kpi.label}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08 }}
+                className={`backdrop-blur-xl bg-white/[0.03] rounded-2xl p-6 border border-white/[0.06] relative overflow-hidden group hover:border-white/[0.12] transition-colors`}
               >
-                <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
-              </div>
-              <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-widest mb-1">
-                {kpi.label}
-              </p>
-              <div className="flex items-baseline gap-1">
-                {loading ? (
-                  <div className="h-8 w-16 bg-white/5 rounded animate-pulse" />
-                ) : (
-                  <>
-                    <span className="text-3xl font-bold font-mono text-white">
-                      {kpi.value.toLocaleString()}
-                    </span>
-                    {kpi.suffix && (
-                      <span className="text-sm text-neutral-500">
-                        {kpi.suffix}
+                <div className="absolute -top-4 -right-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity">
+                  <kpi.icon className={`w-28 h-28 ${kpi.color}`} />
+                </div>
+                <div
+                  className={`w-10 h-10 rounded-xl ${kpi.bg} flex items-center justify-center mb-4`}
+                >
+                  <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
+                </div>
+                <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-widest mb-1">
+                  {kpi.label}
+                </p>
+                <div className="flex items-baseline gap-1">
+                  {loading ? (
+                    <div className="h-8 w-16 bg-white/5 rounded animate-pulse" />
+                  ) : (
+                    <>
+                      <span className="text-3xl font-bold font-mono text-white">
+                        {kpi.value.toLocaleString()}
                       </span>
-                    )}
-                  </>
+                      {kpi.suffix && (
+                        <span className="text-sm text-neutral-500">
+                          {kpi.suffix}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* ── Content Area ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Recent Activity Feed */}
+            <div className="lg:col-span-2 backdrop-blur-xl bg-white/[0.03] rounded-2xl border border-white/[0.06] overflow-hidden flex flex-col max-h-[600px]">
+              <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+                <h2 className="text-xs font-bold uppercase tracking-widest text-neutral-500 flex items-center gap-2">
+                  <Activity className="w-4 h-4" /> Recent Activity
+                </h2>
+                <span className="text-[10px] text-neutral-500">
+                  Last 10 executions
+                </span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6">
+                {loading ? (
+                  <div className="space-y-4">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="flex gap-4 animate-pulse">
+                        <div className="w-8 h-8 rounded-full bg-white/5 shrink-0" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-3 w-40 bg-white/5 rounded" />
+                          <div className="h-2 w-64 bg-white/5 rounded" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : metrics.recentActivity.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-neutral-500">
+                    <Activity className="w-10 h-10 mb-3 opacity-40" />
+                    <p className="text-sm">No activity recorded yet.</p>
+                    <p className="text-xs mt-1">
+                      Agent executions will appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="absolute left-4 top-4 bottom-4 w-px bg-white/[0.06]" />
+                    <div className="space-y-6">
+                      <AnimatePresence>
+                        {metrics.recentActivity.map((item, i) => (
+                          <motion.div
+                            key={item.id}
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.05 }}
+                            className="relative flex gap-5 pl-1"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-white/[0.05] border border-white/[0.06] flex items-center justify-center shrink-0 z-10">
+                              <AgentIcon type={item.type} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-3 mb-0.5">
+                                <span className="text-sm font-semibold text-white truncate">
+                                  {item.agent}
+                                </span>
+                                <span className="text-[10px] text-neutral-500 font-mono flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {formatTime(item.timestamp)}
+                                </span>
+                              </div>
+                              <p className="text-xs text-neutral-500 leading-relaxed line-clamp-2">
+                                {item.summary}
+                              </p>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  </div>
                 )}
               </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* ── Content Area ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Activity Feed */}
-          <div className="lg:col-span-2 backdrop-blur-xl bg-white/[0.03] rounded-2xl border border-white/[0.06] overflow-hidden flex flex-col max-h-[600px]">
-            <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-neutral-500 flex items-center gap-2">
-                <Activity className="w-4 h-4" /> Recent Activity
-              </h2>
-              <span className="text-[10px] text-neutral-500">
-                Last 10 executions
-              </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
-              {loading ? (
-                <div className="space-y-4">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="flex gap-4 animate-pulse">
-                      <div className="w-8 h-8 rounded-full bg-white/5 shrink-0" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-3 w-40 bg-white/5 rounded" />
-                        <div className="h-2 w-64 bg-white/5 rounded" />
-                      </div>
-                    </div>
-                  ))}
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Revenue CTA */}
+              <Link
+                href={`/portal/${clientId}/revenue${tokenQS}`}
+                className="block backdrop-blur-xl bg-white/[0.03] rounded-2xl p-6 border border-white/[0.06] hover:border-white/[0.12] transition-colors group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-violet-400/10 flex items-center justify-center mb-4">
+                  <BarChart3 className="w-5 h-5 text-violet-400" />
                 </div>
-              ) : metrics.recentActivity.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-neutral-500">
-                  <Activity className="w-10 h-10 mb-3 opacity-40" />
-                  <p className="text-sm">No activity recorded yet.</p>
-                  <p className="text-xs mt-1">
-                    Agent executions will appear here.
-                  </p>
+                <h3 className="text-base font-bold text-white mb-1">
+                  Revenue Attribution
+                </h3>
+                <p className="text-xs text-neutral-500 mb-4 leading-relaxed">
+                  See which AI agents are driving the most value for your
+                  business.
+                </p>
+                <span className="text-xs text-violet-400 flex items-center gap-1.5 font-semibold group-hover:gap-2.5 transition-all">
+                  View breakdown <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+              </Link>
+
+              {/* Upgrade CTA */}
+              <div className="backdrop-blur-xl bg-gradient-to-br from-white/[0.03] to-emerald-500/[0.03] rounded-2xl p-6 border border-white/[0.06]">
+                <div className="w-10 h-10 rounded-xl bg-emerald-400/10 flex items-center justify-center mb-4">
+                  <ExternalLink className="w-5 h-5 text-emerald-400" />
                 </div>
-              ) : (
-                <div className="relative">
-                  <div className="absolute left-4 top-4 bottom-4 w-px bg-white/[0.06]" />
-                  <div className="space-y-6">
-                    <AnimatePresence>
-                      {metrics.recentActivity.map((item, i) => (
-                        <motion.div
-                          key={item.id}
-                          initial={{ opacity: 0, x: -8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                          className="relative flex gap-5 pl-1"
-                        >
-                          <div className="w-8 h-8 rounded-full bg-white/[0.05] border border-white/[0.06] flex items-center justify-center shrink-0 z-10">
-                            <AgentIcon type={item.type} />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-3 mb-0.5">
-                              <span className="text-sm font-semibold text-white truncate">
-                                {item.agent}
-                              </span>
-                              <span className="text-[10px] text-neutral-500 font-mono flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {formatTime(item.timestamp)}
-                              </span>
-                            </div>
-                            <p className="text-xs text-neutral-500 leading-relaxed line-clamp-2">
-                              {item.summary}
-                            </p>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              )}
+                <h3 className="text-base font-bold text-white mb-1">
+                  Scale your results
+                </h3>
+                <p className="text-xs text-neutral-500 mb-6 leading-relaxed">
+                  Unlock additional AI agents and expand your coverage area.
+                </p>
+                <button className="w-full py-3 rounded-xl bg-white text-[#030303] font-bold text-sm hover:bg-neutral-200 transition-colors">
+                  Contact Account Manager
+                </button>
+              </div>
             </div>
           </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Revenue CTA */}
-            <Link
-              href={`/portal/${clientId}/revenue`}
-              className="block backdrop-blur-xl bg-white/[0.03] rounded-2xl p-6 border border-white/[0.06] hover:border-white/[0.12] transition-colors group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-violet-400/10 flex items-center justify-center mb-4">
-                <BarChart3 className="w-5 h-5 text-violet-400" />
-              </div>
-              <h3 className="text-base font-bold text-white mb-1">
-                Revenue Attribution
-              </h3>
-              <p className="text-xs text-neutral-500 mb-4 leading-relaxed">
-                See which AI agents are driving the most value for your
-                business.
-              </p>
-              <span className="text-xs text-violet-400 flex items-center gap-1.5 font-semibold group-hover:gap-2.5 transition-all">
-                View breakdown{" "}
-                <ArrowRight className="w-3.5 h-3.5" />
-              </span>
-            </Link>
-
-            {/* Upgrade CTA */}
-            <div className="backdrop-blur-xl bg-gradient-to-br from-white/[0.03] to-emerald-500/[0.03] rounded-2xl p-6 border border-white/[0.06]">
-              <div className="w-10 h-10 rounded-xl bg-emerald-400/10 flex items-center justify-center mb-4">
-                <ExternalLink className="w-5 h-5 text-emerald-400" />
-              </div>
-              <h3 className="text-base font-bold text-white mb-1">
-                Scale your results
-              </h3>
-              <p className="text-xs text-neutral-500 mb-6 leading-relaxed">
-                Unlock additional AI agents and expand your coverage area.
-              </p>
-              <button className="w-full py-3 rounded-xl bg-white text-[#030303] font-bold text-sm hover:bg-neutral-200 transition-colors">
-                Contact Account Manager
-              </button>
-            </div>
-          </div>
-        </div>
-      </main>
+        </main>
+      )}
 
       {/* ── Footer ── */}
       <footer className="border-t border-white/[0.06] py-6 text-center">
@@ -350,7 +390,11 @@ function AgentIcon({ type }: { type: string }) {
   const lower = type.toLowerCase();
   if (lower.includes("lead") || lower.includes("sales"))
     return <Users className="w-3.5 h-3.5 text-emerald-400" />;
-  if (lower.includes("content") || lower.includes("blog") || lower.includes("social"))
+  if (
+    lower.includes("content") ||
+    lower.includes("blog") ||
+    lower.includes("social")
+  )
     return <FileText className="w-3.5 h-3.5 text-blue-400" />;
   if (lower.includes("seo"))
     return <Search className="w-3.5 h-3.5 text-violet-400" />;

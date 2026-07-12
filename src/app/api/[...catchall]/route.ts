@@ -28,7 +28,17 @@ async function loadHandler(path: string): Promise<RouteModule | null> {
     .replace(/^payments\//, "")
     .replace(/^integrations\//, "");
 
-  const prefixes = ["_agents", "_misc", "_settings", "_email", "_content", "_payments", "_billing", "_webhooks", "_cron", "_integrations"];
+  const prefixes = [
+    "_agents",
+    "_misc",
+    "_settings",
+    "_email",
+    "_content",
+    "_payments",
+    "_webhooks",
+    "_cron",
+    "_integrations",
+  ];
   const pathsToTry = [...new Set([path, strippedPath])];
 
   for (const tryPath of pathsToTry) {
@@ -43,34 +53,62 @@ async function loadHandler(path: string): Promise<RouteModule | null> {
   return null;
 }
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ catchall: string[] }> }) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ catchall: string[] }> },
+) {
   const { catchall } = await params;
   const path = catchall.join("/");
   const mod = await loadHandler(path);
-  if (!mod?.GET) return NextResponse.json({ error: `Route /api/${path} not found (GET)` }, { status: 404 });
+  if (!mod?.GET)
+    return NextResponse.json(
+      { error: `Route /api/${path} not found (GET)` },
+      { status: 404 },
+    );
   return mod.GET(req);
 }
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ catchall: string[] }> }) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ catchall: string[] }> },
+) {
   const { catchall } = await params;
   const path = catchall.join("/");
   const mod = await loadHandler(path);
-  if (!mod?.POST) return NextResponse.json({ error: `Route /api/${path} not found (POST)` }, { status: 404 });
+  if (!mod?.POST)
+    return NextResponse.json(
+      { error: `Route /api/${path} not found (POST)` },
+      { status: 404 },
+    );
   return mod.POST(req);
 }
 
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ catchall: string[] }> }) {
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ catchall: string[] }> },
+) {
   const { catchall } = await params;
   const path = catchall.join("/");
   const mod = await loadHandler(path);
-  if (!mod?.PUT) return NextResponse.json({ error: `Route /api/${path} not found (PUT)` }, { status: 404 });
+  if (!mod?.PUT)
+    return NextResponse.json(
+      { error: `Route /api/${path} not found (PUT)` },
+      { status: 404 },
+    );
   return mod.PUT(req);
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ catchall: string[] }> }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ catchall: string[] }> },
+) {
   const { catchall } = await params;
   const path = catchall.join("/");
   const mod = await loadHandler(path);
-  if (!mod?.DELETE) return NextResponse.json({ error: `Route /api/${path} not found (DELETE)` }, { status: 404 });
+  if (!mod?.DELETE)
+    return NextResponse.json(
+      { error: `Route /api/${path} not found (DELETE)` },
+      { status: 404 },
+    );
   return mod.DELETE(req);
 }

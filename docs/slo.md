@@ -21,7 +21,7 @@ exceeds 5% OR median latency exceeds 5× the p50 baseline.
 
 | Endpoint                              | p95 budget | Notes                                     |
 | ------------------------------------- | ---------- | ----------------------------------------- |
-| `/api/_payments/stripe/webhook`       | 800 ms     | Stripe drops the connection after 10s.    |
+| `/api/payments/stripe/webhook`        | 800 ms     | Stripe drops the connection after 10s.    |
 | `/api/_payments/stripe/checkout`      | 1.5 s      | Includes Stripe API round trip.           |
 | `/api/_agents/*` (handler + verifier) | 6 s        | Includes 150–400ms LlamaGuard postflight. |
 | `/r/[id]` (server-rendered receipt)   | 600 ms     | Single Postgres select, no LLM call.      |
