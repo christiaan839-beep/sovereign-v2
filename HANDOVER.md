@@ -80,22 +80,22 @@ these live in this repo** — they live in Vercel Project Settings,
 Clerk Dashboard, Stripe Dashboard, etc. Christiaan's password
 manager is the master source.
 
-| Service                   | Where it lives                                     | Without it, what breaks                             |
-| ------------------------- | -------------------------------------------------- | --------------------------------------------------- |
-| Vercel (deploys)          | https://vercel.com/dashboard                       | No deploys. Production stays at last build.         |
-| Neon (Postgres)           | https://console.neon.tech                          | Every DB read/write fails. Site loads, queries 5xx. |
-| Clerk (auth)              | https://dashboard.clerk.com                        | Nobody can sign in. Anonymous routes still work.    |
-| Stripe (revenue)          | https://dashboard.stripe.com                       | No new subscriptions; existing subs continue.       |
-| Resend (email)            | https://resend.com                                 | Onboarding + transactional email silent.            |
-| Cloudflare (DNS, CDN)     | https://dash.cloudflare.com                        | DNS resolution stops if records expire.             |
-| GitHub (source + CI)      | https://github.com/christiaan839-beep/sovereign-v2 | No deploys, no PRs, no issues.                      |
-| Sentry (errors)           | https://sentry.io                                  | Errors still happen, just nobody sees them.         |
-| npm (OSS publish)         | https://www.npmjs.com/org/sovereign-matrix         | Can't publish OSS patches.                          |
-| Bitcoin OTS anchor wallet | self-custodial — see §7                            | Anchor cron fails; existing anchors stay valid.     |
+| Service                   | Where it lives                                     | Without it, what breaks                                                                                |
+| ------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Vercel (deploys)          | https://vercel.com/dashboard                       | No deploys. Production stays at last build.                                                            |
+| Neon (Postgres)           | https://console.neon.tech                          | Every DB read/write fails. Site loads, queries 5xx.                                                    |
+| Clerk (auth)              | https://dashboard.clerk.com                        | Nobody can sign in. Anonymous routes still work.                                                       |
+| Stripe (revenue)          | https://dashboard.stripe.com                       | No new subscriptions; existing subs continue.                                                          |
+| Resend (email)            | https://resend.com                                 | Onboarding + transactional email silent.                                                               |
+| Vercel DNS (domain zone)  | https://vercel.com → Domains                       | DNS/records live in Vercel (NS = ns1/ns2.vercel-dns.com); DNS resolution stops if the zone is removed. |
+| GitHub (source + CI)      | https://github.com/christiaan839-beep/sovereign-v2 | No deploys, no PRs, no issues.                                                                         |
+| Sentry (errors)           | https://sentry.io                                  | Errors still happen, just nobody sees them.                                                            |
+| npm (OSS publish)         | https://www.npmjs.com/org/sovereign-matrix         | Can't publish OSS patches.                                                                             |
+| Bitcoin OTS anchor wallet | self-custodial — see §7                            | Anchor cron fails; existing anchors stay valid.                                                        |
 
 For each, the recovery codes / backup MFA tokens are in
-Christiaan's Bitwarden vault (master shared with [TODO: name a
-co-trustee here when you have one]).
+Christiaan's Bitwarden vault. No co-trustee is designated yet — until
+one is named, the vault master is the sole recovery path.
 
 **Action item for a new operator:** rotate every credential above
 on day one. The platform survives the rotation because every
@@ -113,7 +113,7 @@ hardcoded keys in the source.
 | Clerk        | same                              | same                | ~$25 (Pro)                      |
 | Stripe       | n/a (Stripe takes from revenue)   | n/a                 | 2.9% + $0.30 per txn            |
 | Resend       | same                              | same                | $0 (free tier currently)        |
-| Cloudflare   | same                              | same                | $0 (free tier)                  |
+| Vercel DNS   | same                              | same                | $0 (included with Vercel)       |
 | Sentry       | same                              | same                | $0 (developer tier)             |
 | AI providers | various                           | Christiaan personal | ~$50–$200, highly variable      |
 

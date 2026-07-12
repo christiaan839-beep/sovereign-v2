@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { executeConnector, getAvailableConnectors } from "@/lib/integrations/connector";
+import {
+  executeConnector,
+  getAvailableConnectors,
+} from "@/lib/integrations/connector";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { safeDecrypt } from "@/lib/encryption";
+import { safeDecrypt } from "@/lib/crypto";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("integration-execute");
@@ -30,7 +33,10 @@ export async function POST(req: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
     }
 
     const body = await req.json();
@@ -38,8 +44,11 @@ export async function POST(req: Request) {
 
     if (!integrationId || !actionId) {
       return NextResponse.json(
-        { error: "integrationId and actionId are required", available: getAvailableConnectors() },
-        { status: 400 }
+        {
+          error: "integrationId and actionId are required",
+          available: getAvailableConnectors(),
+        },
+        { status: 400 },
       );
     }
 
@@ -52,10 +61,16 @@ export async function POST(req: Request) {
       if (userSettings?.apiKeys) {
         const keys = JSON.parse(safeDecrypt(userSettings.apiKeys));
         // Look for integration-specific key (e.g., "hubspot_token", "slack_token")
-        token = keys[`${integrationId}_token`] || keys[`${integrationId}_api_key`] || "";
+        token =
+          keys[`${integrationId}_token`] ||
+          keys[`${integrationId}_api_key`] ||
+          "";
       }
     } catch {
-      log.warn("Failed to resolve integration token from settings", { userId, integrationId });
+      log.warn("Failed to resolve integration token from settings", {
+        userId,
+        integrationId,
+      });
     }
 
     // Fall back to environment variable
@@ -81,6 +96,9 @@ export async function POST(req: Request) {
     return NextResponse.json(result, { status: result.success ? 200 : 502 });
   } catch (err) {
     log.error("Integration execution error", { error: (err as Error).message });
-    return NextResponse.json({ error: "Integration execution failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Integration execution failed" },
+      { status: 500 },
+    );
   }
 }

@@ -24,7 +24,7 @@
    echo "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" | cut -d_ -f3- | base64 -d
    ```
 
-   Should print something like `clerk.sovereignmatrix.com`. Then:
+   Should print something like `clerk.sovereignmatrix.agency`. Then:
 
    ```bash
    curl -s "https://<host>/.well-known/jwks.json" | jq '.keys | length'
@@ -50,7 +50,7 @@
 - Clerk-side outage → wait it out, post status notice
 - Wrong publishable key shape → confirm `pk_test_…` vs `pk_live_…`
   matches the deployment environment
-- Custom domain DNS broken → if you use `clerk.sovereignmatrix.com`,
+- Custom domain DNS broken → if you use `clerk.sovereignmatrix.agency`,
   verify the CNAME points where Clerk says it should
 
 **If sign-in works but webhooks don't fire**:

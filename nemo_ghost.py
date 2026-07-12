@@ -26,7 +26,7 @@ logging.basicConfig(
 
 app = Flask(__name__)
 # Allow requests from the local Next.js dev server and the production domain
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000", "https://umbra-v2.vercel.app"]}})
+CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000", "https://sovereignmatrix.agency"]}})
 
 def capture_retina_buffer():
     """Extract physical pixel buffer from the macOS display."""

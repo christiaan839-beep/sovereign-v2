@@ -11,7 +11,7 @@ export const POST = createAgentRoute({
   handler: async ({ input, email, userId }) => {
     const { targetUrl } = input as Record<string, unknown>;
 
-    if (!targetUrl) {
+    if (typeof targetUrl !== "string" || !targetUrl) {
       return { error: "URL is required" };
     }
 
@@ -21,17 +21,13 @@ export const POST = createAgentRoute({
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-      const response = await fetch(
-        // @ts-expect-error — `targetUrl` is typed as `unknown` upstream; runtime guarantees string via prior validation
-        targetUrl,
-        {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) SovereignMatrix/1.0",
-          },
-          signal: controller.signal,
+      const response = await fetch(targetUrl, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) SovereignMatrix/1.0",
         },
-      );
+        signal: controller.signal,
+      });
 
       clearTimeout(timeoutId);
 

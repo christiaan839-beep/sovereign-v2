@@ -23,7 +23,7 @@ echo "[*] Verifying secure tunnel for Mobile Uplink..."
 
 # 3. Registering Webhook with Telegram API
 # We hit the Telegram API to tell it: "Send all messages from the CAO's iPhone to this Vercel Edge function."
-WEBHOOK_URL="https://your-vercel-domain.vercel.app/api/webhooks/telegram"
+WEBHOOK_URL="https://sovereignmatrix.agency/api/webhooks/telegram"
 echo "[*] Bound Telegram Webhook to Edge Infrastructure."
 
 echo "\n✅ TELEGRAM UPLINK ACTIVE."

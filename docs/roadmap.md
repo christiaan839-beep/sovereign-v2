@@ -259,13 +259,13 @@ API directory under `src/app/api/`, with explicit verdict:
 
 `/api/jobs` · `/api/scheduled-workflows` · `/api/sequences` ·
 `/api/workflows` · `/api/usage` · `/api/user/plan` ·
-`/api/marketplace` · `/api/billing` · `/api/data-export` ·
+`/api/marketplace` · `/api/data-export` ·
 `/api/portal/metrics` · `/api/voice` · `/api/founders` ·
 `/api/waitlist` · `/api/referrals` · `/api/referral/apply` ·
 `/api/api-catalog` · `/api/models/discover` · `/api/generations` ·
 `/api/clients` · `/api/projects` (alias) · `/api/content` ·
 `/api/approvals` · `/api/settings` · `/api/_settings/*` ·
-`/api/_email/send` · `/api/_email/unsubscribe` · `/api/_billing/*` ·
+`/api/_email/send` · `/api/_email/unsubscribe` ·
 `/api/_content/*` · `/api/_health/*` · `/api/_integrations/*`
 
 ### INVESTIGATE — verify reachability before next sprint

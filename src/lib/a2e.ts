@@ -32,14 +32,14 @@ const log = createLogger("a2e");
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export type TransactionType =
-  | "purchase"    // user bought credits
-  | "earn"        // user earned via agent marketplace
-  | "spend"       // user spent on agent runs
-  | "refund"      // run failed, credits refunded
-  | "a2e_hire"    // agent hired another agent (debit)
-  | "a2e_earn"    // creator earned from A2E hire (credit)
-  | "bonus"       // platform bonus credits
-  | "referral";   // referral reward
+  | "purchase" // user bought credits
+  | "earn" // user earned via agent marketplace
+  | "spend" // user spent on agent runs
+  | "refund" // run failed, credits refunded
+  | "a2e_hire" // agent hired another agent (debit)
+  | "a2e_earn" // creator earned from A2E hire (credit)
+  | "bonus" // platform bonus credits
+  | "referral"; // referral reward
 
 export interface CreditBalance {
   userId: string;
@@ -66,7 +66,7 @@ export async function getCreditBalance(userId: string): Promise<CreditBalance> {
   try {
     const rows = await db.execute(
       sql`SELECT balance_cents, lifetime_earned, lifetime_spent
-          FROM user_credits WHERE user_id = ${userId} LIMIT 1`
+          FROM user_credits WHERE user_id = ${userId} LIMIT 1`,
     );
     const row = (rows as unknown as Array<Record<string, unknown>>)[0];
     if (!row) {
@@ -74,9 +74,9 @@ export async function getCreditBalance(userId: string): Promise<CreditBalance> {
     }
     return {
       userId,
-      balanceCents:   Number(row.balance_cents   ?? 0),
+      balanceCents: Number(row.balance_cents ?? 0),
       lifetimeEarned: Number(row.lifetime_earned ?? 0),
-      lifetimeSpent:  Number(row.lifetime_spent  ?? 0),
+      lifetimeSpent: Number(row.lifetime_spent ?? 0),
     };
   } catch (err) {
     log.info("Credit balance read failed", { error: String(err) });
@@ -93,7 +93,7 @@ export async function addCredits(
   amountCents: number,
   type: TransactionType,
   description: string,
-  metadata?: { agentId?: string; runId?: string }
+  metadata?: { agentId?: string; runId?: string },
 ): Promise<CreditBalance> {
   try {
     await db.execute(sql`
@@ -131,11 +131,13 @@ export async function deductCredits(
   amountCents: number,
   type: TransactionType,
   description: string,
-  metadata?: { agentId?: string; runId?: string }
+  metadata?: { agentId?: string; runId?: string },
 ): Promise<CreditBalance> {
   const balance = await getCreditBalance(userId);
   if (balance.balanceCents < amountCents) {
-    throw new Error(`Insufficient credits: have ${balance.balanceCents}, need ${amountCents}`);
+    throw new Error(
+      `Insufficient credits: have ${balance.balanceCents}, need ${amountCents}`,
+    );
   }
 
   try {
@@ -182,8 +184,8 @@ export async function hireAgent(
   userId: string,
   agentSlug: string,
   input: Record<string, unknown>,
-  maxBudget = 50,     // default max: 50 credits ($0.50)
-  hiringAgent?: string
+  maxBudget = 50, // default max: 50 credits ($0.50)
+  hiringAgent?: string,
 ): Promise<HireResult> {
   const runId = `a2e_${crypto.randomUUID().slice(0, 12)}`;
 
@@ -193,11 +195,13 @@ export async function hireAgent(
     const rows = await db.execute(
       sql`SELECT price_per_run FROM marketplace_agents
           WHERE name = ${agentSlug} AND verification_status = 'approved' AND is_public = true
-          LIMIT 1`
+          LIMIT 1`,
     );
     const row = (rows as unknown as Array<Record<string, unknown>>)[0];
     costCents = row ? Number(row.price_per_run ?? 0) : 0;
-  } catch { /* marketplace table may not exist yet — treat as free */ }
+  } catch {
+    /* marketplace table may not exist yet — treat as free */
+  }
 
   if (costCents > maxBudget) {
     return {
@@ -216,7 +220,7 @@ export async function hireAgent(
         costCents,
         "a2e_hire",
         `Hired ${agentSlug} via A2E`,
-        { agentId: agentSlug, runId }
+        { agentId: agentSlug, runId },
       );
     } catch (err) {
       return { success: false, runId, costCents, error: String(err) };
@@ -231,13 +235,17 @@ export async function hireAgent(
       VALUES
         (${runId}, ${userId}, ${agentSlug}, ${hiringAgent ?? null}, ${costCents}, ${runId}, 'running')
     `);
-  } catch { /* non-blocking audit log */ }
+  } catch {
+    /* non-blocking audit log */
+  }
 
   // 4. Execute the hired agent via internal API
   try {
-    const baseUrl = process.env.NEXTAUTH_URL ?? process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
+    const baseUrl =
+      process.env.NEXTAUTH_URL ??
+      (process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000");
 
     const res = await fetch(`${baseUrl}/api/agents/${agentSlug}`, {
       method: "POST",
@@ -250,7 +258,7 @@ export async function hireAgent(
       body: JSON.stringify({ ...input, _a2eRunId: runId }),
     });
 
-    const result = await res.json() as Record<string, unknown>;
+    const result = (await res.json()) as Record<string, unknown>;
 
     // 5. Complete the hire log + credit creator
     if (res.ok && costCents > 0) {
@@ -258,32 +266,54 @@ export async function hireAgent(
       const creatorShare = Math.floor(costCents * 0.7);
       try {
         const creatorRows = await db.execute(
-          sql`SELECT creator_user_id FROM marketplace_agents WHERE name = ${agentSlug} LIMIT 1`
+          sql`SELECT creator_user_id FROM marketplace_agents WHERE name = ${agentSlug} LIMIT 1`,
         );
-        const creatorRow = (creatorRows as unknown as Array<Record<string, unknown>>)[0];
+        const creatorRow = (
+          creatorRows as unknown as Array<Record<string, unknown>>
+        )[0];
         const creatorId = creatorRow?.creator_user_id as string | undefined;
         if (creatorId) {
-          await addCredits(creatorId, creatorShare, "a2e_earn",
-            `A2E hire earnings from ${agentSlug}`, { agentId: agentSlug, runId });
+          await addCredits(
+            creatorId,
+            creatorShare,
+            "a2e_earn",
+            `A2E hire earnings from ${agentSlug}`,
+            { agentId: agentSlug, runId },
+          );
         }
-      } catch { /* non-blocking */ }
+      } catch {
+        /* non-blocking */
+      }
     }
 
-    await db.execute(sql`
+    await db
+      .execute(
+        sql`
       UPDATE a2e_hire_log SET status = 'complete', completed_at = NOW()
       WHERE id = ${runId}
-    `).catch(() => {});
+    `,
+      )
+      .catch(() => {});
 
     return { success: true, runId, costCents, result };
   } catch (err) {
     // Refund on failure
     if (costCents > 0) {
-      await addCredits(userId, costCents, "refund", `Refund: ${agentSlug} hire failed`, { agentId: agentSlug, runId })
-        .catch(() => {});
+      await addCredits(
+        userId,
+        costCents,
+        "refund",
+        `Refund: ${agentSlug} hire failed`,
+        { agentId: agentSlug, runId },
+      ).catch(() => {});
     }
-    await db.execute(sql`
+    await db
+      .execute(
+        sql`
       UPDATE a2e_hire_log SET status = 'failed', completed_at = NOW() WHERE id = ${runId}
-    `).catch(() => {});
+    `,
+      )
+      .catch(() => {});
 
     return { success: false, runId, costCents, error: String(err) };
   }
@@ -294,15 +324,17 @@ export async function hireAgent(
  */
 export async function getCreditHistory(
   userId: string,
-  limit = 50
-): Promise<Array<{
-  id: string;
-  amountCents: number;
-  type: TransactionType;
-  description: string;
-  agentId?: string;
-  createdAt: string;
-}>> {
+  limit = 50,
+): Promise<
+  Array<{
+    id: string;
+    amountCents: number;
+    type: TransactionType;
+    description: string;
+    agentId?: string;
+    createdAt: string;
+  }>
+> {
   try {
     const rows = await db.execute(sql`
       SELECT id, amount_cents, transaction_type, description, agent_id, created_at
@@ -312,13 +344,13 @@ export async function getCreditHistory(
       LIMIT ${limit}
     `);
 
-    return (rows as unknown as Array<Record<string, unknown>>).map(r => ({
+    return (rows as unknown as Array<Record<string, unknown>>).map((r) => ({
       id: String(r.id),
-      amountCents:  Number(r.amount_cents),
-      type:        String(r.transaction_type) as TransactionType,
+      amountCents: Number(r.amount_cents),
+      type: String(r.transaction_type) as TransactionType,
       description: String(r.description ?? ""),
-      agentId:     r.agent_id ? String(r.agent_id) : undefined,
-      createdAt:   String(r.created_at),
+      agentId: r.agent_id ? String(r.agent_id) : undefined,
+      createdAt: String(r.created_at),
     }));
   } catch (err) {
     log.info("Credit history read failed", { error: String(err) });

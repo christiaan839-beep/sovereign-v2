@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# UMBRA Phase 67: Automated Workflows Ingestion
+# Sovereign Matrix: Automated Workflows Ingestion
 echo "=================================================="
 echo "    ARMING SWARM: Local n8n Logic Import"
 echo "=================================================="
 
-CONTAINER_NAME="umbra-n8n-orchestrator"
+CONTAINER_NAME="sovereign-n8n"
 
 echo "[1/2] Importing Social Media Agent Workflows..."
 docker exec $CONTAINER_NAME n8n import:workflow --input=/skills/social-media-agent/workflows/full_funnel.json
