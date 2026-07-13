@@ -109,6 +109,21 @@ describe("integrations webhook SSRF", () => {
     );
   });
 
+  it("distinguishes a non-HTTPS target (400 NON_HTTPS_BLOCKED) from an SSRF block", async () => {
+    mockOutboundFetch.mockRejectedValueOnce(
+      new FakeEgressBlockedError("http://hooks.example.com/abc", {
+        reason: "non-https",
+        message: "Only HTTPS egress is allowed; got http:",
+      }),
+    );
+    const { POST } = await import("../route");
+    const res = await POST(makeReq({ url: "http://hooks.example.com/abc" }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe("NON_HTTPS_BLOCKED");
+    expect(json.code).not.toBe("SSRF_BLOCKED");
+  });
+
   it("rejects a malformed URL with 400 before any egress", async () => {
     const { POST } = await import("../route");
     const res = await POST(makeReq({ url: "not a url" }));

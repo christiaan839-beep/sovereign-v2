@@ -153,6 +153,16 @@ export async function POST(req: Request) {
           userId: auth.userId,
           reason: err.violation.reason,
         });
+        // Distinguish "not HTTPS" (a real but non-SSRF policy rejection)
+        // from an actual private/loopback/metadata block — reusing one
+        // message for both mislabels a plain http:// target as an attack.
+        if (err.violation.reason === "non-https") {
+          return errorResponse(
+            "Webhook URL must use https://",
+            400,
+            "NON_HTTPS_BLOCKED",
+          );
+        }
         return errorResponse(
           "Cannot send webhooks to private, loopback, or cloud-metadata addresses",
           400,
