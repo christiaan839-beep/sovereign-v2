@@ -1,0 +1,3 @@
+## 2025-02-18 - Keyboard Accessibility for Hover Actions
+**Learning:** Found a pattern where interactive hover actions (`opacity-0 group-hover:opacity-100`) in `NotificationBell` and `NotificationCenter` were inaccessible to keyboard users because they couldn't receive focus, and their container didn't remain visible on focus.
+**Action:** Always pair `opacity-0 group-hover:opacity-100` containers with `focus-within:opacity-100`. Additionally, explicitly add `focus-visible` utility classes (e.g., `focus-visible:ring-1 focus-visible:ring-[color] focus-visible:outline-none`) to the interactive child elements to ensure focus states are clearly indicated when the container becomes visible.
