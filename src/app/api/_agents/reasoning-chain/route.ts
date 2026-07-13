@@ -57,6 +57,17 @@ export const POST = createAgentRoute({
       },
     );
 
+    if (!decomposeRes.ok) {
+      // Previously fell through to `.json()` unchecked; an empty
+      // subQuestions string would silently propagate into every
+      // downstream stage (analysis would "analyze" nothing, synthesis
+      // would synthesize nothing) while still returning success:true.
+      // Decompose is the foundation of the chain — fail loudly here.
+      throw new Error(
+        `Reasoning chain decompose step failed (status ${decomposeRes.status})`,
+      );
+    }
+
     const decomposeData = await decomposeRes.json();
     const subQuestions = decomposeData?.choices?.[0]?.message?.content || "";
     steps.push({
@@ -93,6 +104,16 @@ export const POST = createAgentRoute({
         }),
       },
     );
+
+    if (!analysisRes.ok) {
+      // Same reasoning as the decompose check above — an empty analysis
+      // would silently flow into synthesis as "Detailed analysis:\n"
+      // with nothing after it, producing a synthesized "answer" built
+      // from no actual research while still reporting success:true.
+      throw new Error(
+        `Reasoning chain deep-analysis step failed (status ${analysisRes.status})`,
+      );
+    }
 
     const analysisData = await analysisRes.json();
     const analysis = analysisData?.choices?.[0]?.message?.content || "";
@@ -147,6 +168,17 @@ export const POST = createAgentRoute({
         },
       );
 
+      if (!synthRes.ok) {
+        // Both the primary Claude synthesis (caught above) and this NIM
+        // fallback failed — previously this fell through to `.json()`
+        // unchecked and returned an empty final_answer as success:true,
+        // the single worst case: the whole chain's deliverable missing
+        // with no indication anything went wrong.
+        throw new Error(
+          `Reasoning chain synthesis failed on both primary and fallback (NIM status ${synthRes.status})`,
+        );
+      }
+
       const synthData = await synthRes.json();
       synthesis = synthData?.choices?.[0]?.message?.content || "";
     }
@@ -186,8 +218,18 @@ export const POST = createAgentRoute({
       },
     );
 
-    const critiqueData = await critiqueRes.json();
-    const critique = critiqueData?.choices?.[0]?.message?.content || "";
+    // Unlike the earlier stages, self-critique failing shouldn't discard
+    // an already-completed synthesis — degrade honestly instead of
+    // throwing away the chain's actual deliverable over its last,
+    // optional step.
+    let critique = "";
+    if (!critiqueRes.ok) {
+      critique =
+        "Self-critique unavailable — the critique model returned an error.";
+    } else {
+      const critiqueData = await critiqueRes.json();
+      critique = critiqueData?.choices?.[0]?.message?.content || "";
+    }
     steps.push({
       step: "Self-Critique",
       content: critique,

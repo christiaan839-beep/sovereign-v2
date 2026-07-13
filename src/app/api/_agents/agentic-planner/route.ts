@@ -17,16 +17,56 @@ const log = createLogger("agentic-planner");
  */
 
 const AVAILABLE_TOOLS = [
-  { name: "translate", description: "Translate text between languages", params: "text, target_lang" },
-  { name: "blog-gen", description: "Generate SEO blog posts", params: "topic, keywords" },
-  { name: "pii-redactor", description: "Detect and redact personally identifiable information", params: "text" },
-  { name: "case-study", description: "Generate professional case studies", params: "clientName, industry, metrics" },
-  { name: "page-builder", description: "Generate landing pages with HTML/CSS", params: "prompt" },
-  { name: "image-gen", description: "Generate images from text descriptions", params: "prompt, width, height" },
-  { name: "voice-synth", description: "Convert text to speech audio", params: "text, voice" },
-  { name: "smart-router", description: "Route a prompt to the optimal AI model", params: "prompt, task_type" },
-  { name: "research", description: "Deep web research on any topic", params: "query" },
-  { name: "reasoning-chain", description: "Multi-step deep reasoning for complex problems", params: "question, domain" },
+  {
+    name: "translate",
+    description: "Translate text between languages",
+    params: "text, target_lang",
+  },
+  {
+    name: "blog-gen",
+    description: "Generate SEO blog posts",
+    params: "topic, keywords",
+  },
+  {
+    name: "pii-redactor",
+    description: "Detect and redact personally identifiable information",
+    params: "text",
+  },
+  {
+    name: "case-study",
+    description: "Generate professional case studies",
+    params: "clientName, industry, metrics",
+  },
+  {
+    name: "page-builder",
+    description: "Generate landing pages with HTML/CSS",
+    params: "prompt",
+  },
+  {
+    name: "image-gen",
+    description: "Generate images from text descriptions",
+    params: "prompt, width, height",
+  },
+  {
+    name: "voice-synth",
+    description: "Convert text to speech audio",
+    params: "text, voice",
+  },
+  {
+    name: "smart-router",
+    description: "Route a prompt to the optimal AI model",
+    params: "prompt, task_type",
+  },
+  {
+    name: "research",
+    description: "Deep web research on any topic",
+    params: "query",
+  },
+  {
+    name: "reasoning-chain",
+    description: "Multi-step deep reasoning for complex problems",
+    params: "question, domain",
+  },
 ];
 
 export const POST = createAgentRoute({
@@ -36,39 +76,79 @@ export const POST = createAgentRoute({
     const { goal, auto_execute = false } = input as Record<string, unknown>;
 
     // Step 1: GLM-5 creates the execution plan
-    const toolList = AVAILABLE_TOOLS.map(t => `- ${t.name}: ${t.description} (params: ${t.params})`).join("\n");
+    const toolList = AVAILABLE_TOOLS.map(
+      (t) => `- ${t.name}: ${t.description} (params: ${t.params})`,
+    ).join("\n");
 
-    const planRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
-      body: JSON.stringify({
-        model: "z-ai/glm5",
-        messages: [
-          {
-            role: "system",
-            content: `You are an autonomous AI orchestrator. Given a goal, create an execution plan using the available tools.
+    const planRes = await fetch(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${await getNimKey()}`,
+        },
+        body: JSON.stringify({
+          model: "z-ai/glm5",
+          messages: [
+            {
+              role: "system",
+              content: `You are an autonomous AI orchestrator. Given a goal, create an execution plan using the available tools.
 
 Available tools:
 ${toolList}
 
 Output a JSON array of steps. Each step must have: {"tool": "tool_name", "params": {key: value}, "reason": "why this step"}. Output ONLY valid JSON array, nothing else.`,
-          },
-          { role: "user", content: `Goal: ${goal}` },
-        ],
-        max_tokens: 800,
-        temperature: 0.3,
-      }),
-    });
-
-    const planData = await planRes.json();
-    const rawPlan = planData?.choices?.[0]?.message?.content || "[]";
+            },
+            { role: "user", content: `Goal: ${goal}` },
+          ],
+          max_tokens: 800,
+          temperature: 0.3,
+        }),
+      },
+    );
 
     let executionPlan;
-    try {
-      executionPlan = JSON.parse(rawPlan.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
-    } catch (err) {
-      log.warn("Plan JSON parse failed, using fallback", { error: (err as Error).message });
-      executionPlan = [{ tool: "smart-router", params: { prompt: goal }, reason: "Fallback: Direct routing" }];
+    if (!planRes.ok) {
+      // Previously a failed planning call fell through to `.json()`
+      // unchecked; the resulting empty/undefined content defaulted to
+      // "[]", which parsed cleanly to an empty plan and was
+      // indistinguishable from GLM-5 legitimately deciding no steps
+      // were needed. Route through the same single-step fallback as a
+      // parse failure, but log it as an error (a total API failure,
+      // not a formatting hiccup) so it's operator-visible.
+      log.error("Planning call failed, using fallback", {
+        status: planRes.status,
+      });
+      executionPlan = [
+        {
+          tool: "smart-router",
+          params: { prompt: goal },
+          reason: "Fallback: planning call failed",
+        },
+      ];
+    } else {
+      const planData = await planRes.json();
+      const rawPlan = planData?.choices?.[0]?.message?.content || "[]";
+      try {
+        executionPlan = JSON.parse(
+          rawPlan
+            .replace(/```json?\n?/g, "")
+            .replace(/```/g, "")
+            .trim(),
+        );
+      } catch (err) {
+        log.warn("Plan JSON parse failed, using fallback", {
+          error: (err as Error).message,
+        });
+        executionPlan = [
+          {
+            tool: "smart-router",
+            params: { prompt: goal },
+            reason: "Fallback: Direct routing",
+          },
+        ];
+      }
     }
 
     // Step 2: Optionally auto-execute the plan
@@ -94,7 +174,12 @@ Output a JSON array of steps. Each step must have: {"tool": "tool_name", "params
             preview: JSON.stringify(data).substring(0, 200),
           });
         } catch (err) {
-          results.push({ tool: step.tool, reason: step.reason, status: "Failed", error: String(err) });
+          results.push({
+            tool: step.tool,
+            reason: step.reason,
+            status: "Failed",
+            error: String(err),
+          });
         }
       }
     }
@@ -106,7 +191,9 @@ Output a JSON array of steps. Each step must have: {"tool": "tool_name", "params
       auto_execute,
       execution_plan: executionPlan,
       steps_planned: Array.isArray(executionPlan) ? executionPlan.length : 0,
-      results: auto_execute ? results : "Set auto_execute: true to run the plan",
+      results: auto_execute
+        ? results
+        : "Set auto_execute: true to run the plan",
       license: "GLM License — commercial use permitted",
     };
   },

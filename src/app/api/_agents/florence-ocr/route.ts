@@ -51,6 +51,14 @@ export const POST = createAgentRoute({
       },
     );
 
+    if (!res.ok) {
+      // Previously fell through to `.json()` unchecked; the resulting
+      // empty content defaulted to an empty string returned as
+      // success:true — an OCR call that failed outright reported as if
+      // it ran and found nothing.
+      throw new Error(`Florence OCR failed (status ${res.status})`);
+    }
+
     const data = await res.json();
     const result = data?.choices?.[0]?.message?.content || "";
 
