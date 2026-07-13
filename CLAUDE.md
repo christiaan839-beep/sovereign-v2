@@ -85,7 +85,7 @@ This is how the engineering memory survives context resets.
 
 - All API routes handle missing DB tables gracefully (PostgreSQL error 42P01) — return empty arrays or 503, never crash
 - Drizzle schema is source of truth: `src/db/schema.ts`. Migrations in `drizzle/` folder.
-- Migrations: 0000-0004 + 0016-0025 live on disk. Apply pending ones via Neon SQL Editor before deploy; `drizzle/` is canonical.
+- Migrations: 0000-0004 + 0016-0026 live on disk. Apply pending ones via Neon SQL Editor before deploy; `drizzle/` is canonical.
 
 ### Revenue Pipeline
 
