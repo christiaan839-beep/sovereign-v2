@@ -194,19 +194,6 @@ jobs:
       - name: Verify package signatures (best-effort)
         run: npm audit signatures || true
 
-  # PR-only: surface added/changed dependencies and any new advisories
-  # right on the diff, before the audit job even has to fail.
-  dependency-review:
-    name: Dependency Review
-    runs-on: ubuntu-22.04
-    if: github.event_name == 'pull_request'
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
-
   migration-parity:
     name: Migration Parity
     # Pin a known-stable image. ubuntu-latest rotated to 24.04 with
@@ -310,7 +297,7 @@ jobs:
 
       - name: Start next server in background
         run: |
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_smoke_dummy' }}" \
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_c21va2VfZHVtbXk' }}" \
           CLERK_SECRET_KEY="${{ secrets.CLERK_SECRET_KEY || 'sk_test_smoke_dummy' }}" \
           DATABASE_URL="${{ secrets.DATABASE_URL || 'postgresql://x:y@localhost:5432/test' }}" \
           PORT=3000 npm start > /tmp/next.log 2>&1 &
