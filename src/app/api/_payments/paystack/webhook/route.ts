@@ -13,9 +13,11 @@ const log = createLogger("paystack-webhook");
 // Pre-Wave-72 the code used `hash !== signature` which leaks the
 // first-mismatched byte position on a verified webhook receiver.
 function timingSafeHexEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
+  const bufA = Buffer.from(a, "hex");
+  const bufB = Buffer.from(b, "hex");
+  if (bufA.length !== bufB.length) return false;
   try {
-    return crypto.timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
+    return crypto.timingSafeEqual(bufA, bufB);
   } catch {
     return false;
   }
