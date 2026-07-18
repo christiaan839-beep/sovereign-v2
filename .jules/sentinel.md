@@ -1,0 +1,9 @@
+## 2025-02-23 - Timing-Safe Equality Checks on Varying Length Strings
+**Vulnerability:** The codebase occasionally uses `crypto.timingSafeEqual` directly with dynamically sized string buffers without first checking length equality (or using a wrapper like `timingSafeStringEqual`), potentially exposing a RangeError crash vector, which an attacker can trigger directly.
+**Learning:** `crypto.timingSafeEqual` requires `Buffer` arguments of identical byte length. Node.js throws a runtime error if lengths mismatch. An adversary manipulating input length effectively triggers an uncaught exception, leading to Denial of Service (DoS) in web servers/agents.
+**Prevention:** Always verify `a.length === b.length` before invoking `crypto.timingSafeEqual`, or encapsulate it within a utility method such as `timingSafeStringEqual` that safely handles strings.
+
+## 2025-02-23 - Sub-optimal Custom Timing-Safe Equal Function
+**Vulnerability:** A custom string comparison `for` loop utilizing `charCodeAt(i)` and XOR logic was used for API key authentication in the trigger route. This is susceptible to edge cases involving multi-byte UTF-16 code units or unicode characters, which could lead to authentication failures or potential bypasses in exotic scenarios compared to robust standard library utilities.
+**Learning:** Native `crypto.timingSafeEqual` is the proven and hardened standard in Node.js for constant-time comparisons. Hand-rolled implementations in JavaScript often fail to account for byte vs char length complexities and engine optimizations that might leak timing information.
+**Prevention:** Always use Node.js `crypto.timingSafeEqual` for cryptographic string comparisons. Convert strings to `Buffer` with a known encoding (like `utf8`), check for identical byte `length`, and then perform the `timingSafeEqual`.
