@@ -14,10 +14,10 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: "bg-gradient-to-r from-[#00B7FF] to-[#0090CC] text-white hover:from-[#33C5FF] hover:to-[#00A3E0] shadow-lg shadow-[#00B7FF]/10",
-  secondary: "bg-white/[0.05] border border-white/[0.08] text-neutral-300 hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white",
-  ghost: "text-neutral-400 hover:text-white hover:bg-white/[0.05]",
-  danger: "bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:border-red-500/30",
+  primary: "bg-gradient-to-r from-[#00B7FF] to-[#0090CC] text-white hover:from-[#33C5FF] hover:to-[#00A3E0] shadow-lg shadow-[#00B7FF]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]",
+  secondary: "bg-white/[0.05] border border-white/[0.08] text-neutral-300 hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
+  ghost: "text-neutral-400 hover:text-white hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
+  danger: "bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:border-red-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
