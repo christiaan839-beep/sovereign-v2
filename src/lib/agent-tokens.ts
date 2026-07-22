@@ -25,7 +25,7 @@
  * /api/agent-tokens endpoint surface.
  */
 
-import { createHmac, createSign, createVerify, randomUUID } from "crypto";
+import { createHmac, createSign, createVerify, randomUUID, timingSafeEqual } from "crypto";
 import { db } from "@/db";
 import { agentTokens } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
@@ -467,9 +467,6 @@ function constantTimeEqual(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
   const bufB = Buffer.from(b);
   if (bufA.length !== bufB.length) return false;
-
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { timingSafeEqual } = require("crypto");
   return timingSafeEqual(bufA, bufB);
 }
 
