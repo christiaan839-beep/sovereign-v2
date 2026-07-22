@@ -464,12 +464,13 @@ function b64urlNormalize(s: string): string {
 }
 
 function constantTimeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let out = 0;
-  for (let i = 0; i < a.length; i++) {
-    out |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return out === 0;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { timingSafeEqual } = require("crypto");
+  return timingSafeEqual(bufA, bufB);
 }
 
 function safeParseScopes(raw: string): AgentTokenScope[] {
