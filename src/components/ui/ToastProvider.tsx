@@ -162,11 +162,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 )}
               </div>
               <button
+                aria-label="Close notification"
+                title="Close"
                 onClick={(e) => {
                   e.stopPropagation();
                   removeToast(t.id);
                 }}
-                className="text-neutral-500 hover:text-white transition-colors shrink-0 mt-0.5"
+                className="text-neutral-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF] rounded-md transition-colors shrink-0 mt-0.5"
               >
                 <X className="w-3 h-3" />
               </button>
