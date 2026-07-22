@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { getPlaybook } from "@/lib/playbooks";
 import { createLogger } from "@/lib/logger";
 import { getBaseUrl } from "@/lib/base-url";
@@ -68,13 +69,15 @@ function authenticateApiKey(apiKey: unknown): boolean {
   if (typeof apiKey !== "string" || apiKey.length === 0) {
     return false;
   }
+
+  // Convert to buffers to avoid multi-byte character length issues
+  const bufA = Buffer.from(apiKey);
+  const bufB = Buffer.from(expected);
+
   // Constant-time comparison to prevent timing attacks
-  if (apiKey.length !== expected.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < apiKey.length; i++) {
-    mismatch |= apiKey.charCodeAt(i) ^ expected.charCodeAt(i);
-  }
-  return mismatch === 0;
+  // Must check buffer length, not string length, to prevent DoS via ERR_CRYPTO_TIMING_SAFE_EQUAL_LENGTH
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
 }
 
 // ─── POST Handler ───────────────────────────────────────────────────────────
