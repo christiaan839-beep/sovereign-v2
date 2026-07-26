@@ -2,31 +2,58 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, ArrowRight, ShieldCheck, Mail } from "lucide-react";
+import { Link2, ArrowRight, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function ClientPortalLogin() {
-  const [accessValue, setAccessValue] = useState("");
-  const [mode, setMode] = useState<"id" | "email">("id");
-  const [isLoading, setIsLoading] = useState(false);
+/**
+ * /portal — portal link entry.
+ *
+ * Portal access is via signed links (wave 122): /portal/<clientId>?token=…
+ * minted by the agency (POST /api/portal/link) or auto-onboard emails.
+ * This page lets a client who has the link in an email paste it here —
+ * it navigates to the link's own path on this origin (never a foreign
+ * host, so no open redirect). There is no ID/email "login": an
+ * identifier without its token renders the access-denied state.
+ */
+export default function ClientPortalEntry() {
+  const [linkValue, setLinkValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleOpen = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!accessValue.trim()) return;
+    const raw = linkValue.trim();
+    if (!raw) return;
 
-    setIsLoading(true);
-    setTimeout(() => {
-      const encoded = encodeURIComponent(accessValue.trim());
-      router.push(`/portal/${encoded}`);
-    }, 1200);
+    // Accept a full URL or a bare /portal/... path; keep only path+query
+    // from OUR portal namespace so a pasted foreign URL can't redirect.
+    let pathAndQuery: string | null = null;
+    try {
+      const url = new URL(raw, window.location.origin);
+      if (url.pathname.startsWith("/portal/")) {
+        pathAndQuery = url.pathname + url.search;
+      }
+    } catch {
+      // Not parseable as a URL at all.
+    }
+
+    if (!pathAndQuery) {
+      setError(
+        "That doesn't look like a portal link. It should start with " +
+          "https://…/portal/ — copy the full link from your email.",
+      );
+      return;
+    }
+
+    setError(null);
+    router.push(pathAndQuery);
   };
 
   return (
     <div className="min-h-screen bg-[#030303] flex items-center justify-center p-6 relative overflow-hidden">
       {/* Background glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-500/8 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/8 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-teal-500/5 rounded-full blur-[100px] pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -48,105 +75,62 @@ export default function ClientPortalLogin() {
             Client Portal
           </h1>
           <p className="text-neutral-500 text-sm mt-2 text-center max-w-xs">
-            Access your live dashboard to see campaign results and AI agent activity.
+            Your dashboard is reached through the secure link your agency sent
+            you. Paste it below to open it.
           </p>
         </div>
 
-        {/* Login Form */}
+        {/* Link Form */}
         <form
-          onSubmit={handleLogin}
+          onSubmit={handleOpen}
           className="backdrop-blur-xl bg-white/[0.03] rounded-2xl p-8 border border-white/[0.06]"
         >
-          {/* Mode Toggle */}
-          <div className="flex gap-2 mb-6">
-            <button
-              type="button"
-              onClick={() => setMode("id")}
-              className={`flex-1 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all ${
-                mode === "id"
-                  ? "bg-white/10 text-white border border-white/10"
-                  : "text-neutral-500 hover:text-neutral-300"
-              }`}
-            >
-              Client ID
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("email")}
-              className={`flex-1 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all ${
-                mode === "email"
-                  ? "bg-white/10 text-white border border-white/10"
-                  : "text-neutral-500 hover:text-neutral-300"
-              }`}
-            >
-              Email
-            </button>
-          </div>
-
           <div className="space-y-6">
             <div>
-              <label htmlFor="portal-access" className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
-                {mode === "id" ? "Client Access ID" : "Email Address"}
+              <label
+                htmlFor="portal-link"
+                className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2"
+              >
+                Portal link
               </label>
               <div className="relative">
-                {mode === "id" ? (
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
-                ) : (
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
-                )}
+                <Link2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
                 <input
-                  id="portal-access"
-                  type={mode === "id" ? "text" : "email"}
-                  autoComplete={mode === "id" ? "username" : "email"}
-                  value={accessValue}
-                  onChange={(e) => setAccessValue(e.target.value)}
-                  placeholder={
-                    mode === "id" ? "Enter your client ID" : "Enter your email"
-                  }
-                  className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl pl-12 pr-4 py-4 text-white placeholder:text-neutral-500 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition-all"
+                  id="portal-link"
+                  type="text"
+                  autoComplete="off"
+                  value={linkValue}
+                  onChange={(e) => setLinkValue(e.target.value)}
+                  placeholder="https://…/portal/you?token=…"
+                  className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl pl-12 pr-4 py-4 text-white placeholder:text-neutral-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 focus:border-emerald-500/40 transition-all"
                   required
                 />
               </div>
+              {error && (
+                <p
+                  className="text-xs text-amber-400 mt-2 leading-relaxed"
+                  role="alert"
+                >
+                  {error}
+                </p>
+              )}
             </div>
 
             <motion.button
               type="submit"
-              disabled={isLoading || !accessValue.trim()}
+              disabled={!linkValue.trim()}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               className="w-full py-4 rounded-xl bg-white text-[#030303] font-bold flex items-center justify-center gap-2 hover:bg-neutral-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed group"
             >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin h-4 w-4 text-[#030303]"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Verifying...
-                </span>
-              ) : (
-                <>
-                  View your dashboard
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </>
-              )}
+              Open your dashboard
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </motion.button>
+
+            <p className="text-[11px] text-neutral-500 leading-relaxed text-center">
+              Lost your link? Ask your agency to issue a new one — links expire
+              for your protection.
+            </p>
           </div>
         </form>
 

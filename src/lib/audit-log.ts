@@ -37,6 +37,7 @@ export type AuditAction =
   | "webauthn.assertion.failed"
   | "agent_token.issued"
   | "agent_token.revoked"
+  | "portal_link.issued"
   | "defense.block"
   | "capability.invoke"
   | "trs.attestation"

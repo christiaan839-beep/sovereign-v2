@@ -1,9 +1,9 @@
 /**
- * UMBRA AI Chat Widget — Embeddable Script
- * 
+ * Sovereign Matrix AI Chat Widget — Embeddable Script
+ *
  * Usage: Add this to any website:
- * <script src="https://YOUR-DOMAIN.vercel.app/widget.js" data-umbra-owner="owner@email.com"></script>
- * 
+ * <script src="https://sovereignmatrix.agency/widget.js" data-umbra-owner="owner@email.com"></script>
+ *
  * Optional config:
  * data-umbra-color="#00B7FF"
  * data-umbra-position="right" (or "left")
@@ -11,25 +11,28 @@
  * data-umbra-business="Description of the business for AI context"
  */
 
-(function() {
-  'use strict';
+(function () {
+  "use strict";
 
   // Get config from script tag
   const script = document.currentScript;
-  const baseUrl = script.src.replace('/widget.js', '');
-  const ownerEmail = script.getAttribute('data-umbra-owner') || 'admin@umbra.ai';
-  const primaryColor = script.getAttribute('data-umbra-color') || '#00B7FF';
-  const position = script.getAttribute('data-umbra-position') || 'right';
-  const greeting = script.getAttribute('data-umbra-greeting') || 'Hi there! 👋 How can I help you today?';
-  const businessDesc = script.getAttribute('data-umbra-business') || '';
+  const baseUrl = script.src.replace("/widget.js", "");
+  const ownerEmail =
+    script.getAttribute("data-umbra-owner") || "admin@sovereignmatrix.agency";
+  const primaryColor = script.getAttribute("data-umbra-color") || "#00B7FF";
+  const position = script.getAttribute("data-umbra-position") || "right";
+  const greeting =
+    script.getAttribute("data-umbra-greeting") ||
+    "Hi there! 👋 How can I help you today?";
+  const businessDesc = script.getAttribute("data-umbra-business") || "";
 
   // State
   let isOpen = false;
-  let messages = [{ role: 'assistant', content: greeting }];
+  let messages = [{ role: "assistant", content: greeting }];
   let isTyping = false;
 
   // Create styles
-  const style = document.createElement('style');
+  const style = document.createElement("style");
   style.textContent = `
     #umbra-widget-container * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     
@@ -113,8 +116,8 @@
   document.head.appendChild(style);
 
   // Create widget container
-  const container = document.createElement('div');
-  container.id = 'umbra-widget-container';
+  const container = document.createElement("div");
+  container.id = "umbra-widget-container";
   container.innerHTML = `
     <div id="umbra-widget-panel">
       <div class="umbra-header">
@@ -131,7 +134,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
-      <div class="umbra-powered">Powered by <a href="${baseUrl}" target="_blank">UMBRA</a></div>
+      <div class="umbra-powered">Powered by <a href="${baseUrl}" target="_blank">Sovereign Matrix</a></div>
     </div>
     <button id="umbra-widget-bubble" title="Chat with us">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -140,16 +143,20 @@
   document.body.appendChild(container);
 
   // DOM refs
-  const bubble = document.getElementById('umbra-widget-bubble');
-  const panel = document.getElementById('umbra-widget-panel');
-  const messagesEl = document.getElementById('umbra-messages');
-  const input = document.getElementById('umbra-input');
-  const sendBtn = document.getElementById('umbra-send');
+  const bubble = document.getElementById("umbra-widget-bubble");
+  const panel = document.getElementById("umbra-widget-panel");
+  const messagesEl = document.getElementById("umbra-messages");
+  const input = document.getElementById("umbra-input");
+  const sendBtn = document.getElementById("umbra-send");
 
   function renderMessages() {
-    messagesEl.innerHTML = messages.map(m => 
-      `<div class="umbra-msg ${m.role}">${m.content}</div>`
-    ).join('') + (isTyping ? '<div class="umbra-typing"><span></span><span></span><span></span></div>' : '');
+    messagesEl.innerHTML =
+      messages
+        .map((m) => `<div class="umbra-msg ${m.role}">${m.content}</div>`)
+        .join("") +
+      (isTyping
+        ? '<div class="umbra-typing"><span></span><span></span><span></span></div>'
+        : "");
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
@@ -157,24 +164,30 @@
     const text = input.value.trim();
     if (!text || isTyping) return;
 
-    messages.push({ role: 'user', content: text });
-    input.value = '';
+    messages.push({ role: "user", content: text });
+    input.value = "";
     isTyping = true;
     renderMessages();
 
     try {
-      const res = await fetch(baseUrl + '/api/widget/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(baseUrl + "/api/widget/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: messages,
-          widgetConfig: { ownerEmail, businessDescription: businessDesc }
-        })
+          widgetConfig: { ownerEmail, businessDescription: businessDesc },
+        }),
       });
       const data = await res.json();
-      messages.push({ role: 'assistant', content: data.message || "I'm here to help! Could you tell me more?" });
+      messages.push({
+        role: "assistant",
+        content: data.message || "I'm here to help! Could you tell me more?",
+      });
     } catch {
-      messages.push({ role: 'assistant', content: "Sorry, I'm having a moment. Could you try again?" });
+      messages.push({
+        role: "assistant",
+        content: "Sorry, I'm having a moment. Could you try again?",
+      });
     }
 
     isTyping = false;
@@ -182,15 +195,20 @@
   }
 
   // Event listeners
-  bubble.addEventListener('click', () => {
+  bubble.addEventListener("click", () => {
     isOpen = !isOpen;
-    panel.classList.toggle('open', isOpen);
-    bubble.classList.toggle('open', isOpen);
-    if (isOpen) { renderMessages(); setTimeout(() => input.focus(), 300); }
+    panel.classList.toggle("open", isOpen);
+    bubble.classList.toggle("open", isOpen);
+    if (isOpen) {
+      renderMessages();
+      setTimeout(() => input.focus(), 300);
+    }
   });
 
-  sendBtn.addEventListener('click', sendMessage);
-  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+  sendBtn.addEventListener("click", sendMessage);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessage();
+  });
 
   // Initial render
   renderMessages();

@@ -138,10 +138,25 @@ export async function POST(request: NextRequest) {
         }),
       },
     );
-    const data = await nimResponse.json();
-    const aiResponse =
-      data?.choices?.[0]?.message?.content ||
-      "System is processing your request. Please try again shortly.";
+    let aiResponse: string;
+    if (!nimResponse.ok) {
+      // Prior behavior: a failed call fell through to `.json()` on a
+      // non-JSON or error body, and the resulting undefined `.content`
+      // silently defaulted to a generic message with NO server-side
+      // record that the model call ever failed — real users stuck
+      // in an indefinite "try again shortly" loop the operator can't see.
+      log.error("NIM completion failed for inbound SMS", {
+        from,
+        status: nimResponse.status,
+      });
+      aiResponse =
+        "We're having trouble responding right now. Please try again shortly, or reach us at hello@sovereignmatrix.agency.";
+    } else {
+      const data = await nimResponse.json();
+      aiResponse =
+        data?.choices?.[0]?.message?.content ||
+        "System is processing your request. Please try again shortly.";
+    }
 
     // XML-escape before interpolation — prevents TwiML injection.
     const safeResponse = xmlEscape(aiResponse);

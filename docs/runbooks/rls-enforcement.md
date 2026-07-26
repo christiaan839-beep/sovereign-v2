@@ -199,7 +199,7 @@ SELECT * FROM rls_phase_state ORDER BY phase;
 In the app, sample a few endpoints:
 
 - `/api/usage/summary` — returns the caller's row only.
-- `/api/billing/subscription` — returns the caller's subscription only.
+- `/api/user/plan` — returns the caller's plan/subscription only.
 - `/api/agents/leads` (list) — returns only the caller's leads.
 
 If any endpoint returns zero rows when it shouldn't, the route was not

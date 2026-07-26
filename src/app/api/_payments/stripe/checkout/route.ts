@@ -21,7 +21,7 @@ const log = createLogger("stripe-checkout");
  * Setup required:
  * 1. STRIPE_SECRET_KEY in .env.local
  * 2. STRIPE_PRICE_STARTER / NODE / ARRAY / ENTERPRISE price IDs
- * 3. Webhook endpoint configured at /api/_payments/stripe/webhook
+ * 3. Webhook endpoint configured at /api/payments/stripe/webhook
  */
 
 const limiter = rateLimit({ interval: 60, limit: 20 });

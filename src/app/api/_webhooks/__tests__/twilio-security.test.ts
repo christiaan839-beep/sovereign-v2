@@ -21,8 +21,15 @@ vi.mock("@/lib/rate-limit", () => ({
   rateLimit: () => ({ check: async () => null }),
 }));
 
+vi.mock("@/lib/idempotency", () => ({
+  alreadyProcessed: async () => false,
+}));
+
 import crypto from "crypto";
-import { validateTwilioSignature } from "@/app/api/_webhooks/twilio/route";
+import {
+  validateTwilioSignature,
+  POST,
+} from "@/app/api/_webhooks/twilio/route";
 
 const TEST_TOKEN = "test_auth_token_abc123";
 const TEST_URL = "https://sovereignmatrix.agency/api/_webhooks/twilio";
@@ -129,5 +136,86 @@ describe("TwiML XML escape — injection regression", () => {
     expect(xmlEscape(`"hello" 'world'`)).toBe(
       "&quot;hello&quot; &apos;world&apos;",
     );
+  });
+});
+
+/**
+ * NIM failure handling — regression for the missing res.ok check
+ * (wave 122.6). Previously a failed/non-2xx NIM response fell through
+ * to `.json()` unchecked; the resulting undefined `.content` silently
+ * produced a generic reply with no server-side record the call ever
+ * failed. Real SMS users could get stuck in an indefinite loop the
+ * operator had no visibility into.
+ */
+describe("POST — NIM completion failure handling", () => {
+  const TOKEN = "twilio_nim_test_token";
+
+  beforeEach(() => {
+    process.env.TWILIO_AUTH_TOKEN = TOKEN;
+    process.env.NVIDIA_NIM_API_KEY = "fake-nim-key";
+  });
+
+  afterEach(() => {
+    delete process.env.TWILIO_AUTH_TOKEN;
+    delete process.env.NVIDIA_NIM_API_KEY;
+    vi.unstubAllGlobals();
+  });
+
+  function signedRequest(body: string): Request {
+    const url = "https://sovereignmatrix.agency/api/_webhooks/twilio";
+    const params: Record<string, string> = { From: "+15550001111", Body: body };
+    const sortedKeys = Object.keys(params).sort();
+    let data = url;
+    for (const key of sortedKeys) data += key + params[key];
+    const signature = crypto
+      .createHmac("sha1", TOKEN)
+      .update(data)
+      .digest("base64");
+
+    const form = new URLSearchParams(params);
+    return new Request(url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        "x-twilio-signature": signature,
+      },
+      body: form.toString(),
+    });
+  }
+
+  it("logs the failure and returns a real reply instead of an undefined-content fallback", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("Internal Server Error", { status: 500 })),
+    );
+
+    const res = await POST(signedRequest("hello") as never);
+    expect(res.status).toBe(200);
+    const xml = await res.text();
+    expect(xml).toContain("<Message>");
+    // Does NOT silently fall through to the generic "processing" copy —
+    // that string is reserved for a genuinely empty/malformed 2xx body.
+    expect(xml).not.toContain("System is processing your request");
+    expect(xml).toContain("having trouble responding");
+  });
+
+  it("still returns the model's real reply on a successful NIM call", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              choices: [{ message: { content: "Hi there!" } }],
+            }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          ),
+      ),
+    );
+
+    const res = await POST(signedRequest("hi") as never);
+    expect(res.status).toBe(200);
+    const xml = await res.text();
+    expect(xml).toContain("Hi there!");
   });
 });

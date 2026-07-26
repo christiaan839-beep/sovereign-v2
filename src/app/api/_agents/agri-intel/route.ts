@@ -54,7 +54,7 @@ export const POST = createAgentRoute({
     },
   },
   handler: withSelfHeal(
-    async ({ input, pastContextAsPrompt }) => {
+    async ({ input }) => {
       const cropType = input.cropType as string;
       const location = input.location as string;
       const seasonalData = (input.seasonalData as string) || "";

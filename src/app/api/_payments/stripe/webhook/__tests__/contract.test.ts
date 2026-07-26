@@ -42,6 +42,8 @@ const insertValues = vi.fn();
 const onConflict = vi.fn();
 const updateSet = vi.fn();
 const updateWhere = vi.fn();
+// userIdForCustomer() lookups go through db.select; default: no row.
+const selectRows = vi.fn<() => unknown[]>(() => []);
 const mockDb = {
   insert: vi.fn(() => ({
     values: (v: unknown) => {
@@ -55,6 +57,9 @@ const mockDb = {
       return { where: (w: unknown) => updateWhere(w) };
     },
   })),
+  select: vi.fn(() => ({
+    from: () => ({ where: () => ({ limit: () => selectRows() }) }),
+  })),
   query: { settings: { findFirst: vi.fn() } },
 };
 vi.mock("@/db", () => ({ db: mockDb }));
@@ -63,12 +68,23 @@ vi.mock("@/db/schema", () => ({
     userId: "userId-col",
     stripeCustomerId: "stripeCustomerId-col",
   },
+  tenants: {
+    clerkUserId: "clerkUserId-col",
+    plan: "plan-col",
+  },
 }));
 
 // Default: treat every eventId as unseen. Individual tests flip this.
 const mockAlreadyProcessed = vi.fn().mockResolvedValue(false);
+const mockUnmarkProcessed = vi.fn();
 vi.mock("@/lib/idempotency", () => ({
   alreadyProcessed: mockAlreadyProcessed,
+  unmarkProcessed: mockUnmarkProcessed,
+}));
+
+const mockAuditLog = vi.fn();
+vi.mock("@/lib/audit-log", () => ({
+  auditLog: mockAuditLog,
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -112,6 +128,7 @@ function setEnv(): void {
 beforeEach(() => {
   vi.clearAllMocks();
   mockAlreadyProcessed.mockResolvedValue(false);
+  selectRows.mockReturnValue([]);
   // No resetModules here — the route reads env at runtime, and the
   // hoisted vi.mock("stripe") factory only runs once. Resetting the
   // module cache would also reset the Stripe constructor mock and break
@@ -250,5 +267,83 @@ describe("Stripe webhook contract", () => {
     expect(updateSet).toHaveBeenCalledWith(
       expect.objectContaining({ plan: "free", status: "cancelled" }),
     );
+  });
+
+  it("mirrors the plan onto tenants and writes an audit entry on checkout", async () => {
+    setEnv();
+    mockConstructEvent.mockReturnValue({
+      id: "evt_tenant_sync",
+      type: "checkout.session.completed",
+      created: Math.floor(Date.now() / 1000),
+      data: {
+        object: {
+          metadata: { userId: "u1", plan: "array" },
+          customer: "cus_1",
+          subscription: "sub_1",
+        },
+      },
+    });
+    const { POST } = await import("../route");
+    const res = await POST(makeReq());
+    expect(res.status).toBe(200);
+    // The only db.update in the checkout branch is the tenants.plan mirror.
+    expect(updateSet).toHaveBeenCalledWith({ plan: "array" });
+    expect(mockAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "u1",
+        action: "subscription.change",
+        resource: "sub_1",
+      }),
+    );
+  });
+
+  it("downgrades tenants.plan to free (via customer lookup) on subscription.deleted", async () => {
+    setEnv();
+    selectRows.mockReturnValue([{ userId: "u9" }]);
+    mockConstructEvent.mockReturnValue({
+      id: "evt_del_tenant",
+      type: "customer.subscription.deleted",
+      created: Math.floor(Date.now() / 1000),
+      data: { object: { id: "sub_9", customer: "cus_9" } },
+    });
+    const { POST } = await import("../route");
+    const res = await POST(makeReq());
+    expect(res.status).toBe(200);
+    expect(updateSet).toHaveBeenCalledWith({ plan: "free" });
+    expect(mockAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "u9", action: "subscription.change" }),
+    );
+  });
+
+  it("still returns 200 when the tenants.plan mirror throws (best-effort sync)", async () => {
+    setEnv();
+    mockConstructEvent.mockReturnValue({
+      id: "evt_tenant_err",
+      type: "checkout.session.completed",
+      created: Math.floor(Date.now() / 1000),
+      data: {
+        object: {
+          metadata: { userId: "u1", plan: "node" },
+          customer: "cus_1",
+          subscription: "sub_1",
+        },
+      },
+    });
+    // The checkout branch's only db.update is the tenant mirror — make it
+    // blow up like a missing table would (42P01).
+    mockDb.update.mockImplementationOnce(() => {
+      throw Object.assign(new Error("relation does not exist"), {
+        code: "42P01",
+      });
+    });
+    const { POST } = await import("../route");
+    const res = await POST(makeReq());
+    expect(res.status).toBe(200);
+    // The subscription row itself must still have been written…
+    expect(insertValues).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "u1", plan: "node" }),
+    );
+    // …and the idempotency marker must NOT have been released (no retry loop).
+    expect(mockUnmarkProcessed).not.toHaveBeenCalled();
   });
 });

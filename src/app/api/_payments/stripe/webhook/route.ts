@@ -1,13 +1,52 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/db";
-import { subscriptions } from "@/db/schema";
+import { subscriptions, tenants } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import { alreadyProcessed, unmarkProcessed } from "@/lib/idempotency";
 import { getPlanIdFromStripePriceId } from "@/lib/plans";
+import { auditLog } from "@/lib/audit-log";
 
 const log = createLogger("stripe-webhook");
+
+/**
+ * Mirror the plan onto tenants.plan. Entitlement still reads ONLY the
+ * subscriptions row (plan-enforcement/free-tier); tenants.plan is
+ * display/provisioning metadata, and this mirror was previously the sole
+ * job of the retired _billing webhook. Best-effort by design: a missing
+ * tenants table or row must never 500 the webhook, or Stripe would
+ * retry a successfully-processed paid event forever.
+ */
+async function syncTenantPlan(userId: string, plan: string): Promise<void> {
+  try {
+    await db
+      .update(tenants)
+      .set({ plan })
+      .where(eq(tenants.clerkUserId, userId));
+  } catch (err) {
+    log.warn("tenants.plan sync skipped", {
+      userId,
+      error: (err as Error).message,
+    });
+  }
+}
+
+/** Resolve the Clerk userId that owns a Stripe customer, or null. */
+async function userIdForCustomer(
+  stripeCustomerId: string,
+): Promise<string | null> {
+  try {
+    const rows = await db
+      .select({ userId: subscriptions.userId })
+      .from(subscriptions)
+      .where(eq(subscriptions.stripeCustomerId, stripeCustomerId))
+      .limit(1);
+    return rows[0]?.userId ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Map a Stripe subscription status to our stored status. `trialing`
@@ -139,6 +178,13 @@ export async function POST(req: Request) {
                 updatedAt: new Date(),
               },
             });
+          await syncTenantPlan(userId, plan);
+          await auditLog({
+            userId,
+            action: "subscription.change",
+            resource: subscriptionId ?? "unknown",
+            details: { event: event.type, plan, stripeCustomerId: customerId },
+          });
           log.info("Subscription activated", { userId, plan });
         }
         break;
@@ -171,6 +217,20 @@ export async function POST(req: Request) {
               updatedAt: new Date(),
             })
             .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
+          const ownerId = await userIdForCustomer(stripeCustomerId);
+          if (ownerId && derivedPlan) {
+            await syncTenantPlan(ownerId, derivedPlan);
+          }
+          await auditLog({
+            userId: ownerId ?? stripeCustomerId,
+            action: "subscription.change",
+            resource: sub.id,
+            details: {
+              event: event.type,
+              plan: derivedPlan ?? "(unchanged)",
+              status: sub.status,
+            },
+          });
           log.info("Subscription updated", {
             stripeCustomerId,
             status: sub.status,
@@ -192,6 +252,16 @@ export async function POST(req: Request) {
               updatedAt: new Date(),
             })
             .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
+          const ownerId = await userIdForCustomer(stripeCustomerId);
+          if (ownerId) {
+            await syncTenantPlan(ownerId, "free");
+          }
+          await auditLog({
+            userId: ownerId ?? stripeCustomerId,
+            action: "subscription.change",
+            resource: sub.id,
+            details: { event: event.type, plan: "free", status: "cancelled" },
+          });
           log.info("Subscription cancelled — downgraded to free", {
             stripeCustomerId,
           });

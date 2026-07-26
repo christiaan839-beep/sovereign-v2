@@ -1598,6 +1598,7 @@ function Footer() {
             title="Company"
             links={[
               { href: "/about", label: "About" },
+              { href: "/learning", label: "Learning" },
               { href: "/case-studies", label: "Customers" },
               { href: "/pricing", label: "Pricing" },
               { href: "/contact", label: "Contact" },

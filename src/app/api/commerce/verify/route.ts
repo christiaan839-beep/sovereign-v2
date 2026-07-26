@@ -17,7 +17,7 @@
  */
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
-import { verifyAcpEnvelope } from "@/lib/agentic-commerce";
+import { verifyAcpEnvelope, type AcpEnvelope } from "@/lib/agentic-commerce";
 
 const limiter = rateLimit({ interval: 60, limit: 120 });
 
@@ -42,9 +42,9 @@ export async function POST(req: Request) {
   }
 
   // The verify function is pure — no DB, no network. Returns a tagged
-  // union we forward to the caller.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = verifyAcpEnvelope(body.envelope as any);
+  // union we forward to the caller. verifyAcpEnvelope does its own
+  // structural validation, so the downcast is only a compile-time hint.
+  const result = verifyAcpEnvelope(body.envelope as AcpEnvelope);
   return NextResponse.json(result, {
     status: 200,
     headers: { "cache-control": "no-store" },

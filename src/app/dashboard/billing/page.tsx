@@ -40,11 +40,42 @@ export default function BillingPage() {
   useEffect(() => {
     async function fetchInvoices() {
       try {
-        const res = await fetch("/api/_billing/portal", { method: "POST" });
+        const res = await fetch("/api/payments/stripe/invoices");
         if (res.ok) {
           const data = await res.json();
           if (data.invoices && Array.isArray(data.invoices)) {
-            setInvoices(data.invoices);
+            setInvoices(
+              data.invoices.map(
+                (inv: {
+                  id: string;
+                  date: string;
+                  amount: number;
+                  currency: string;
+                  status: string;
+                  description: string;
+                }) => ({
+                  id: inv.id,
+                  date: new Date(inv.date).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  }),
+                  amount: new Intl.NumberFormat(undefined, {
+                    style: "currency",
+                    currency: (inv.currency || "usd").toUpperCase(),
+                  }).format(inv.amount / 100),
+                  // Stripe statuses: draft/open/paid/uncollectible/void →
+                  // collapse onto the three badge states the table renders.
+                  status:
+                    inv.status === "paid"
+                      ? "paid"
+                      : inv.status === "open" || inv.status === "draft"
+                        ? "pending"
+                        : "failed",
+                  description: inv.description,
+                }),
+              ),
+            );
           }
         }
       } catch {
@@ -103,7 +134,9 @@ export default function BillingPage() {
     setPortalLoading(true);
     setPortalError(null);
     try {
-      const res = await fetch("/api/_billing/portal", { method: "POST" });
+      const res = await fetch("/api/payments/stripe/portal", {
+        method: "POST",
+      });
       const data = await res.json();
       if (res.ok && data.url) {
         window.location.assign(data.url);

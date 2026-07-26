@@ -215,20 +215,20 @@ verifying the build is green without them.
 
 ### Useful — KEEP, monitor for usage
 
-| Route                                                                     | What it does                     |
-| ------------------------------------------------------------------------- | -------------------------------- |
-| `/api/jobs`                                                               | Async job queue API              |
-| `/api/scheduled-workflows`                                                | Recurring workflow CRUD          |
-| `/api/sequences`                                                          | Email sequence CRUD              |
-| `/api/workflows`                                                          | Workflow CRUD                    |
-| `/api/usage`                                                              | Usage / quota lookup             |
-| `/api/user/plan`                                                          | Current plan info                |
-| `/api/marketplace`                                                        | Marketplace listing API          |
-| `/api/billing`                                                            | Billing summary                  |
-| `/api/data-export`                                                        | POPIA / GDPR export skeleton     |
-| `/api/portal/metrics`                                                     | Whitelabel client portal metrics |
-| `/api/voice`                                                              | TTS for landing                  |
-| `/api/founders`, `/api/waitlist`, `/api/referrals`, `/api/referral/apply` | Marketing flows                  |
+| Route                                                                     | What it does                                                         |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `/api/jobs`                                                               | Async job queue API                                                  |
+| `/api/scheduled-workflows`                                                | Recurring workflow CRUD                                              |
+| `/api/sequences`                                                          | Email sequence CRUD                                                  |
+| `/api/workflows`                                                          | Workflow CRUD                                                        |
+| `/api/usage`                                                              | Usage / quota lookup                                                 |
+| `/api/user/plan`                                                          | Current plan info                                                    |
+| `/api/marketplace`                                                        | Marketplace listing API                                              |
+| `/api/_payments/stripe/*`                                                 | Billing (portal/invoices/webhook; `/api/billing` retired wave 122.1) |
+| `/api/data-export`                                                        | POPIA / GDPR export skeleton                                         |
+| `/api/portal/metrics`                                                     | Whitelabel client portal metrics                                     |
+| `/api/voice`                                                              | TTS for landing                                                      |
+| `/api/founders`, `/api/waitlist`, `/api/referrals`, `/api/referral/apply` | Marketing flows                                                      |
 
 ### Aliases / re-exports — KEEP (low cost) or COLLAPSE
 

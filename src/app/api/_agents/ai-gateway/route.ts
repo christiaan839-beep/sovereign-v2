@@ -26,38 +26,53 @@ export const POST = createAgentRoute({
     }
 
     // Vercel AI Gateway uses the standard OpenAI-compatible endpoint
-    const gatewayResponse = await fetch("https://api.vercel.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.VERCEL_AI_GATEWAY_KEY || await getNimKey()}`,
+    const gatewayResponse = await fetch(
+      "https://api.vercel.ai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.VERCEL_AI_GATEWAY_KEY || (await getNimKey())}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          max_tokens,
+          temperature,
+          stream: false,
+        }),
       },
-      body: JSON.stringify({
-        model,
-        messages,
-        max_tokens,
-        temperature,
-        stream: false,
-      }),
-    });
+    );
 
     if (!gatewayResponse.ok) {
       // Fallback to NVIDIA NIM if Vercel AI Gateway is not configured
       if (await getNimKey()) {
-        const fallbackRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${await getNimKey()}`,
+        const fallbackRes = await fetch(
+          "https://integrate.api.nvidia.com/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${await getNimKey()}`,
+            },
+            body: JSON.stringify({
+              model: "minimaxai/minimax-m2.1",
+              messages,
+              max_tokens,
+              temperature,
+              stream: false,
+            }),
           },
-          body: JSON.stringify({
-            model: "minimaxai/minimax-m2.1",
-            messages,
-            max_tokens,
-            temperature,
-            stream: false,
-          }),
-        });
+        );
+        if (!fallbackRes.ok) {
+          // Previously this parsed the failed response's body
+          // unconditionally and returned it as `result` with
+          // success:true — an upstream 4xx/5xx error object silently
+          // reported as a successful completion.
+          throw new Error(
+            `AI Gateway and NIM fallback both failed (NIM status ${fallbackRes.status})`,
+          );
+        }
         const fallbackData = await fallbackRes.json();
         return {
           success: true,

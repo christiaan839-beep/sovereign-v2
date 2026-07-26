@@ -85,13 +85,13 @@ This is how the engineering memory survives context resets.
 
 - All API routes handle missing DB tables gracefully (PostgreSQL error 42P01) — return empty arrays or 503, never crash
 - Drizzle schema is source of truth: `src/db/schema.ts`. Migrations in `drizzle/` folder.
-- Migrations: 0000-0004 + 0016-0025 live on disk. Apply pending ones via Neon SQL Editor before deploy; `drizzle/` is canonical.
+- Migrations: 0000-0004 + 0016-0026 live on disk. Apply pending ones via Neon SQL Editor before deploy; `drizzle/` is canonical.
 
 ### Revenue Pipeline
 
 - plans.ts is single source of truth for pricing: free=50, starter=200, founder=10K, array=500, node=2K, enterprise=10K runs/month
 - plan-enforcement.ts reads from subscriptions table → falls back to founder check → falls back to free
-- Stripe webhook at `/api/_payments/stripe/webhook` handles full lifecycle: checkout.session.completed, subscription.updated/deleted, invoice.payment_failed
+- Stripe webhook at `/api/payments/stripe/webhook` (routable shim → handler in `_payments/stripe/webhook`; underscore URLs 404) handles full lifecycle: checkout.session.completed, subscription.updated/deleted, invoice.payment_failed + mirrors plan onto tenants.plan
 - Checkout flow: Pricing.tsx → `/api/payments/stripe/checkout` → Stripe → webhook → subscriptions table
 - Model names must include version suffix (e.g., nemotron-ultra-253b-v1, not just 253b)
 

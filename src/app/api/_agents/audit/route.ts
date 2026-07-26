@@ -12,7 +12,7 @@ export const POST = createAgentRoute({
   handler: async ({ input, email, userId }) => {
     const { targetUrl } = input as Record<string, unknown>;
 
-    if (!targetUrl) {
+    if (typeof targetUrl !== "string" || !targetUrl) {
       return { error: "URL is required" };
     }
 
@@ -20,7 +20,7 @@ export const POST = createAgentRoute({
     let scrapedText = "";
     try {
       const response = await outboundFetch(
-        targetUrl as string,
+        targetUrl,
         {
           method: "GET",
           headers: { "User-Agent": BOT_USER_AGENT },
@@ -30,7 +30,7 @@ export const POST = createAgentRoute({
           userId: userId ?? "anon",
           maxResponseBytes: 200_000,
           timeoutMs: 8_000,
-        }
+        },
       );
 
       if (response.ok) {

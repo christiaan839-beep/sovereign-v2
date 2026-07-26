@@ -63,31 +63,30 @@ export async function POST(req: Request) {
   if (!targetPhone || typeof targetPhone !== "string") {
     return NextResponse.json(
       { error: "targetPhone is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (!E164_REGEX.test(targetPhone)) {
     return NextResponse.json(
       {
-        error:
-          "Invalid phone number format. Use E.164 (e.g., +14155551234).",
+        error: "Invalid phone number format. Use E.164 (e.g., +14155551234).",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (!context || typeof context !== "string" || context.length < 5) {
     return NextResponse.json(
       { error: "context is required (min 5 characters)" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (context.length > 5000) {
     return NextResponse.json(
       { error: "context too long (max 5000 characters)" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -97,7 +96,7 @@ export async function POST(req: Request) {
     log.warn("Twilio not configured — missing env vars");
     return NextResponse.json(
       { error: "Voice calling not configured. Contact support." },
-      { status: 503 }
+      { status: 503 },
     );
   }
 
@@ -122,15 +121,15 @@ export async function POST(req: Request) {
     // Use the app's public URL for the webhook callback
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.VERCEL_PROJECT_PRODUCTION_URL
+      (process.env.VERCEL_PROJECT_PRODUCTION_URL
         ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-        : null;
+        : null);
 
     if (!baseUrl) {
       log.error("No public URL configured for TwiML webhook");
       return NextResponse.json(
         { error: "Server misconfigured — no public URL for webhook" },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -167,7 +166,7 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(
       { error: "Failed to initiate call" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

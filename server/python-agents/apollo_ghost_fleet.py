@@ -9,7 +9,7 @@ from playwright.async_api import async_playwright
 # Built to bypass Cloudflare, extract target Cartel leads autonomously, 
 # and pipe data precisely into the Next.js Vercel Edge API at 1ms latency.
 
-API_ENDPOINT = "http://localhost:3000/api/leads/capture" # Prod: "https://yourdomain.com/api/leads/capture"
+API_ENDPOINT = "http://localhost:3000/api/leads/capture" # Prod: "https://sovereignmatrix.agency/api/leads/capture"
 SECRET_KEY = os.environ.get("SOVEREIGN_NODE_KEY", "mock_key_cartel")
 
 async def assassinate_target_list(target_niche: str):

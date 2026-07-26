@@ -97,10 +97,20 @@ PREFER:
         },
       );
 
+      if (!nimRes.ok) {
+        // Previously a failed call fell through to `.json()` unchecked;
+        // the resulting empty content defaulted to a literal
+        // "Generation failed" HTML page returned as success:true —
+        // a page-builder that silently ships a broken page as if it
+        // rendered correctly.
+        throw new Error(`Page generation failed (NIM status ${nimRes.status})`);
+      }
+
       const nimData = await nimRes.json();
-      const generatedHtml =
-        nimData?.choices?.[0]?.message?.content ||
-        "<html><body>Generation failed</body></html>";
+      const generatedHtml = nimData?.choices?.[0]?.message?.content;
+      if (!generatedHtml) {
+        throw new Error("Page generation returned no content");
+      }
 
       return {
         success: true,

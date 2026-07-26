@@ -60,7 +60,7 @@ export const POST = createAgentRoute({
     },
   },
   handler: withSelfHeal(
-    async ({ input, pastContextAsPrompt }) => {
+    async ({ input }) => {
       const industry = input.industry as string;
       const jurisdiction = input.jurisdiction as string;
       const businessDescription = input.businessDescription as string;

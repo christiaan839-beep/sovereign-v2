@@ -933,10 +933,19 @@ Then give your final answer.`
     );
     clearTimeout(nimTimeout);
 
+    if (!res.ok) {
+      // Previously fell through to `.json()` unconditionally and, on
+      // failure, leaked the raw NIM error payload's `error.message`
+      // straight into finalResult as if it were model output — an
+      // upstream API error was indistinguishable from a real
+      // completion to the caller. The enclosing try/catch (below)
+      // already turns thrown errors into a proper 500, so fail loudly.
+      throw new Error(`Smart-router completion failed (status ${res.status})`);
+    }
+
     const data = await res.json();
     let finalResult =
-      data?.choices?.[0]?.message?.content ||
-      String(data.error?.message || "Generation failed.");
+      data?.choices?.[0]?.message?.content || "Generation failed.";
 
     // ── Model Escalation — if output is suspiciously short, retry with stronger model ──
     if (

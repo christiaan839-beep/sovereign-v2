@@ -32,24 +32,41 @@ export const POST = createAgentRoute({
     };
 
     const start = Date.now();
-    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
-      body: JSON.stringify({
-        model: "qwen/qwen-3.5-vlm",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "image_url", image_url: { url: image_url } },
-              { type: "text", text: modePrompts[mode as string] || modePrompts.analyze },
-            ],
-          },
-        ],
-        max_tokens: 1024,
-        temperature: 0.3,
-      }),
-    });
+    const res = await fetch(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${await getNimKey()}`,
+        },
+        body: JSON.stringify({
+          model: "qwen/qwen-3.5-vlm",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "image_url", image_url: { url: image_url } },
+                {
+                  type: "text",
+                  text: modePrompts[mode as string] || modePrompts.analyze,
+                },
+              ],
+            },
+          ],
+          max_tokens: 1024,
+          temperature: 0.3,
+        }),
+      },
+    );
+
+    if (!res.ok) {
+      // Previously fell through to `.json()` unchecked; the resulting
+      // empty content defaulted to result:"" and was returned as
+      // success:true — indistinguishable from "the model looked at the
+      // image and had nothing to say."
+      throw new Error(`Vision analysis failed (status ${res.status})`);
+    }
 
     const data = await res.json();
 

@@ -27,7 +27,7 @@
 2. Check the webhook signing secret:
 
    ```bash
-   curl -i https://sovereignmatrix.agency/api/_payments/stripe/webhook \
+   curl -i https://sovereignmatrix.agency/api/payments/stripe/webhook \
      -X POST \
      -H "stripe-signature: bad_sig_test" \
      -d '{}'
