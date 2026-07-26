@@ -69,7 +69,8 @@
     "stripe": "^20.4.1",
     "svix": "^1.96.1",
     "twilio": "^5.13.0",
-    "ws": "^8.20.0"
+    "ws": "^8.20.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
