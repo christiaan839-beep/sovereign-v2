@@ -1,0 +1,3 @@
+## 2024-06-12 - Keyboard Accessibility for Hover Actions
+**Learning:** When using `opacity-0 group-hover:opacity-100` to hide actions (like delete/mark read buttons) until hovered, those actions become completely inaccessible to keyboard-only users who use `Tab` to navigate, since hover states are not triggered by focus.
+**Action:** Always pair `opacity-0 group-hover:opacity-100` with `focus-within:opacity-100` on the container element. Furthermore, ensure the interactive elements inside have explicit `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]` classes so they show clear visual indicators when tabbed to.
