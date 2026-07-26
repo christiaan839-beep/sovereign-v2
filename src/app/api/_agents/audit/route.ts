@@ -4,6 +4,7 @@ import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import * as cheerio from "cheerio";
 import { createLogger } from "@/lib/logger";
+import { outboundFetch, BOT_USER_AGENT } from "@/lib/outbound-fetch";
 const log = createLogger("audit-engine");
 
 export const POST = createAgentRoute({
@@ -18,21 +19,22 @@ export const POST = createAgentRoute({
     // 1. Physically scrape the target website
     let scrapedText = "";
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-      const response = await fetch(targetUrl, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) SovereignMatrix/1.0",
+      const response = await outboundFetch(
+        targetUrl,
+        {
+          method: "GET",
+          headers: { "User-Agent": BOT_USER_AGENT },
         },
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
+        {
+          ruleId: "audit.fetch_target",
+          userId: userId ?? "anon",
+          maxResponseBytes: 200_000,
+          timeoutMs: 8_000,
+        },
+      );
 
       if (response.ok) {
-        const html = await response.text();
+        const html = response.body;
         const $ = cheerio.load(html);
         // Remove garbage scripts and styles
         $("script, style, nav, footer, iframe").remove();
