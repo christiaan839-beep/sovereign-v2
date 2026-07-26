@@ -135,7 +135,7 @@ export function NotificationCenter() {
         onClick={() => setOpen((v) => !v)}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
         aria-expanded={open}
-        className="relative p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
+        className="relative p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF] transition-colors"
       >
         <Bell className="w-4.5 h-4.5" />
         {unreadCount > 0 && (
@@ -165,7 +165,7 @@ export function NotificationCenter() {
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllRead}
-                  className="text-[10px] text-[#00B7FF] hover:text-[#00B7FF]/80 font-medium uppercase tracking-wider transition-colors"
+                  className="text-[10px] text-[#00B7FF] hover:text-[#00B7FF]/80 font-medium uppercase tracking-wider rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF] transition-colors"
                 >
                   Mark all read
                 </button>
@@ -225,12 +225,12 @@ export function NotificationCenter() {
                       </div>
 
                       {/* Actions (visible on hover) */}
-                      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0">
                         {!n.read && (
                           <button
                             onClick={() => handleMarkRead(n.id)}
                             aria-label="Mark as read"
-                            className="p-1 rounded text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                            className="p-1 rounded text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF] transition-colors"
                           >
                             <Check className="w-3 h-3" />
                           </button>
@@ -238,7 +238,7 @@ export function NotificationCenter() {
                         <button
                           onClick={() => handleRemove(n.id)}
                           aria-label="Dismiss notification"
-                          className="p-1 rounded text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          className="p-1 rounded text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF] transition-colors"
                         >
                           <X className="w-3 h-3" />
                         </button>
