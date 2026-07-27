@@ -308,7 +308,7 @@ export function NotificationBell() {
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 8 }}
-                      className={`group flex gap-3 px-4 py-3 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors ${
+                      className={`group flex gap-3 px-4 py-3 border-b border-white/[0.04] hover:bg-white/[0.02] focus-within:bg-white/[0.02] transition-colors ${
                         !n.read ? "bg-white/[0.02]" : ""
                       }`}
                     >
@@ -347,12 +347,12 @@ export function NotificationBell() {
                       </div>
 
                       {/* Hover Actions */}
-                      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0">
                         {!n.read && (
                           <button
                             onClick={() => handleMarkRead(n.id)}
                             aria-label="Mark as read"
-                            className="p-1 rounded text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                            className="p-1 rounded text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-[#00B7FF] transition-colors"
                           >
                             <Check className="w-3 h-3" />
                           </button>
@@ -360,7 +360,7 @@ export function NotificationBell() {
                         <button
                           onClick={() => handleDismiss(n.id)}
                           aria-label="Dismiss notification"
-                          className="p-1 rounded text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          className="p-1 rounded text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-[#00B7FF] transition-colors"
                         >
                           <X className="w-3 h-3" />
                         </button>
