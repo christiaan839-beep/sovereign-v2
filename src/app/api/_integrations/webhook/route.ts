@@ -15,8 +15,14 @@
  */
 
 import { NextResponse } from "next/server";
-import { guardRoute, errorResponse, sanitizeString, validateRequired } from "@/lib/api-guard";
+import {
+  guardRoute,
+  errorResponse,
+  sanitizeString,
+  validateRequired,
+} from "@/lib/api-guard";
 import { createLogger } from "@/lib/logger";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 const log = createLogger("integration:webhook");
 
@@ -30,9 +36,13 @@ async function signPayload(payload: string, secret: string): Promise<string> {
     new TextEncoder().encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["sign"],
   );
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  const sig = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(payload),
+  );
   return Array.from(new Uint8Array(sig))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
@@ -48,7 +58,7 @@ export async function POST(req: Request) {
     if (missing) return errorResponse(missing, 400, "VALIDATION_ERROR");
 
     const url = sanitizeString(body.url, 2000);
-    const method = (sanitizeString(body.method ?? "POST", 10)).toUpperCase();
+    const method = sanitizeString(body.method ?? "POST", 10).toUpperCase();
 
     // Validate URL
     let parsedUrl: URL;
@@ -58,38 +68,35 @@ export async function POST(req: Request) {
       return errorResponse("Invalid URL", 400, "VALIDATION_ERROR");
     }
 
-    // Block private/local URLs to prevent SSRF
-    const hostname = parsedUrl.hostname.toLowerCase();
-    if (
-      hostname === "localhost" ||
-      hostname === "127.0.0.1" ||
-      hostname === "0.0.0.0" ||
-      hostname.startsWith("10.") ||
-      hostname.startsWith("192.168.") ||
-      hostname.startsWith("172.") ||
-      hostname === "metadata.google.internal"
-    ) {
-      return errorResponse("Cannot send webhooks to private/local addresses", 400, "SSRF_BLOCKED");
-    }
-
     if (!ALLOWED_METHODS.has(method)) {
-      return errorResponse("method must be GET or POST", 400, "VALIDATION_ERROR");
+      return errorResponse(
+        "method must be GET or POST",
+        400,
+        "VALIDATION_ERROR",
+      );
     }
 
     // Build outgoing headers
     const outHeaders: Record<string, string> = {
       "Content-Type": "application/json",
       "User-Agent": "Sovereign-Webhook/1.0",
-      ...((body.headers && typeof body.headers === "object" && !Array.isArray(body.headers))
-        ? body.headers as Record<string, string>
+      ...(body.headers &&
+      typeof body.headers === "object" &&
+      !Array.isArray(body.headers)
+        ? (body.headers as Record<string, string>)
         : {}),
     };
 
     // Serialize the body payload
-    const payloadBody = body.body !== undefined ? JSON.stringify(body.body) : undefined;
+    const payloadBody =
+      body.body !== undefined ? JSON.stringify(body.body) : undefined;
 
     if (payloadBody && payloadBody.length > MAX_BODY_SIZE) {
-      return errorResponse(`Payload too large (max ${MAX_BODY_SIZE} bytes)`, 400, "PAYLOAD_TOO_LARGE");
+      return errorResponse(
+        `Payload too large (max ${MAX_BODY_SIZE} bytes)`,
+        400,
+        "PAYLOAD_TOO_LARGE",
+      );
     }
 
     // Sign the payload if a signing secret is configured
@@ -97,7 +104,9 @@ export async function POST(req: Request) {
     if (secret && payloadBody) {
       const signature = await signPayload(payloadBody, secret);
       outHeaders["X-Sovereign-Signature"] = `sha256=${signature}`;
-      outHeaders["X-Sovereign-Timestamp"] = String(Math.floor(Date.now() / 1000));
+      outHeaders["X-Sovereign-Timestamp"] = String(
+        Math.floor(Date.now() / 1000),
+      );
     }
 
     log.info("Firing webhook", {
@@ -115,17 +124,19 @@ export async function POST(req: Request) {
       fetchOpts.body = payloadBody;
     }
 
-    const res = await fetch(url, fetchOpts);
+    const res = await outboundFetch(url, fetchOpts, {
+      ruleId: "webhook-integration",
+      userId: auth.userId,
+    });
 
     // Try to capture the response body (but don't fail if we can't)
     let responseBody: unknown = null;
     try {
-      const contentType = res.headers.get("content-type") ?? "";
+      const contentType = res.contentType ?? "";
       if (contentType.includes("json")) {
-        responseBody = await res.json();
+        responseBody = JSON.parse(res.body);
       } else {
-        const text = await res.text();
-        responseBody = text.slice(0, 2000); // Cap response size
+        responseBody = res.body.slice(0, 2000); // Cap response size
       }
     } catch {
       responseBody = null;
