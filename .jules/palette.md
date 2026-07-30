@@ -1,0 +1,3 @@
+## 2024-03-XX - Add ARIA Labels to Canvas Icon-Only Buttons
+**Learning:** Found that custom Node components in `@xyflow/react` interfaces (like `ScreenNode` and `NoteNode`) have several icon-only action buttons (Copy, Expand, Delete, Viewport toggles) completely missing `aria-label`s, which makes them inaccessible to screen readers.
+**Action:** When working with visually heavy node editors, remember to verify that hover-revealed action palettes have appropriate accessible labels. Ensure focus states are accessible (add `focus-visible:ring-2 focus-visible:outline-none`) and parent nodes have `focus-within:opacity-100` so keyboard users can reveal and access these buttons.
