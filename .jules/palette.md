@@ -1,0 +1,3 @@
+## 2024-05-24 - Keyboard Accessible Hover Actions
+**Learning:** When hiding interactive actions behind hover states using `opacity-0 group-hover:opacity-100`, keyboard users lose access unless `focus-within:opacity-100` is added to the parent container. Icon-only buttons also need explicit `focus-visible` styles to show focus without showing rings on mouse clicks, and their SVGs need `aria-hidden="true"` to reduce screen reader clutter.
+**Action:** Always add `focus-within:opacity-100` to hover-revealed action groups, ensure explicit `focus-visible:ring-2 focus-visible:outline-none` with `rounded-md` on the buttons, and hide the decorative SVG icons.
