@@ -25,7 +25,7 @@
  * /api/agent-tokens endpoint surface.
  */
 
-import { createHmac, createSign, createVerify, randomUUID } from "crypto";
+import { createHmac, createSign, createVerify, randomUUID, timingSafeEqual } from "crypto";
 import { db } from "@/db";
 import { agentTokens } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
@@ -464,12 +464,10 @@ function b64urlNormalize(s: string): string {
 }
 
 function constantTimeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let out = 0;
-  for (let i = 0; i < a.length; i++) {
-    out |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return out === 0;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
 }
 
 function safeParseScopes(raw: string): AgentTokenScope[] {
