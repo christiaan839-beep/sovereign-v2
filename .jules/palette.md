@@ -1,0 +1,3 @@
+## 2024-10-27 - Accessible Hover Controls
+**Learning:** For elements hidden behind hover states (e.g., `opacity-0 group-hover:opacity-100`), simply making the inner elements focusable is not enough, as they remain invisible to keyboard users. The parent container must include `focus-within:opacity-100` to reveal the elements during keyboard navigation.
+**Action:** Whenever applying `opacity-0 group-hover:opacity-100` to a container with interactive elements, always pair it with `focus-within:opacity-100` and ensure the interactive elements inside have `focus-visible` styling and appropriate `aria-label`s.
