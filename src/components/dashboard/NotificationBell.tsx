@@ -246,7 +246,7 @@ export function NotificationBell() {
         onClick={() => setOpen((v) => !v)}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
         aria-expanded={open}
-        className="relative p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
+        className="relative p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
       >
         <Bell className="w-4.5 h-4.5" />
         <AnimatePresence>
@@ -281,7 +281,7 @@ export function NotificationBell() {
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllRead}
-                  className="text-[10px] text-emerald-400 hover:text-emerald-300 font-medium uppercase tracking-wider transition-colors"
+                  className="text-[10px] text-emerald-400 hover:text-emerald-300 font-medium uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-sm"
                 >
                   Mark all as read
                 </button>
@@ -346,23 +346,23 @@ export function NotificationBell() {
                         </span>
                       </div>
 
-                      {/* Hover Actions */}
-                      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      {/* Actions (visible on hover or focus) */}
+                      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0">
                         {!n.read && (
                           <button
                             onClick={() => handleMarkRead(n.id)}
                             aria-label="Mark as read"
-                            className="p-1 rounded text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                            className="p-1 rounded text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                           >
-                            <Check className="w-3 h-3" />
+                            <Check className="w-3 h-3" aria-hidden="true" />
                           </button>
                         )}
                         <button
                           onClick={() => handleDismiss(n.id)}
                           aria-label="Dismiss notification"
-                          className="p-1 rounded text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          className="p-1 rounded text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-3 h-3" aria-hidden="true" />
                         </button>
                       </div>
                     </motion.div>
