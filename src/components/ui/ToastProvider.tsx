@@ -134,6 +134,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           {toasts.map((t) => (
             <motion.div
               key={t.id}
+              role={t.type === "error" ? "alert" : "status"}
+              aria-live={t.type === "error" ? "assertive" : "polite"}
               initial={{ opacity: 0, x: 80, scale: 0.95 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 80, scale: 0.95 }}
@@ -166,9 +168,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   e.stopPropagation();
                   removeToast(t.id);
                 }}
-                className="text-neutral-500 hover:text-white transition-colors shrink-0 mt-0.5"
+                aria-label="Dismiss notification"
+                className="text-neutral-500 hover:text-white transition-colors shrink-0 mt-0.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3 h-3" aria-hidden="true" />
               </button>
               <ProgressBar
                 duration={t.duration}
