@@ -325,6 +325,9 @@ jobs:
           tail -50 /tmp/next.log
           exit 1
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
+
       - name: Run golden-path smoke tests
         run: npm run smoke
         env:
