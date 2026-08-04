@@ -1,0 +1,3 @@
+## 2024-08-04 - Keyboard Accessibility for Hover-Revealed Actions
+**Learning:** When action buttons (like "Mark as read" or "Dismiss" on notifications) are only revealed on hover using `opacity-0 group-hover:opacity-100`, they become invisible to keyboard users when focused via the Tab key.
+**Action:** Always add `focus-within:opacity-100` to the container alongside `group-hover:opacity-100`. Additionally, ensure the internal buttons have explicit `focus-visible` styles (e.g., `focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:outline-none`) so the user can clearly see which button is focused.
