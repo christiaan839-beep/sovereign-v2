@@ -13,6 +13,7 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 **Goal: Platform goes live with real AI output**
 
 ### Day 1 (Today)
+
 - [ ] Set NVIDIA_NIM_API_KEY in Vercel (91 free models activate)
 - [ ] Set GEMINI_API_KEY in Vercel (Gemini 3.1 Pro activates)
 - [ ] Set DATABASE_URL in Vercel (persistence activates)
@@ -23,6 +24,7 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 - [ ] Verify: smart router picks best model per task
 
 ### Day 2
+
 - [ ] Set STRIPE keys (payments activate)
 - [ ] Set RESEND key (emails activate)
 - [ ] Set GROQ + CEREBRAS keys (ultra-fast inference)
@@ -39,6 +41,7 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 **Goal: 10 real users generating real value**
 
 ### User Acquisition
+
 - [ ] Post on LinkedIn (launch copy ready in LAUNCH.md)
 - [ ] Post Twitter thread (7-tweet thread ready)
 - [ ] Share /free/competitor-scan in 5 relevant communities
@@ -46,6 +49,7 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 - [ ] Offer free Node access (30 days) to first 10 signups
 
 ### What They'll Experience
+
 1. Land on sovereignmatrix.agency → see the hero + live terminal demo
 2. Try free competitor scan → get real intelligence in 15 seconds
 3. Sign up → 5-step onboarding → first playbook suggested
@@ -54,6 +58,7 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 6. Dashboard shows real execution metrics
 
 ### Feedback Loop
+
 - [ ] Set up a Slack channel for early users
 - [ ] Daily check-in: what worked, what broke, what's missing
 - [ ] Fix reported bugs within 24 hours
@@ -68,17 +73,20 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 **Goal: First paying customer**
 
 ### Conversion Strategy
+
 - Free tier → show value → upgrade prompt after 50 tasks
 - "Your free tier used 47/50 tasks. Upgrade to Starter ($19/mo) for 200 tasks."
 - Agency pitch: "White-label this for $499/mo. Resell to 10 clients at $99 = $990 revenue."
 
 ### Content Engine
+
 - [ ] Publish 5 blog posts (already written, just need AI generation via smart-router)
 - [ ] Share comparison pages on social (11 pages ready)
 - [ ] Post "Sovereign Matrix vs HubSpot" on r/SaaS, Indie Hackers
 - [ ] Share Glasswing security narrative on LinkedIn (CISOs read LinkedIn)
 
 ### Partnerships
+
 - [ ] Reach out to 3 agency owners for white-label pilot
 - [ ] Offer them 60-day free Enterprise trial
 - [ ] Their success story becomes our first real testimonial
@@ -92,6 +100,7 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 **Goal: #1 Product of the Day**
 
 ### Preparation
+
 - [ ] Product Hunt listing (copy ready in LAUNCH.md)
 - [ ] 5+ upvotes from early users on launch day
 - [ ] Respond to every comment within 30 minutes
@@ -99,6 +108,7 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 - [ ] Demo video showing: type goal → agents execute → real output
 
 ### Launch Day Checklist
+
 - [ ] Post at 12:01 AM PST (Product Hunt tradition)
 - [ ] Share on all social channels simultaneously
 - [ ] Email waitlist (welcome email already built)
@@ -114,6 +124,7 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 **Goal: Prove product-market fit**
 
 ### Growth Channels
+
 1. **SEO:** 11 comparison pages + 9 sector pages + 15 blog articles already deployed
 2. **Social proof:** Early user testimonials on landing page
 3. **Referral program:** 10% affiliate / 25% reseller / 40% agency partner
@@ -121,12 +132,14 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 5. **Content:** Weekly blog post targeting buyer-intent keywords
 
 ### Product Improvements Based on User Feedback
+
 - [ ] Top 3 requested features built within 2 weeks
 - [ ] Any bug reported → fixed within 24 hours
 - [ ] Dashboard UX refined based on session recordings
 - [ ] Agent quality improved via evolution engine learnings
 
 ### Revenue Targets
+
 - Month 1: 10 users, $500 MRR
 - Month 2: 50 users, $3,000 MRR
 - Month 3: 100 users, $8,000 MRR
@@ -138,12 +151,14 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 **Goal: 10 agencies white-labeling**
 
 ### Strategy
+
 - Each agency brings 10-50 clients
 - 10 agencies × 20 clients avg = 200 end users
 - Revenue: 10 × $499 = $4,990 MRR from agencies alone
 - Their clients pay them $99-299/mo (our platform, their brand)
 
 ### What Agencies Get
+
 - White-label dashboard with their logo
 - Custom domain (agency.theirbrand.com)
 - Client portals with isolated data
@@ -151,6 +166,7 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 - 80/20 marketplace revenue share
 
 ### Why They Can't Leave
+
 - Client data lives on our infrastructure
 - Agent performance compounds (evolution engine)
 - Switching costs increase monthly
@@ -163,18 +179,21 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 **Goal: 50 developers building agents**
 
 ### Strategy
+
 - Open the Agent SDK (documentation already at /developers/docs)
 - 80% revenue share (they keep most)
 - Featured agents on marketplace get homepage placement
 - First 50 developers get "Founding Developer" badge
 
 ### What Gets Built
+
 - Sector-specific agents (legal, healthcare, finance)
 - Integration agents (Shopify, HubSpot deep, Salesforce)
 - Niche agents (podcast transcription, patent search, code review)
 - Each developer adds value we don't have to build
 
 ### Network Effect
+
 - More developers → more agents → more users → more developers
 - This flywheel is the #1 moat. It's why Shopify and Salesforce are worth $100B+.
 
@@ -184,17 +203,32 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 
 **Goal: First enterprise deal ($499/mo+)**
 
-### Enterprise Requirements (already built)
-- [x] SOC 2 narrative (security page + Glasswing)
+### Enterprise Requirements
+
+**Already built:**
+
 - [x] GDPR data export (/api/user/export)
-- [x] HIPAA-ready (Ollama local execution)
 - [x] 5-layer safety pipeline
 - [x] 4-level trust controls
 - [x] Immutable execution audit
 - [x] Admin panel with user management
 - [x] Deep health check API
 
+**Infrastructure exists, but NOT a substitute for the real requirement —
+do not represent these as certifications/compliance to a buyer:**
+
+- [ ] SOC 2 evidence-generation tooling exists (audit trails, control
+      mappings); there is no signed SOC 2 Type II report. That requires
+      an actual third-party auditor engagement.
+- [ ] Ollama local execution is one HIPAA control, not HIPAA compliance.
+      No BAA exists, and none of the required administrative/physical
+      safeguards, breach-notification process, or risk assessment have
+      been done. Do not call this "HIPAA-ready" externally.
+- [ ] No SSO/SAML (Okta, Entra/Azure AD) — most enterprise procurement
+      hard-blocks on this.
+
 ### Enterprise Sales
+
 - Target: 5 enterprise prospects per month
 - Channel: LinkedIn outreach + Glasswing security narrative
 - Demo: live competitive scan of THEIR competitor
@@ -204,14 +238,14 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 
 ## The Numbers
 
-| Metric | Day 1 | Day 30 | Day 90 | Day 180 | Day 365 |
-|--------|-------|--------|--------|---------|---------|
-| Users | 0 | 30 | 100 | 500 | 2,000 |
-| MRR | $0 | $1,000 | $8,000 | $25,000 | $80,000 |
-| Agents | 130 | 130 | 150 | 200 | 500+ |
-| Models | 39 | 39 | 45 | 50 | 60+ |
-| Pages | 160 | 170 | 180 | 200 | 250+ |
-| Deploys | 60 | 100 | 200 | 400 | 800+ |
+| Metric  | Day 1 | Day 30 | Day 90 | Day 180 | Day 365 |
+| ------- | ----- | ------ | ------ | ------- | ------- |
+| Users   | 0     | 30     | 100    | 500     | 2,000   |
+| MRR     | $0    | $1,000 | $8,000 | $25,000 | $80,000 |
+| Agents  | 130   | 130    | 150    | 200     | 500+    |
+| Models  | 39    | 39     | 45     | 50      | 60+     |
+| Pages   | 160   | 170    | 180    | 200     | 250+    |
+| Deploys | 60    | 100    | 200    | 400     | 800+    |
 
 ---
 

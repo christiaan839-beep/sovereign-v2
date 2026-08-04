@@ -72,18 +72,17 @@ const pricingJsonLd = {
   ],
 };
 
+// Note: deliberately no "What is Sovereign Matrix?" question here — the
+// root layout's site-wide FAQPage (src/app/layout.tsx) already answers
+// that on every page including this one. Root layout's JSON-LD renders
+// in the initial HTML alongside this one, so two Question entities with
+// the same name but different acceptedAnswer text would both be visible
+// to crawlers/AI answer engines on this exact URL — a direct contradiction
+// rather than complementary content.
 const faqJsonLd = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   mainEntity: [
-    {
-      "@type": "Question",
-      name: "What is Sovereign Matrix?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Sovereign Matrix is audit-grade AI infrastructure. Every agent run produces a cryptographically signed receipt that anyone can verify against our public /api/verify endpoint — no signup, no API key. Designed for AI deployments in regulated industries where compliance teams need to prove what an agent did.",
-      },
-    },
     {
       "@type": "Question",
       name: "What is a verifiable agent receipt?",

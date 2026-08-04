@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { validateEnvironment } from "@/lib/env-check";
 import { SafeClerkProvider } from "@/components/ui/SafeClerkProvider";
 import { CustomCursor } from "@/components/cinematic/CustomCursor";
@@ -200,12 +198,13 @@ export default function RootLayout({
           <CookieConsent />
           <LiveActivityTicker />
           <FounderCTA />
-          {process.env.NODE_ENV === "production" && <Analytics />}
-          {process.env.NODE_ENV === "production" && <SpeedInsights />}
-          <Script
-            id="json-ld"
+          {/* Plain server-rendered script, not next/script — JSON-LD must
+              be present in the initial HTML. next/script's afterInteractive
+              strategy injects client-side after hydration, so non-JS-executing
+              crawlers (GPTBot, ClaudeBot, PerplexityBot, CCBot, and classic
+              Googlebot's raw-HTML fetch) never saw this schema at all. */}
+          <script
             type="application/ld+json"
-            strategy="afterInteractive"
             dangerouslySetInnerHTML={{
               __html: JSON.stringify([
                 {
