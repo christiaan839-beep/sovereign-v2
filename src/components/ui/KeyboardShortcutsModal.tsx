@@ -44,9 +44,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
   },
   {
     title: "Help",
-    shortcuts: [
-      { keys: ["?"], label: "Show this shortcuts panel" },
-    ],
+    shortcuts: [{ keys: ["?"], label: "Show this shortcuts panel" }],
   },
 ];
 
@@ -84,11 +82,13 @@ export function KeyboardShortcutsModal() {
       {/* Floating help button — offset to not overlap SovereignAssistant FAB */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-[5.5rem] z-40 w-8 h-8 rounded-xl bg-white/5 border border-white/10 text-neutral-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200 flex items-center justify-center backdrop-blur-sm shadow-lg"
+        className="fixed bottom-6 right-[5.5rem] z-40 w-8 h-8 rounded-xl bg-white/5 border border-white/10 text-neutral-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200 flex items-center justify-center backdrop-blur-sm shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
         title="Keyboard Shortcuts (?)"
         aria-label="Show keyboard shortcuts"
       >
-        <span className="text-xs font-mono">?</span>
+        <span className="text-xs font-mono" aria-hidden="true">
+          ?
+        </span>
       </button>
 
       {/* Modal */}
@@ -119,14 +119,19 @@ export function KeyboardShortcutsModal() {
                 <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
                   <div className="flex items-center gap-2.5">
                     <Keyboard className="w-4 h-4 text-[#00B7FF]" />
-                    <span id="shortcuts-title" className="text-sm font-semibold text-white">Keyboard Shortcuts</span>
+                    <span
+                      id="shortcuts-title"
+                      className="text-sm font-semibold text-white"
+                    >
+                      Keyboard Shortcuts
+                    </span>
                   </div>
                   <button
                     onClick={() => setIsOpen(false)}
                     aria-label="Close keyboard shortcuts"
-                    className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
+                    className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
 
@@ -143,7 +148,9 @@ export function KeyboardShortcutsModal() {
                             key={i}
                             className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-white/[0.03] transition-colors"
                           >
-                            <span className="text-sm text-neutral-300">{sc.label}</span>
+                            <span className="text-sm text-neutral-300">
+                              {sc.label}
+                            </span>
                             <div className="flex items-center gap-1">
                               {sc.keys.map((key, ki) => (
                                 <kbd
@@ -163,8 +170,12 @@ export function KeyboardShortcutsModal() {
 
                 {/* Footer */}
                 <div className="px-5 py-3 border-t border-white/5 flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-neutral-600">Press ? to toggle</span>
-                  <span className="text-[10px] font-mono text-neutral-600">esc to close</span>
+                  <span className="text-[10px] font-mono text-neutral-600">
+                    Press ? to toggle
+                  </span>
+                  <span className="text-[10px] font-mono text-neutral-600">
+                    esc to close
+                  </span>
                 </div>
               </div>
             </motion.div>
