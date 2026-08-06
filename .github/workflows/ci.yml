@@ -296,7 +296,7 @@ jobs:
           exit 1
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Build the app for the smoke run
         # Same env shape as the Build job — dummy values are fine since
