@@ -1,0 +1,3 @@
+## 2026-08-06 - Keyboard Accessibility in Hover Reveal Components
+**Learning:** Components hidden behind hover states (using opacity-0 group-hover:opacity-100) are inaccessible to keyboard navigation by default, making them completely hidden to non-mouse users, despite the underlying interactive elements theoretically being tab-able.
+**Action:** When implementing interactive elements inside hover-revealed containers, always apply `focus-within:opacity-100` to the container and explicitly add `focus-visible:ring` styles to the interactive children so they become visible and clearly highlighted when focused via keyboard.
