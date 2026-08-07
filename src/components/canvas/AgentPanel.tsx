@@ -37,7 +37,7 @@ export function AgentPanel({ open, onClose, tasks, onExploreMore }: AgentPanelPr
               <span className="text-xs font-semibold text-white">Design Agent</span>
               <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/[0.05] text-neutral-400">{tasks.length}</span>
             </div>
-            <button onClick={onClose} className="p-1 rounded hover:bg-white/[0.05] text-neutral-500 hover:text-white transition-colors">
+            <button onClick={onClose} aria-label="Close panel" className="p-1 rounded hover:bg-white/[0.05] text-neutral-500 hover:text-white transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
