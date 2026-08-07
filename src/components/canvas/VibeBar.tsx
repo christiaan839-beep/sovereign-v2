@@ -42,7 +42,7 @@ export function VibeBar({ onGenerate, onAddNote, generating }: VibeBarProps) {
     }, 800);
   };
 
-  const activeVibe = VIBE_PRESETS.find(v => v.id === selectedVibe);
+  const activeVibe = VIBE_PRESETS.find((v) => v.id === selectedVibe);
 
   return (
     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl px-4">
@@ -58,7 +58,10 @@ export function VibeBar({ onGenerate, onAddNote, generating }: VibeBarProps) {
             {VIBE_PRESETS.map((vibe) => (
               <button
                 key={vibe.id}
-                onClick={() => { setSelectedVibe(vibe.id); setShowVibes(false); }}
+                onClick={() => {
+                  setSelectedVibe(vibe.id);
+                  setShowVibes(false);
+                }}
                 className={`px-3 py-1.5 rounded-full text-[10px] font-semibold transition-gpu ${
                   selectedVibe === vibe.id
                     ? "bg-[#00B7FF]/15 text-[#00B7FF] border border-[#00B7FF]/30"
@@ -88,7 +91,9 @@ export function VibeBar({ onGenerate, onAddNote, generating }: VibeBarProps) {
         <button
           onClick={() => setShowVibes(!showVibes)}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-semibold shrink-0 transition-gpu ${
-            showVibes ? "bg-[#00B7FF]/10 text-[#00B7FF] border border-[#00B7FF]/20" : "bg-white/[0.04] text-neutral-400 border border-white/[0.06] hover:text-white"
+            showVibes
+              ? "bg-[#00B7FF]/10 text-[#00B7FF] border border-[#00B7FF]/20"
+              : "bg-white/[0.04] text-neutral-400 border border-white/[0.06] hover:text-white"
           }`}
         >
           <Sparkles className="w-3 h-3" />

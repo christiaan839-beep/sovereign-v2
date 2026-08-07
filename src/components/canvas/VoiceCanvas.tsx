@@ -15,7 +15,8 @@ export function VoiceCanvas({ onResult, disabled }: VoiceCanvasProps) {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const startListening = useCallback(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
@@ -66,7 +67,9 @@ export function VoiceCanvas({ onResult, disabled }: VoiceCanvasProps) {
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => { recognitionRef.current?.stop(); };
+    return () => {
+      recognitionRef.current?.stop();
+    };
   }, []);
 
   return (
@@ -81,7 +84,11 @@ export function VoiceCanvas({ onResult, disabled }: VoiceCanvasProps) {
         } disabled:opacity-30`}
         title={listening ? "Stop listening" : "Voice input"}
       >
-        {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+        {listening ? (
+          <MicOff className="w-4 h-4" />
+        ) : (
+          <Mic className="w-4 h-4" />
+        )}
       </button>
 
       {/* Live transcript tooltip */}
