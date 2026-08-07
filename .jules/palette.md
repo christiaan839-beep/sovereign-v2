@@ -1,0 +1,3 @@
+## 2024-07-17 - Keyboard Inaccessible Hover Actions Pattern
+**Learning:** Found a widespread accessibility anti-pattern in the app's components (`NotificationBell`, `NotificationCenter`) where interactive actions are hidden using `opacity-0 group-hover:opacity-100`. When keyboard users tab to these elements, they receive focus but remain invisible, breaking keyboard navigation.
+**Action:** When using `opacity-0 group-hover:opacity-100` on a container, always explicitly add `focus-within:opacity-100` to the container and `focus-visible:ring-1 focus-visible:ring-[color] focus-visible:outline-none` to the interactive elements inside.
