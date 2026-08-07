@@ -70,3 +70,10 @@ next-env.d.ts
 .idea/
 .vscode/
 .playwright-mcp/
+
+# python (standalone server/python-agents — deps come from requirements.txt,
+# never commit the virtualenv or compiled artifacts)
+venv/
+.venv/
+__pycache__/
+*.pyc

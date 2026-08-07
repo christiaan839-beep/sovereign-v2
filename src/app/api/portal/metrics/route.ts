@@ -3,8 +3,7 @@ import { db } from "@/db";
 import { leads, generations, bookings, agentActivity } from "@/db/schema";
 import { eq, desc, sql, count } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
-
-export const runtime = "edge";
+import { requireAuth } from "@/lib/auth-guard";
 
 const log = createLogger("portal/metrics");
 
@@ -12,19 +11,30 @@ const log = createLogger("portal/metrics");
  * GET /api/portal/metrics?clientId=<id>
  *
  * Returns aggregated metrics for a client portal dashboard.
- * The clientId maps to userEmail or userId across tables.
- * No auth required — the clientId itself acts as the access token.
+ *
+ * Self-scoped: the caller may only read their OWN aggregated data. A Clerk
+ * session is required, and the queried identity is derived from that session
+ * — not from a client-supplied id. An optional clientId/tenantId query param
+ * is honoured only when it matches the authenticated identity; anything else
+ * is a cross-tenant read (BOLA) and is rejected.
  */
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const clientId = searchParams.get("clientId") || searchParams.get("tenantId");
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
-  if (!clientId) {
+  const { searchParams } = new URL(req.url);
+  const requested =
+    searchParams.get("clientId") || searchParams.get("tenantId");
+  if (requested && requested !== auth.email && requested !== auth.userId) {
     return NextResponse.json(
-      { success: false, error: "clientId is required" },
-      { status: 400 }
+      { success: false, error: "Forbidden" },
+      { status: 403 },
     );
   }
+
+  // leads/generations/bookings are keyed by userEmail; agentActivity by userId.
+  const emailScope = auth.email;
+  const activityScope = auth.userId;
 
   try {
     // Run all queries in parallel
@@ -34,25 +44,25 @@ export async function GET(req: NextRequest) {
         db
           .select({ total: count() })
           .from(leads)
-          .where(eq(leads.userEmail, clientId)),
+          .where(eq(leads.userEmail, emailScope)),
 
         // Total content generations
         db
           .select({ total: count() })
           .from(generations)
-          .where(eq(generations.userEmail, clientId)),
+          .where(eq(generations.userEmail, emailScope)),
 
         // Total bookings (tasks completed)
         db
           .select({ total: count() })
           .from(bookings)
-          .where(eq(bookings.userEmail, clientId)),
+          .where(eq(bookings.userEmail, emailScope)),
 
         // Agent activity count (completed tasks)
         db
           .select({ total: count() })
           .from(agentActivity)
-          .where(eq(agentActivity.userId, clientId)),
+          .where(eq(agentActivity.userId, activityScope)),
 
         // Recent activity — last 10 agent executions
         db
@@ -65,7 +75,7 @@ export async function GET(req: NextRequest) {
             createdAt: agentActivity.createdAt,
           })
           .from(agentActivity)
-          .where(eq(agentActivity.userId, clientId))
+          .where(eq(agentActivity.userId, activityScope))
           .orderBy(desc(agentActivity.createdAt))
           .limit(10),
       ]);
@@ -76,7 +86,10 @@ export async function GET(req: NextRequest) {
     const tasksCount = activityRows[0]?.total ?? 0;
 
     // Derive a simple SEO score from content + leads (capped at 100)
-    const seoScore = Math.min(100, Math.round((contentCount * 3 + leadsCount) * 1.5));
+    const seoScore = Math.min(
+      100,
+      Math.round((contentCount * 3 + leadsCount) * 1.5),
+    );
 
     // Format recent activity for the frontend
     const recentActivity = recentActivityRows.map((row) => ({
@@ -97,8 +110,11 @@ export async function GET(req: NextRequest) {
         executions: count(),
       })
       .from(generations)
-      .where(eq(generations.userEmail, clientId))
-      .groupBy(generations.tool, sql`to_char(${generations.createdAt}, 'YYYY-MM')`)
+      .where(eq(generations.userEmail, emailScope))
+      .groupBy(
+        generations.tool,
+        sql`to_char(${generations.createdAt}, 'YYYY-MM')`,
+      )
       .orderBy(sql`to_char(${generations.createdAt}, 'YYYY-MM')`);
 
     return NextResponse.json({
@@ -143,7 +159,7 @@ export async function GET(req: NextRequest) {
         },
         recentEvents: [],
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 }
