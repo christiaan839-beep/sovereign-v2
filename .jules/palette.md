@@ -1,0 +1,3 @@
+## 2024-07-20 - Add Keyboard Accessibility to Hover-Hidden Canvas Actions
+**Learning:** When using hover-driven UI like `opacity-0 group-hover:opacity-100` to hide action buttons until hovered, it completely breaks keyboard accessibility. Screen reader and keyboard users cannot easily navigate to or activate those buttons.
+**Action:** Always add `focus-within:opacity-100` to the parent container when using `opacity-0 group-hover:opacity-100` so the entire area becomes visible when focus enters. Additionally, explicitly apply `focus-visible:ring-2`, `focus-visible:outline-none`, and `aria-label` to every interactive element inside so users have clear focus indication and know what the action is.
