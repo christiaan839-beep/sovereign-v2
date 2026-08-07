@@ -59,7 +59,7 @@ export function VibeBar({ onGenerate, onAddNote, generating }: VibeBarProps) {
               <button
                 key={vibe.id}
                 onClick={() => { setSelectedVibe(vibe.id); setShowVibes(false); }}
-                className={`px-3 py-1.5 rounded-full text-[10px] font-semibold transition-gpu ${
+                className={`px-3 py-1.5 rounded-full text-[10px] font-semibold transition-gpu focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus:outline-none ${
                   selectedVibe === vibe.id
                     ? "bg-[#00B7FF]/15 text-[#00B7FF] border border-[#00B7FF]/30"
                     : "bg-white/[0.04] text-neutral-400 border border-white/[0.06] hover:border-white/[0.12] hover:text-white"
@@ -78,7 +78,8 @@ export function VibeBar({ onGenerate, onAddNote, generating }: VibeBarProps) {
         {/* Note button */}
         <button
           onClick={onAddNote}
-          className="p-2.5 rounded-xl hover:bg-white/[0.05] text-neutral-500 hover:text-amber-400 transition-colors shrink-0"
+          aria-label="Add note"
+          className="p-2.5 rounded-xl hover:bg-white/[0.05] text-neutral-500 hover:text-amber-400 transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus:outline-none"
           title="Add note"
         >
           <StickyNote className="w-4 h-4" />
@@ -87,7 +88,8 @@ export function VibeBar({ onGenerate, onAddNote, generating }: VibeBarProps) {
         {/* Vibe button */}
         <button
           onClick={() => setShowVibes(!showVibes)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-semibold shrink-0 transition-gpu ${
+          aria-label="Toggle vibe selector"
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-semibold shrink-0 transition-gpu focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus:outline-none ${
             showVibes ? "bg-[#00B7FF]/10 text-[#00B7FF] border border-[#00B7FF]/20" : "bg-white/[0.04] text-neutral-400 border border-white/[0.06] hover:text-white"
           }`}
         >
@@ -111,8 +113,9 @@ export function VibeBar({ onGenerate, onAddNote, generating }: VibeBarProps) {
         {/* Send */}
         <button
           onClick={handleSubmit}
+          aria-label="Send prompt"
           disabled={!prompt.trim() || generating}
-          className="p-2.5 rounded-xl bg-[#00B7FF] text-white hover:bg-[#33C5FF] disabled:opacity-30 transition-gpu shrink-0"
+          className="p-2.5 rounded-xl bg-[#00B7FF] text-white hover:bg-[#33C5FF] disabled:opacity-30 transition-gpu shrink-0 focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus:outline-none"
         >
           {generating ? (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

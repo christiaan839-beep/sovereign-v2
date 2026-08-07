@@ -92,15 +92,15 @@ export function FlowExport({ open, onClose, screens }: FlowExportProps) {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={handlePlay} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00B7FF]/10 text-[#00B7FF] text-[10px] font-semibold hover:bg-[#00B7FF]/20 transition-colors">
+              <button onClick={handlePlay} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00B7FF]/10 text-[#00B7FF] text-[10px] font-semibold hover:bg-[#00B7FF]/20 transition-colors focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus:outline-none">
                 <Play className="w-3 h-3" />
                 {playing ? "Stop" : "Auto-Play"}
               </button>
-              <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold hover:bg-emerald-500/20 transition-colors">
+              <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold hover:bg-emerald-500/20 transition-colors focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus:outline-none">
                 <Download className="w-3 h-3" />
                 Export All
               </button>
-              <button onClick={onClose} aria-label="Close flow preview" className="p-1.5 rounded-lg hover:bg-white/[0.05] text-neutral-500 hover:text-white transition-colors">
+              <button onClick={onClose} aria-label="Close flow preview" className="p-1.5 rounded-lg hover:bg-white/[0.05] text-neutral-500 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus:outline-none">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -124,7 +124,7 @@ export function FlowExport({ open, onClose, screens }: FlowExportProps) {
             <button
               onClick={() => setActiveIndex(Math.max(0, activeIndex - 1))}
               disabled={activeIndex === 0}
-              className="flex items-center gap-1 text-xs text-neutral-400 hover:text-white disabled:opacity-30 transition-colors"
+              className="flex items-center gap-1 text-xs text-neutral-400 hover:text-white disabled:opacity-30 transition-colors focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus:outline-none rounded"
             >
               <ChevronLeft className="w-4 h-4" /> Previous
             </button>
@@ -132,15 +132,16 @@ export function FlowExport({ open, onClose, screens }: FlowExportProps) {
               {screens.map((_, i) => (
                 <button
                   key={i}
+                  aria-label={`Go to screen ${i + 1}`}
                   onClick={() => setActiveIndex(i)}
-                  className={`w-2 h-2 rounded-full transition-gpu ${i === activeIndex ? "bg-[#00B7FF] scale-125" : "bg-white/[0.15] hover:bg-white/[0.3]"}`}
+                  className={`w-2 h-2 rounded-full transition-gpu focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus:outline-none ${i === activeIndex ? "bg-[#00B7FF] scale-125" : "bg-white/[0.15] hover:bg-white/[0.3]"}`}
                 />
               ))}
             </div>
             <button
               onClick={() => setActiveIndex(Math.min(screens.length - 1, activeIndex + 1))}
               disabled={activeIndex === screens.length - 1}
-              className="flex items-center gap-1 text-xs text-neutral-400 hover:text-white disabled:opacity-30 transition-colors"
+              className="flex items-center gap-1 text-xs text-neutral-400 hover:text-white disabled:opacity-30 transition-colors focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus:outline-none rounded"
             >
               Next <ChevronRight className="w-4 h-4" />
             </button>
