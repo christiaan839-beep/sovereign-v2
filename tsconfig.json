@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@sovereign-matrix/*": ["./packages/*/src"]
     }
   },
   "include": [
