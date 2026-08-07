@@ -1,0 +1,3 @@
+## 2024-05-24 - Add focus visible styling to reusable Button component
+**Learning:** It is easy to miss adding keyboard navigation outlines (`focus-visible`) to base buttons, which can hurt keyboard accessibility heavily since the `Button` is used across many components. I discovered our central `Button` component lacked any explicit `focus-visible` outline.
+**Action:** Always include a `focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus-visible:outline-none` class pattern to generic interactive elements, specifically the base `Button` component, to ensure a prominent focus state when navigated via keyboard.
