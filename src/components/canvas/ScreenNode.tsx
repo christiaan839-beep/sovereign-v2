@@ -45,7 +45,7 @@ export function ScreenNode({ id, data }: NodeProps) {
               <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#00B7FF]/10 text-[#00B7FF] border border-[#00B7FF]/20 shrink-0">{d.vibe}</span>
             )}
           </div>
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             {/* Device toggles */}
             {d.status === "ready" && (
               <div className="flex items-center gap-0.5 mr-1 px-1 py-0.5 rounded bg-white/[0.03] border border-white/[0.04]">

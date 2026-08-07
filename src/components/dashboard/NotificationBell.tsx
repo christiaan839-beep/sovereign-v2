@@ -347,7 +347,7 @@ export function NotificationBell() {
                       </div>
 
                       {/* Hover Actions */}
-                      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0">
                         {!n.read && (
                           <button
                             onClick={() => handleMarkRead(n.id)}
