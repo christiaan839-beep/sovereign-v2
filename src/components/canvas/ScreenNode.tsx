@@ -45,13 +45,14 @@ export function ScreenNode({ id, data }: NodeProps) {
               <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#00B7FF]/10 text-[#00B7FF] border border-[#00B7FF]/20 shrink-0">{d.vibe}</span>
             )}
           </div>
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             {/* Device toggles */}
             {d.status === "ready" && (
               <div className="flex items-center gap-0.5 mr-1 px-1 py-0.5 rounded bg-white/[0.03] border border-white/[0.04]">
                 {([["desktop", Monitor], ["tablet", Tablet], ["mobile", Smartphone]] as const).map(([dev, Icon]) => (
                   <button key={dev} onClick={(e) => { e.stopPropagation(); setDevice(dev); }}
-                    className={`p-0.5 rounded transition-colors ${device === dev ? "text-[#00B7FF]" : "text-neutral-600 hover:text-neutral-400"}`}>
+                    aria-label={`Switch to ${dev} view`}
+                    className={`p-0.5 rounded transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-[#00B7FF] ${device === dev ? "text-[#00B7FF]" : "text-neutral-600 hover:text-neutral-400"}`}>
                     <Icon className="w-2.5 h-2.5" />
                   </button>
                 ))}
