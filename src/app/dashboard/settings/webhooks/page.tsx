@@ -77,6 +77,7 @@ export default function WebhooksPage() {
   const [configModal, setConfigModal] = useState<WebhookTemplate | null>(null);
   const [configUrl, setConfigUrl] = useState("");
   const [configSaving, setConfigSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [configMessage, setConfigMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -187,6 +188,8 @@ export default function WebhooksPage() {
   // ── Copy payload to clipboard ──
   const copyPayload = (payload: Record<string, string>) => {
     navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -462,7 +465,7 @@ export default function WebhooksPage() {
                     onClick={() => copyPayload(configModal.payload)}
                     className="flex items-center gap-1 text-[10px] text-neutral-500 hover:text-[#00B7FF] transition-colors"
                   >
-                    <Copy className="w-3 h-3" /> Copy
+                    {copied ? <CheckCircle2 className="w-3 h-3 text-[#00B7FF]" /> : <Copy className="w-3 h-3" />} {copied ? "Copied" : "Copy"}
                   </button>
                 </div>
                 <pre className="bg-white/5 border border-white/5 rounded-xl p-4 text-xs text-neutral-400 font-mono overflow-x-auto">
