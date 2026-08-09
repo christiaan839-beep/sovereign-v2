@@ -1,0 +1,3 @@
+## 2024-08-09 - Accessible hover-only actions
+**Learning:** When interactive elements (like dismiss/read buttons) are visually hidden behind a parent hover state (`opacity-0 group-hover:opacity-100`), they become inaccessible to keyboard users because focusing on the child doesn't trigger the parent's hover state, leaving them invisible while focused.
+**Action:** Always add `focus-within:opacity-100` to the parent container hiding interactive child elements. Additionally, ensure the child elements have clear `focus-visible:ring-2` styles and use `aria-hidden="true"` on internal SVG icons for icon-only buttons.
