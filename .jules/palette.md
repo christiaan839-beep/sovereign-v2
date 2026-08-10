@@ -1,0 +1,3 @@
+## 2024-08-10 - Keyboard accessibility for hidden icon buttons
+**Learning:** Icon buttons that are visible only on hover (e.g. `opacity-0 group-hover:opacity-100`) often lack keyboard accessibility. Even if they get focus, they might remain hidden, or they might not have proper focus indicators or aria-labels.
+**Action:** When adding hover-based visibility to action buttons, ensure `focus-within:opacity-100` (or similar) is added to the parent container so keyboard users can see the element when it receives focus. Also ensure the button has `aria-label` and `focus-visible:ring-2` (or similar) focus indication.
