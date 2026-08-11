@@ -1,0 +1,3 @@
+## 2024-08-11 - Make hover-hidden notification actions keyboard accessible
+**Learning:** Found a pattern where interactive elements hidden via `opacity-0 group-hover:opacity-100` are inaccessible via keyboard navigation because focus alone doesn't trigger the group-hover state, rendering them invisible when tabbed to.
+**Action:** When hiding interactive elements behind a hover state using `opacity-0`, always apply `focus-within:opacity-100` to the container and explicit `focus-visible:ring-2 focus-visible:outline-none` styles to the elements inside to ensure they become visible and clearly indicated when focused via keyboard.
