@@ -109,7 +109,7 @@ describe("integrations/connector.ts", () => {
       auth: { type: "bearer", token: "" },
     });
     expect(result.statusCode).toBe(403);
-    expect(result.data).toEqual(expect.objectContaining({ error: expect.stringContaining("private") }));
+    expect(result.data).toEqual(expect.objectContaining({ error: expect.stringContaining("blocked by SSRF guard") }));
   });
 
   it("webhook blocks 127.0.0.1", async () => {
