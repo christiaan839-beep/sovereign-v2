@@ -9,6 +9,7 @@
  */
 
 import { createLogger } from "@/lib/logger";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 const log = createLogger("connector");
 
@@ -311,37 +312,39 @@ async function webhookConnector(
     return { data: { error: "url is required" }, statusCode: 400 };
   }
 
-  // SSRF protection — block private IPs
-  const urlObj = new URL(url);
-  const blockedHosts = ["localhost", "127.0.0.1", "0.0.0.0", "169.254.169.254"];
-  if (blockedHosts.includes(urlObj.hostname) || urlObj.hostname.startsWith("10.") || urlObj.hostname.startsWith("192.168.")) {
-    return { data: { error: "Blocked: private/internal URLs not allowed" }, statusCode: 403 };
-  }
-
   const method = (params.method as string)?.toUpperCase() || "POST";
   const body = params.body ? JSON.stringify(params.body) : undefined;
   const customHeaders = (params.headers as Record<string, string>) || {};
 
-  const res = await fetch(url, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      ...customHeaders,
-      ...(auth.token ? { Authorization: `Bearer ${auth.token}` } : {}),
-    },
-    body: method !== "GET" ? body : undefined,
-    signal: AbortSignal.timeout(10_000), // 10s timeout
-  });
+  try {
+    const res = await outboundFetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        ...customHeaders,
+        ...(auth.token ? { Authorization: `Bearer ${auth.token}` } : {}),
+      },
+      body: method !== "GET" ? body : undefined,
+    }, { ruleId: "webhook.fire", timeoutMs: 10000 });
 
-  let data: unknown;
-  const contentType = res.headers.get("content-type") || "";
-  if (contentType.includes("json")) {
-    data = await res.json();
-  } else {
-    data = await res.text();
+    let data: unknown;
+    const contentType = res.contentType || "";
+    if (contentType.includes("json")) {
+      try {
+        data = JSON.parse(res.body);
+      } catch {
+        data = res.body;
+      }
+    } else {
+      data = res.body;
+    }
+
+    return { data, statusCode: res.status };
+  } catch (err) {
+    // Catch EgressBlockedError or fetch errors
+    const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+    return { data: { error: errorMessage }, statusCode: 403 };
   }
-
-  return { data, statusCode: res.status };
 }
 
 // ── Airtable Connector ──
