@@ -124,15 +124,17 @@ export function FlowExport({ open, onClose, screens }: FlowExportProps) {
             <button
               onClick={() => setActiveIndex(Math.max(0, activeIndex - 1))}
               disabled={activeIndex === 0}
+              aria-label="Previous screen"
               className="flex items-center gap-1 text-xs text-neutral-400 hover:text-white disabled:opacity-30 transition-colors"
             >
-              <ChevronLeft className="w-4 h-4" /> Previous
+              <ChevronLeft className="w-4 h-4" aria-hidden="true" /> Previous
             </button>
             <div className="flex items-center gap-1.5">
               {screens.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setActiveIndex(i)}
+                  aria-label={`Go to screen ${i + 1}`}
                   className={`w-2 h-2 rounded-full transition-gpu ${i === activeIndex ? "bg-[#00B7FF] scale-125" : "bg-white/[0.15] hover:bg-white/[0.3]"}`}
                 />
               ))}
@@ -140,9 +142,10 @@ export function FlowExport({ open, onClose, screens }: FlowExportProps) {
             <button
               onClick={() => setActiveIndex(Math.min(screens.length - 1, activeIndex + 1))}
               disabled={activeIndex === screens.length - 1}
+              aria-label="Next screen"
               className="flex items-center gap-1 text-xs text-neutral-400 hover:text-white disabled:opacity-30 transition-colors"
             >
-              Next <ChevronRight className="w-4 h-4" />
+              Next <ChevronRight className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </motion.div>
