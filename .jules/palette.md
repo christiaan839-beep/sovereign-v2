@@ -1,0 +1,3 @@
+## 2024-06-12 - Keyboard accessibility for hover-revealed actions
+**Learning:** Actions hidden behind `opacity-0 group-hover:opacity-100` are completely inaccessible to keyboard users because they remain visually hidden (`opacity: 0`) when tabbed to.
+**Action:** When hiding interactive elements on hover, always add `focus-within:opacity-100` to the parent container so they become visible when a child receives focus. Furthermore, icon-only buttons need `aria-label`, `aria-hidden="true"` on the SVG, and explicit focus states like `focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-[color]` (often matching the button's action color).
