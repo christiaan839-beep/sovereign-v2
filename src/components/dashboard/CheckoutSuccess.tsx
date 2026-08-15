@@ -62,14 +62,15 @@ export function CheckoutSuccess() {
           >
             <button
               onClick={dismiss}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
+              aria-label="Close dialog"
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-[#00B7FF] transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
 
             <div className="p-8 text-center">
               <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-6">
-                <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+                <CheckCircle2 className="w-8 h-8 text-emerald-400" aria-hidden="true" />
               </div>
 
               <h2 className="text-xl font-bold text-white mb-2">
@@ -86,13 +87,13 @@ export function CheckoutSuccess() {
                     dismiss();
                     router.push("/dashboard/playbooks");
                   }}
-                  className="w-full py-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/20 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-emerald-400 transition-colors flex items-center justify-center gap-2"
                 >
-                  Run your first playbook <ArrowRight className="w-4 h-4" />
+                  Run your first playbook <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </button>
                 <button
                   onClick={dismiss}
-                  className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-neutral-300 text-sm hover:bg-white/10 transition-colors"
+                  className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-neutral-300 text-sm hover:bg-white/10 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-[#00B7FF] transition-colors"
                 >
                   Explore dashboard
                 </button>
