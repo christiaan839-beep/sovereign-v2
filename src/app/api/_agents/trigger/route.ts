@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPlaybook } from "@/lib/playbooks";
+import crypto from "crypto";
 import { createLogger } from "@/lib/logger";
 import { getBaseUrl } from "@/lib/base-url";
 
@@ -68,13 +69,13 @@ function authenticateApiKey(apiKey: unknown): boolean {
   if (typeof apiKey !== "string" || apiKey.length === 0) {
     return false;
   }
+
+  const a = Buffer.from(apiKey);
+  const b = Buffer.from(expected);
+
   // Constant-time comparison to prevent timing attacks
-  if (apiKey.length !== expected.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < apiKey.length; i++) {
-    mismatch |= apiKey.charCodeAt(i) ^ expected.charCodeAt(i);
-  }
-  return mismatch === 0;
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
 }
 
 // ─── POST Handler ───────────────────────────────────────────────────────────
