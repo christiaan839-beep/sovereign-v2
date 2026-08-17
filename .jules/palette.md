@@ -1,0 +1,3 @@
+## 2024-05-18 - Keyboard accessibility for hover-only actions
+**Learning:** When interactive elements (like "Mark as read" or "Dismiss" buttons) are only visible on hover (e.g., using `opacity-0 group-hover:opacity-100`), they are completely inaccessible to keyboard users because they remain visually hidden when focused.
+**Action:** Always add `focus-within:opacity-100` to the container that holds the hover actions. Additionally, apply explicit `focus-visible:ring-2 focus-visible:outline-none` styles to the interactive elements themselves so keyboard users can clearly see the focus indicator when tabbing through them.
