@@ -57,14 +57,26 @@ export function ScreenNode({ id, data }: NodeProps) {
                 ))}
               </div>
             )}
-            <button onClick={handleCopy} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors">
-              {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+            <button
+              onClick={handleCopy}
+              className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
+              aria-label={copied ? "Copied" : "Copy to clipboard"}
+            >
+              {copied ? <Check className="w-3 h-3 text-emerald-400" aria-hidden="true" /> : <Copy className="w-3 h-3" aria-hidden="true" />}
             </button>
-            <button onClick={(e) => { e.stopPropagation(); d.onExpand?.(id); }} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors">
-              <Maximize2 className="w-3 h-3" />
+            <button
+              onClick={(e) => { e.stopPropagation(); d.onExpand?.(id); }}
+              className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
+              aria-label="Expand screen"
+            >
+              <Maximize2 className="w-3 h-3" aria-hidden="true" />
             </button>
-            <button onClick={(e) => { e.stopPropagation(); d.onDelete?.(id); }} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-red-400 transition-colors">
-              <X className="w-3 h-3" />
+            <button
+              onClick={(e) => { e.stopPropagation(); d.onDelete?.(id); }}
+              className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
+              aria-label="Delete screen"
+            >
+              <X className="w-3 h-3" aria-hidden="true" />
             </button>
           </div>
         </div>
