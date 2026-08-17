@@ -1,0 +1,3 @@
+## 2024-03-24 - Accessibility improvements for icon-only buttons
+**Learning:** Found several icon-only buttons in the canvas UI components (`FlowExport.tsx`, `AgentPanel.tsx`, `ScreenNode.tsx`, `NoteNode.tsx`) that lack `aria-label` attributes and keyboard focus styles (`focus-visible:ring-2`, `focus-visible:outline-none`, `focus-visible:ring-[#00B7FF]`), reducing accessibility for screen reader and keyboard users. Additionally, SVGs inside these buttons need `aria-hidden="true"` to prevent screen reader clutter.
+**Action:** Add `aria-label` to all icon-only buttons. Apply consistent `focus-visible` styles with a clear `rounded` or `rounded-lg` utility to maintain visual focus indication. Apply `aria-hidden="true"` to internal SVG elements.

@@ -100,8 +100,12 @@ export function FlowExport({ open, onClose, screens }: FlowExportProps) {
                 <Download className="w-3 h-3" />
                 Export All
               </button>
-              <button onClick={onClose} aria-label="Close flow preview" className="p-1.5 rounded-lg hover:bg-white/[0.05] text-neutral-500 hover:text-white transition-colors">
-                <X className="w-4 h-4" />
+              <button
+                onClick={onClose}
+                aria-label="Close flow preview"
+                className="p-1.5 rounded-lg hover:bg-white/[0.05] text-neutral-500 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>
