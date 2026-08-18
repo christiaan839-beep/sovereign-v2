@@ -15,6 +15,7 @@
 
 import { ai } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 const log = createLogger("mcp-tool-gen");
 
@@ -49,7 +50,9 @@ const toolRegistry = new Map<string, GeneratedTool>();
 
 // ── Tool Generation ──
 
-export async function generateTool(description: string): Promise<GeneratedTool> {
+export async function generateTool(
+  description: string,
+): Promise<GeneratedTool> {
   const raw = await ai(
     `Create an API integration tool for: "${description}"
 
@@ -74,12 +77,21 @@ Return ONLY JSON:
 
 The httpConfig.bodyTemplate uses {{paramName}} placeholders that get replaced at runtime.
 URL can also use {{paramName}} placeholders for path/query params.`,
-    { system: "You are an API integration specialist. Generate MCP tool definitions. Output ONLY valid JSON.", maxTokens: 1000 }
+    {
+      system:
+        "You are an API integration specialist. Generate MCP tool definitions. Output ONLY valid JSON.",
+      maxTokens: 1000,
+    },
   );
 
   let parsed;
   try {
-    parsed = JSON.parse(raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+    parsed = JSON.parse(
+      raw
+        .replace(/```json?\n?/g, "")
+        .replace(/```/g, "")
+        .trim(),
+    );
   } catch {
     throw new Error("Failed to generate valid tool definition");
   }
@@ -95,7 +107,9 @@ URL can also use {{paramName}} placeholders for path/query params.`,
     httpConfig: {
       url: parsed.httpConfig.url,
       method: parsed.httpConfig.method || "POST",
-      headers: parsed.httpConfig.headers || { "Content-Type": "application/json" },
+      headers: parsed.httpConfig.headers || {
+        "Content-Type": "application/json",
+      },
       bodyTemplate: parsed.httpConfig.bodyTemplate || "{}",
     },
     createdAt: new Date().toISOString(),
@@ -103,7 +117,10 @@ URL can also use {{paramName}} placeholders for path/query params.`,
   };
 
   toolRegistry.set(tool.schema.name, tool);
-  log.info("MCP tool generated", { name: tool.schema.name, url: tool.httpConfig.url });
+  log.info("MCP tool generated", {
+    name: tool.schema.name,
+    url: tool.httpConfig.url,
+  });
   return tool;
 }
 
@@ -112,9 +129,12 @@ URL can also use {{paramName}} placeholders for path/query params.`,
  */
 export async function executeTool(
   toolNameOrTool: string | GeneratedTool,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
 ): Promise<unknown> {
-  const tool = typeof toolNameOrTool === "string" ? toolRegistry.get(toolNameOrTool) : toolNameOrTool;
+  const tool =
+    typeof toolNameOrTool === "string"
+      ? toolRegistry.get(toolNameOrTool)
+      : toolNameOrTool;
   if (!tool) throw new Error(`Tool "${toolNameOrTool}" not found`);
 
   // Replace {{placeholders}} in URL and body
@@ -126,25 +146,25 @@ export async function executeTool(
     body = body.replaceAll(placeholder, String(value));
   }
 
-  // SSRF check
-  const urlObj = new URL(url);
-  if (["localhost", "127.0.0.1", "0.0.0.0"].includes(urlObj.hostname)) {
-    throw new Error("Blocked: private URLs not allowed");
-  }
+  const res = await outboundFetch(
+    url,
+    {
+      method: tool.httpConfig.method,
+      headers: tool.httpConfig.headers,
+      body: tool.httpConfig.method !== "GET" ? body : undefined,
+    },
+    {
+      ruleId: "mcp-tool.execute",
+      timeoutMs: 15_000,
+    },
+  );
 
-  const res = await fetch(url, {
-    method: tool.httpConfig.method,
-    headers: tool.httpConfig.headers,
-    body: tool.httpConfig.method !== "GET" ? body : undefined,
-    signal: AbortSignal.timeout(15_000),
-  });
-
-  const contentType = res.headers.get("content-type") || "";
-  return contentType.includes("json") ? res.json() : res.text();
+  const contentType = res.contentType || "";
+  return contentType.includes("json") ? JSON.parse(res.body) : res.body;
 }
 
 export function listTools(): MCPToolSchema[] {
-  return [...toolRegistry.values()].map(t => t.schema);
+  return [...toolRegistry.values()].map((t) => t.schema);
 }
 
 export function getTool(name: string): GeneratedTool | undefined {
