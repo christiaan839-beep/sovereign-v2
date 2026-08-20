@@ -29,14 +29,14 @@ const sizeStyles: Record<ButtonSize, string> = {
 export function Button({ children, variant = "primary", size = "md", loading, icon, className = "", disabled, ...props }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center font-medium transition-gpu duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+      className={`inline-flex items-center justify-center font-medium transition-gpu duration-200 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF] ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
       disabled={disabled || loading}
       {...props}
     >
       {loading ? (
-        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" aria-hidden="true" />
       ) : icon ? (
-        <span className="shrink-0">{icon}</span>
+        <span className="shrink-0" aria-hidden="true">{icon}</span>
       ) : null}
       {children}
     </button>

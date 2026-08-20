@@ -1,0 +1,3 @@
+## 2026-08-20 - Global Keyboard Accessibility for Buttons
+**Learning:** Found that the core `Button.tsx` component lacked clear visual focus states (`focus-visible`) and proper `aria-hidden` attributes for internal SVG icons/spinners, which degraded keyboard navigation globally and caused screen reader clutter.
+**Action:** Added `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]` to standard buttons to provide a visible focus ring without appearing on mouse click, and added `aria-hidden="true"` to decorative internal components. Always include focus states and hide decorative elements in core UI components to ensure global compliance.
