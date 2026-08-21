@@ -166,7 +166,8 @@ export default function ApiKeysPage() {
                 </code>
                 <button
                   onClick={copyKey}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/15 px-3 py-2.5 text-xs font-medium text-cyan-100 transition hover:bg-cyan-500/25"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/15 px-3 py-2.5 text-xs font-medium text-cyan-100 transition hover:bg-cyan-500/25 focus-visible:ring-2 focus-visible:ring-[#00B7FF] focus-visible:outline-none"
+                  aria-label="Copy API key"
                 >
                   {copied ? (
                     <>
@@ -183,7 +184,8 @@ export default function ApiKeysPage() {
               </div>
               <button
                 onClick={() => setCreatedKey(null)}
-                className="mt-3 text-xs text-neutral-400 transition hover:text-neutral-200"
+                className="mt-3 text-xs text-neutral-400 transition hover:text-neutral-200 focus-visible:ring-2 focus-visible:ring-[#00B7FF] focus-visible:outline-none rounded-md px-1"
+                aria-label="Dismiss API key"
               >
                 I&apos;ve saved it — dismiss
               </button>
@@ -207,7 +209,7 @@ export default function ApiKeysPage() {
             <button
               onClick={create}
               disabled={creating}
-              className="inline-flex items-center gap-2 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-2.5 text-sm font-medium text-cyan-100 transition hover:bg-cyan-500/15 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-2.5 text-sm font-medium text-cyan-100 transition hover:bg-cyan-500/15 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[#00B7FF] focus-visible:outline-none"
             >
               {creating ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -265,7 +267,8 @@ export default function ApiKeysPage() {
                   <button
                     onClick={() => revoke(k.id)}
                     disabled={revokingId === k.id}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/[0.06] px-3 py-1.5 text-xs text-rose-200 transition hover:bg-rose-500/10 disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/[0.06] px-3 py-1.5 text-xs text-rose-200 transition hover:bg-rose-500/10 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-none"
+                    aria-label="Revoke API key"
                   >
                     {revokingId === k.id ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
