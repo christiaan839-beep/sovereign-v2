@@ -23,7 +23,7 @@ function AgentCore({ isSpeaking }: { isSpeaking: boolean }) {
   });
 
   return (
-    <Sphere ref={meshRef} args={[1.5, 64, 64]}>
+    <Sphere ref={meshRef as any} args={[1.5, 64, 64]}>
       <MeshDistortMaterial
         color="#00ff66"
         attach="material"
