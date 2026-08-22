@@ -114,6 +114,7 @@ export default function ResultsLibraryPage() {
           <button
             onClick={fetchActivities}
             disabled={loading}
+            aria-label="Refresh results"
             className="p-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-neutral-400 transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
