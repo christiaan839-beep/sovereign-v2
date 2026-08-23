@@ -129,7 +129,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ toast }}>
       {children}
       {/* Toast Container -- fixed bottom-right */}
-      <div className="fixed bottom-6 right-6 z-[200] flex flex-col gap-2 pointer-events-none w-[340px]">
+      <div
+        className="fixed bottom-6 right-6 z-[200] flex flex-col gap-2 pointer-events-none w-[340px]"
+        aria-live="polite"
+      >
         <AnimatePresence>
           {toasts.map((t) => (
             <motion.div
@@ -166,9 +169,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   e.stopPropagation();
                   removeToast(t.id);
                 }}
-                className="text-neutral-500 hover:text-white transition-colors shrink-0 mt-0.5"
+                className="text-neutral-500 hover:text-white transition-colors shrink-0 mt-0.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
+                aria-label="Dismiss notification"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3 h-3" aria-hidden="true" />
               </button>
               <ProgressBar
                 duration={t.duration}
