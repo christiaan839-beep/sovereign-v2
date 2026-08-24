@@ -82,26 +82,26 @@ export function ExportButtons({ content, filename = "umbra-output", className = 
     <div className={`flex items-center gap-2 ${className}`}>
       <button
         onClick={copyToClipboard}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-bold text-neutral-400 hover:text-white hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-gpu uppercase tracking-wider"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-bold text-neutral-400 hover:text-white hover:border-emerald-500/30 hover:bg-emerald-500/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-gpu uppercase tracking-wider"
         title="Copy to clipboard"
       >
-        {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+        {copied ? <Check className="w-3 h-3 text-emerald-400" aria-hidden="true" /> : <Copy className="w-3 h-3" aria-hidden="true" />}
         {copied ? "Copied" : "Copy"}
       </button>
       <button
         onClick={downloadAsText}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-bold text-neutral-400 hover:text-white hover:border-[#00B7FF]/30 hover:bg-[#00B7FF]/5 transition-gpu uppercase tracking-wider"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-bold text-neutral-400 hover:text-white hover:border-[#00B7FF]/30 hover:bg-[#00B7FF]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF] transition-gpu uppercase tracking-wider"
         title="Download as text file"
       >
-        <Download className="w-3 h-3" />
+        <Download className="w-3 h-3" aria-hidden="true" />
         .TXT
       </button>
       <button
         onClick={downloadAsHTML}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-bold text-neutral-400 hover:text-white hover:border-purple-500/30 hover:bg-purple-500/5 transition-gpu uppercase tracking-wider"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-bold text-neutral-400 hover:text-white hover:border-purple-500/30 hover:bg-purple-500/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 transition-gpu uppercase tracking-wider"
         title="Download as HTML file"
       >
-        <FileText className="w-3 h-3" />
+        <FileText className="w-3 h-3" aria-hidden="true" />
         .HTML
       </button>
     </div>
