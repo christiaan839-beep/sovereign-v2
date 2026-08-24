@@ -162,13 +162,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 )}
               </div>
               <button
+                aria-label="Close notification"
                 onClick={(e) => {
                   e.stopPropagation();
                   removeToast(t.id);
                 }}
-                className="text-neutral-500 hover:text-white transition-colors shrink-0 mt-0.5"
+                className="text-neutral-500 hover:text-white transition-colors shrink-0 mt-0.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
               >
-                <X className="w-3 h-3" />
+                <X aria-hidden="true" className="w-3 h-3" />
               </button>
               <ProgressBar
                 duration={t.duration}
