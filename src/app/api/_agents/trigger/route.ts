@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getPlaybook } from "@/lib/playbooks";
 import { createLogger } from "@/lib/logger";
 import { getBaseUrl } from "@/lib/base-url";
+import { timingSafeEqual } from "crypto";
 
 /**
  * SOVEREIGN MATRIX — Webhook Trigger Engine
@@ -68,13 +69,12 @@ function authenticateApiKey(apiKey: unknown): boolean {
   if (typeof apiKey !== "string" || apiKey.length === 0) {
     return false;
   }
+
   // Constant-time comparison to prevent timing attacks
-  if (apiKey.length !== expected.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < apiKey.length; i++) {
-    mismatch |= apiKey.charCodeAt(i) ^ expected.charCodeAt(i);
-  }
-  return mismatch === 0;
+  const aBuf = Buffer.from(apiKey, "utf8");
+  const bBuf = Buffer.from(expected, "utf8");
+  if (aBuf.length !== bBuf.length) return false;
+  return timingSafeEqual(aBuf, bBuf);
 }
 
 // ─── POST Handler ───────────────────────────────────────────────────────────
