@@ -63,7 +63,10 @@ gets a concrete deliverable for the "what about audit?" question.
 ## Proof links
 
 - npm: `@sovereign-matrix/verifiable-receipts`
-- GitHub: `christiaan839-beep/sovereign-v2` (Apache 2.0)
+- GitHub: `christiaan839-beep/sovereign-v2` — platform proprietary; the
+  VAOS spec (CC0), the `vaos-verifier` package (MIT) and the CLI (MIT)
+  are permissive carve-outs, and most packages under `packages/` ship
+  their own Apache-2.0 licence. See `LICENSE`.
 - Live transparency log: `https://sovereignmatrix.agency/api/transparency/sth`
 - Live witness observations: `https://sovereignmatrix.agency/api/transparency/witness/observations`
 - IETF draft: `docs/specs/ietf-draft-vaos-00.md` in the repo

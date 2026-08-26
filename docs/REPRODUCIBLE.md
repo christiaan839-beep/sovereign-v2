@@ -253,7 +253,10 @@ researchers.
 
 ## 11. License
 
-Source: AGPL-3.0 (platform); Apache-2.0 (`packages/`).
+Source: proprietary (platform) — see [`LICENSE`](../LICENSE), which is
+authoritative. Individual packages under `packages/` carry their own
+`LICENSE` files; 19 of 23 do (17 Apache-2.0, 2 MIT). The VAOS 1.0 spec,
+the `vaos-verifier` package and the CLI are named permissive carve-outs.
 This document: CC0 1.0 (public domain).
 
 Built with the assumption that any audit-grade claim has to survive

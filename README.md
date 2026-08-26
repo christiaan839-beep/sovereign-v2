@@ -269,13 +269,21 @@ Email: `security@sovereignmatrix.agency`.
 
 ## License
 
-| Layer                     | License                  |
-| ------------------------- | ------------------------ |
-| `packages/*`              | Apache 2.0               |
-| `docs/methodology/*`      | CC0 (public domain)      |
-| `docs/partnerships/*`     | CC0 (use freely)         |
-| `docs/specs/*`            | IETF Trust per BCP 78/79 |
-| Application code (`src/`) | MIT                      |
+[`LICENSE`](./LICENSE) is authoritative; this table summarises it.
+
+| Layer | License |
+| --- | --- |
+| Application code (`src/`) | **Proprietary — all rights reserved** |
+| `packages/*` | Each package's own `LICENSE` file — 19 of 23 carry one (17 Apache-2.0, 2 MIT) |
+| `packages/vaos-verifier/` | MIT (named carve-out) |
+| `cli/sovereign.mjs` | MIT (named carve-out) |
+| `docs/specs/vaos-1.0.md` | CC0 1.0 (named carve-out) |
+| `docs/outreach/*` | CC BY 4.0 (named carve-out) |
+
+The platform is proprietary and the verification format is not — deliberately,
+so VAOS receipts can be adopted by auditors, regulators and competitors without
+anyone needing our permission. `LICENSE` explains the split and names the exact
+carve-outs; where this table and that file differ, that file wins.
 
 ## What's next
 
