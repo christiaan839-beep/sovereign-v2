@@ -5,13 +5,18 @@
  * active subscription due in the current cadence window, then
  * delivers them via the existing universal email sender.
  *
- * Security: CRON_SECRET — header `x-cron-secret` must match. The
- * Vercel cron config in vercel.json runs this hourly; we only
- * actually generate bundles when the cadence's nextBundleAt time
- * falls inside the last hour.
+ * Security: CRON_SECRET via requireCronAuth — the caller must send
+ * `Authorization: Bearer $CRON_SECRET`, the same header every other
+ * cron route expects.
+ *
+ * Scheduling: hourly is load-bearing, not arbitrary — a run only
+ * generates bundles when the cadence's nextBundleAt falls inside the
+ * last hour. Moving this to a lower frequency requires widening that
+ * window in code, or bundles silently stop being generated.
  */
 
 import { NextResponse } from "next/server";
+import { requireCronAuth } from "@/lib/cron-auth";
 import { createLogger } from "@/lib/logger";
 import { generateAuditBundle, nextBundleAt } from "@/lib/audit-bundle";
 import type { AuditSubscription } from "@/lib/audit-bundle";
@@ -24,11 +29,17 @@ export const maxDuration = 300;
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  const supplied = req.headers.get("x-cron-secret");
-  if (!secret || supplied !== secret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Was an inline `x-cron-secret` check. Same secret as the cron/* routes
+  // but a different header, so any scheduler configured with the standard
+  // `Authorization: Bearer` — which is what requireCronAuth and Vercel's
+  // own cron invoker send — got 401 from exactly these two routes and no
+  // others. Both happen to be the evidence-generating jobs.
+  //
+  // requireCronAuth is also the audited path: it rejects an unset secret
+  // with 503 rather than comparing against "Bearer undefined", never
+  // fails open, and enforces in every environment including previews.
+  const authError = requireCronAuth(req);
+  if (authError) return authError;
 
   const signingKey =
     process.env.AGENT_RUN_SIGNING_SECRET ?? process.env.CRON_SECRET ?? "";
