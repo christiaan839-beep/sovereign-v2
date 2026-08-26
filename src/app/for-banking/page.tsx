@@ -148,7 +148,7 @@ export default function ForBankingPage() {
         <p className="mt-6 text-neutral-400 text-base leading-relaxed max-w-2xl">
           SR 11-7 + PRA SS1/23 + EU AI Act high-risk credit-scoring rules demand
           continuous validation + cryptographic auditability. Sovereign Matrix
-          is the only AI agent stack that ships this out of the box.
+          ships both out of the box.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <Link

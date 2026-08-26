@@ -327,7 +327,7 @@ const SECTIONS: Section[] = [
     title: "Models",
     icon: BarChart3,
     description:
-      "The platform routes requests through 35+ models across 6 providers (NVIDIA NIM, Google Gemini, Anthropic Claude, Groq, Ollama, Tavily). The smart router selects the optimal model per task, with an 11-model failover chain.",
+      "The platform routes requests through 39+ models across 6 providers (NVIDIA NIM, Google Gemini, Anthropic Claude, Groq, Ollama, Tavily). The smart router selects the optimal model per task, with an 11-model failover chain.",
     endpoints: [
       {
         id: "model-list",

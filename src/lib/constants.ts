@@ -3,7 +3,16 @@
  *
  * Every page, section, meta tag, and FAQ answer MUST reference these constants.
  * When a number changes, change it here once — it propagates everywhere.
+ *
+ * agentCount used to be a hand-typed 130 that nothing read, so ~40 pages
+ * hard-coded their own figure and drifted to 124/126/129/130/131/135/145
+ * while the platform actually shipped 140. It is now derived from the
+ * generated slug list, which `npm run gen:registry -- --check` verifies
+ * against the routes on disk — so the number cannot be wrong without CI
+ * failing first. AGENT_SLUGS is a frozen string array with no imports of
+ * its own, safe in client and edge bundles alike.
  */
+import { AGENT_SLUGS } from "@/lib/agent-slugs";
 
 export const PLATFORM = {
   name: "Sovereign Matrix",
@@ -15,13 +24,13 @@ export const PLATFORM = {
 } as const;
 
 export const METRICS = {
-  agentCount: 130,
+  agentCount: AGENT_SLUGS.length,
   modelCount: "39+",
   perTokenCost: "$0",
   avgLatency: "<200ms",
   safetyLayers: 5,
   nimModelCount: 26,
-  agentEndpoints: 118,
+  agentEndpoints: AGENT_SLUGS.length,
 } as const;
 
 export const MODELS = {

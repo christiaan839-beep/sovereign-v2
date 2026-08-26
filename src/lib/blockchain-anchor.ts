@@ -19,9 +19,11 @@
  *   - The blockchain anchor proves WHEN you committed the root —
  *     mathematically impossible to backdate.
  *
- * The combined three-primitive system (Cooks 167 + 168 + 169) is
- * the cryptographic moat at full strength: NO competitor in the
- * AI agent space has anything close to this.
+ * The three compose: the ratchet shows nothing was removed, the
+ * tombstone shows deletion happened on time, and the anchor pins when
+ * the root existed. Each is checkable independently by someone who
+ * does not trust the operator, which is the only property that matters
+ * when the operator is the party being audited.
  */
 
 import { createHash } from "crypto";

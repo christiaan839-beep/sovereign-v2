@@ -524,7 +524,7 @@ export default function MissionControlDemo() {
                   <span className="text-white font-bold">{TOTAL_DISPLAY_TIME}</span>
                   <span className="text-neutral-500 mx-2">&bull;</span>
                   Powered by{" "}
-                  <span className="text-emerald-400 font-bold">35+ AI models</span>
+                  <span className="text-emerald-400 font-bold">39+ AI models</span>
                 </span>
               </div>
             </motion.div>

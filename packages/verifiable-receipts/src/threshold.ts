@@ -13,8 +13,10 @@
  *   - TLS notary federations (Convergence, Perspectives)
  *   - Certificate Transparency cross-witness (RFC 9162 §4)
  *
- * Why this matters: even Mastercard Agent Pay and Visa Agentic
- * Commerce don't ship m-of-n cosigning. We do, in Apache 2.0.
+ * Why this matters: a single-issuer receipt is only as trustworthy as
+ * the issuer's key custody. A quorum receipt survives the compromise of
+ * any m-1 issuers, which is the property a regulator actually wants
+ * when the issuer is also the party being audited.
  *
  * Wire format extension:
  *
@@ -196,6 +198,9 @@ export function assembleThresholdAttestation(args: {
 /**
  * Verify a threshold attestation. Returns ok=true only when:
  *   - The envelope schema is intact (scheme === "trs1")
+ *   - The quorum is satisfiable: m and n are integers, 1 <= m <= n, and
+ *     authorizedIssuers has exactly n entries. These travel inside the
+ *     envelope, so they are attacker-controlled and are checked first.
  *   - contentHash matches sha256(canonical)
  *   - Every cosigner in the cosigners list whose issuerId is in
  *     authorizedIssuers has a verifying signature
@@ -220,6 +225,40 @@ export async function verifyThresholdAttestation(
       reason: `unknown scheme "${attestation.scheme}"`,
       validSignatureCount: 0,
       required: 0,
+      verifyingIssuers: [],
+      rejected,
+    };
+  }
+
+  // The quorum parameters are attacker-supplied: they travel inside the
+  // envelope being checked. Without this gate an envelope declaring
+  // `m: 0` verified with ZERO signatures — a threshold signature that
+  // needs no signatures. Confirmed by execution before this was added:
+  // m:0, m:"0", m:-5 and m:0/n:0 all returned ok:true on a payload
+  // reading {"action":"transfer","amountCents":100000000}, and a missing
+  // authorizedIssuers or cosigners array threw a TypeError out of a
+  // function whose every other failure is a structured verdict.
+  const { m, n } = attestation.threshold ?? ({} as { m: unknown; n: unknown });
+  const badQuorum =
+    !Number.isInteger(m) || (m as number) < 1
+      ? `threshold.m must be an integer >= 1, got ${JSON.stringify(m)}`
+      : !Number.isInteger(n) || (n as number) < 1
+        ? `threshold.n must be an integer >= 1, got ${JSON.stringify(n)}`
+        : (m as number) > (n as number)
+          ? `threshold.m (${m}) exceeds threshold.n (${n}) — an unsatisfiable quorum`
+          : !Array.isArray(attestation.authorizedIssuers)
+            ? "authorizedIssuers must be an array"
+            : attestation.authorizedIssuers.length !== (n as number)
+              ? `authorizedIssuers has ${attestation.authorizedIssuers.length} entries but threshold.n is ${n}`
+              : !Array.isArray(attestation.cosigners)
+                ? "cosigners must be an array"
+                : null;
+  if (badQuorum !== null) {
+    return {
+      ok: false,
+      reason: badQuorum,
+      validSignatureCount: 0,
+      required: Number.isInteger(m) ? (m as number) : 0,
       verifyingIssuers: [],
       rejected,
     };

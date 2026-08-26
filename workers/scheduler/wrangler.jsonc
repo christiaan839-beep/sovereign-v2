@@ -1,0 +1,41 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sovereign-cron-scheduler",
+  "main": "src/index.ts",
+
+  // nodejs_compat and nodejs_compat_v2 are enabled by default from
+  // 2026-08-04 onward, so no compatibility_flags are needed. This Worker
+  // uses only fetch, URL and console anyway — the Node surface is
+  // irrelevant to it, and keeping it that way is deliberate: the
+  // scheduler should stay small enough to reason about at a glance.
+  "compatibility_date": "2026-08-26",
+
+  "observability": { "enabled": true },
+
+  // ONE trigger, firing every minute; src/jobs.ts decides what is due.
+  //
+  // Two reasons not to declare ten triggers here. The free plan allows
+  // five per account and there are ten jobs. And Cloudflare's cron
+  // parser numbers weekdays 1=Sunday..7=Saturday, while every expression
+  // in vercel.json is standard cron (0=Sunday) — handing `0 3 * * 0`
+  // straight to Cloudflare would move the weekly cleanup by a day,
+  // silently. Matching internally keeps the existing expressions exact.
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
+
+  "vars": {
+    // The origin the jobs run against. Change this to the Railway (or
+    // other) URL once the app has moved. No trailing slash.
+    "ORIGIN": "https://sovereignmatrix.agency"
+  }
+
+  // CRON_SECRET is a secret, not a var — it is never committed:
+  //
+  //   npx wrangler secret put CRON_SECRET
+  //
+  // It must match CRON_SECRET on the origin. Every scheduled route
+  // verifies it via requireCronAuth, which rejects the literal string
+  // "Bearer undefined" — so a missing secret fails closed rather than
+  // letting anonymous requests through.
+}

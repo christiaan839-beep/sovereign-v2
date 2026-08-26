@@ -157,9 +157,9 @@ export default function ForCsrdPage() {
         <p className="mt-6 text-neutral-400 text-base leading-relaxed max-w-2xl">
           CSRD wave 1 (~12,000 EU issuers) files first reports this year.
           Limited-assurance engagements demand replayable evidence for every
-          AI-generated ESG narrative. Sovereign Matrix is the only agent stack
-          that ships cryptographically-signed receipts your auditor verifies in
-          their own workpaper system.
+          AI-generated ESG narrative. Sovereign Matrix ships cryptographically
+          signed receipts your auditor verifies in their own workpaper system,
+          without taking our word for any of it.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <Link

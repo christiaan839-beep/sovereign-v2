@@ -243,7 +243,7 @@ function PortalLanding({
           <div className="flex items-center gap-2 text-neutral-500">
             <Bot className="w-4 h-4" style={{ color: accent }} />
             <span className="text-xs font-semibold uppercase tracking-wider">
-              130+ AI Agents
+              140 AI Agents
             </span>
           </div>
           <div className="hidden sm:block w-px h-4 bg-white/[0.06]" />

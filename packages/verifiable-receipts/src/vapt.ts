@@ -2,9 +2,8 @@
  * Verifiable Agentic Payment Token (VAPT) — transaction-scoped tokens
  * for autonomous agent purchases.
  *
- * The open-source analogue of Mastercard Agent Pay / Visa Agentic
- * Commerce. A VAPT cryptographically binds an autonomous agent to a
- * verified human user's pre-authorized transaction envelope. Merchants
+ * A VAPT cryptographically binds an autonomous agent to a verified
+ * human user's pre-authorized transaction envelope. Merchants
  * accept the token, settlement happens, but neither merchant nor the
  * agent runtime ever sees the user's underlying payment credentials.
  *

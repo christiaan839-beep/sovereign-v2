@@ -15,7 +15,7 @@ the simpler "just the basics" pitch for non-technical audiences.
 
 | Time     | Screen                                                                                 | Voice-over (read this exactly or close to it)                                                                                                                                                                                                                               |
 | -------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **0:00** | Your face.                                                                             | "I'm [NAME]. In ninety seconds, the verifiable AI agent infrastructure nobody else in the agentic space ships."                                                                                                                                                             |
+| **0:00** | Your face.                                                                             | "I'm [NAME]. In ninety seconds, AI agent infrastructure where every output is signed and independently verifiable."                                                                                                                                                             |
 | **0:08** | sovereignmatrix.agency homepage.                                                       | "Most AI agent platforms can't prove what their AI did. That's the bottleneck blocking enterprise AI deployment in 2026. We fix it with one primitive — every agent run produces a cryptographically signed receipt."                                                       |
 | **0:18** | Click "See it live" → `/verified`. The badge loads on screen.                          | "This is the live demo. The badge below is the actual script running against our database. It pulled a real signed receipt and verified the HMAC signature in real time, with no signup."                                                                                   |
 | **0:30** | Click the badge → `/r/[id]` page opens.                                                | "Here's the receipt. Agent name, model, input, output, safety check results, signature. POST the canonical projection and signature to /api/verify and ANY third party — your auditor, your customer, a regulator — can confirm authenticity. Without us. Without our key." |
@@ -81,7 +81,7 @@ that depend on it. Keep the 0:46 + 0:54 beats — those are the moat.
 
 ## Talking-point cheat sheet (don't memorize, just internalize)
 
-**The five things this Loom proves you can do that nobody else can:**
+**The five things this Loom proves, on camera:**
 
 1. Sign every output (HMAC v1)
 2. Sign with non-repudiation (Ed25519 v2)

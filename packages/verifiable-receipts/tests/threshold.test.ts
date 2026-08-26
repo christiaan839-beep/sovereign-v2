@@ -11,6 +11,7 @@
  */
 import { describe, it, expect } from "vitest";
 import {
+  createHash,
   generateKeyPairSync,
   sign as nodeSign,
   verify as nodeVerify,
@@ -384,5 +385,73 @@ describe("verifyThresholdAttestation — adversarial rejections", () => {
     expect(result.ok).toBe(false);
     expect(result.validSignatureCount).toBe(1);
     expect(result.rejected.some((r) => /duplicate/.test(r.reason))).toBe(true);
+  });
+});
+
+describe("quorum parameters are attacker-supplied and must be validated", () => {
+  // These travel inside the envelope being verified, so a forger picks
+  // them. Before the gate, every case in the first test returned ok:true
+  // with ZERO signatures — a threshold signature needing no signatures —
+  // and the two shape cases threw a TypeError out of a function whose
+  // every other failure is a structured verdict.
+  const contentHash = createHash("sha256").update(CANONICAL, "utf8").digest("hex");
+  const base = {
+    scheme: "trs1" as const,
+    canonical: CANONICAL,
+    contentHash,
+    assembledAt: "2026-08-26T00:00:00Z",
+  };
+  const never: ThresholdVerifyOptions = {
+    verifyIssuerSignature: async () => {
+      throw new Error("the signature verifier must never be reached for these");
+    },
+  };
+
+  it("refuses a quorum that no signature could satisfy", async () => {
+    const cases: Array<[string, unknown, unknown, string[]]> = [
+      ["m = 0", { m: 0, n: 3 }, undefined, ["a", "b", "c"]],
+      ['m = "0" (string)', { m: "0", n: 3 }, undefined, ["a", "b", "c"]],
+      ["m negative", { m: -5, n: 3 }, undefined, ["a", "b", "c"]],
+      ["m and n both 0", { m: 0, n: 0 }, undefined, []],
+      ["m fractional", { m: 1.5, n: 3 }, undefined, ["a", "b", "c"]],
+      ["m exceeds n", { m: 2, n: 1 }, undefined, ["a"]],
+      ["n disagrees with authorizedIssuers", { m: 1, n: 5 }, undefined, ["a"]],
+    ];
+    for (const [label, threshold, , authorizedIssuers] of cases) {
+      const att = { ...base, threshold, authorizedIssuers, cosigners: [] };
+      const r = await verifyThresholdAttestation(att as never, never);
+      expect(r.ok, `${label} must not verify`).toBe(false);
+      expect(r.reason, `${label} must say why`).toBeTruthy();
+      expect(r.validSignatureCount).toBe(0);
+    }
+  });
+
+  it("returns a verdict, not a TypeError, when the arrays are missing", async () => {
+    const noIssuers = { ...base, threshold: { m: 1, n: 1 }, cosigners: [] };
+    const noCosigners = { ...base, threshold: { m: 1, n: 1 }, authorizedIssuers: ["a"] };
+    for (const [label, att] of [
+      ["authorizedIssuers", noIssuers],
+      ["cosigners", noCosigners],
+    ] as const) {
+      const r = await verifyThresholdAttestation(att as never, never);
+      expect(r.ok, label).toBe(false);
+      expect(r.reason, label).toMatch(/must be an array/);
+    }
+  });
+
+  it("still accepts a well-formed 1-of-1 envelope", async () => {
+    // The gate must not have broken the legitimate path.
+    const a = makeIssuer("a");
+    const att = {
+      ...base,
+      threshold: { m: 1, n: 1 },
+      authorizedIssuers: ["a"],
+      cosigners: [
+        { issuerId: "a", signature: signBound(a, CANONICAL, { m: 1, n: 1 }, ["a"]) },
+      ] as ThresholdCosigner[],
+    };
+    const r = await verifyThresholdAttestation(att, makeVerifier([a]));
+    expect(r.ok).toBe(true);
+    expect(r.validSignatureCount).toBe(1);
   });
 });

@@ -9,7 +9,7 @@ const COMPARISON = [
   { feature: "Meeting prep", sovereign: true, competitor: true, note: "Both prepare briefings for meetings" },
   { feature: "Lead generation + enrichment", sovereign: true, competitor: false, note: "Lindy focuses on productivity, not lead gen" },
   { feature: "Content creation", sovereign: true, competitor: false, note: "Sovereign agents create blog posts, social media, and SEO content" },
-  { feature: "Multi-model routing (36+ models)", sovereign: true, competitor: false, note: "Lindy uses a single model per task" },
+  { feature: "Multi-model routing (39+ models)", sovereign: true, competitor: false, note: "Lindy uses a single model per task" },
   { feature: "Voice calling (AI)", sovereign: true, competitor: false, note: "Lindy doesn&apos;t make autonomous calls" },
   { feature: "Competitive analysis", sovereign: true, competitor: false, note: "No competitor scanning in Lindy" },
   { feature: "Workflow automation", sovereign: true, competitor: true, note: "Both automate multi-step workflows" },
@@ -63,7 +63,7 @@ export default function VsLindyPage() {
           <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] text-center">
             <p className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-2">Sovereign Node</p>
             <p className="text-3xl font-black text-emerald-400">$199<span className="text-sm text-emerald-500/50">/mo</span></p>
-            <p className="text-xs text-neutral-500 mt-1">130 agents + 36 models + everything below</p>
+            <p className="text-xs text-neutral-500 mt-1">140 agents + 39+ models + everything below</p>
           </div>
         </div>
       </section>
@@ -134,7 +134,7 @@ export default function VsLindyPage() {
           <div className="grid md:grid-cols-2 gap-4">
             {[
               { title: "130 vs ~20 agents", desc: "Sovereign covers leads, content, SEO, voice, competitive intel, and more — far beyond email and calendar." },
-              { title: "Multi-model consensus", desc: "36+ models with consensus verification. Every output is checked by 4 independent models before delivery." },
+              { title: "Multi-model consensus", desc: "39+ models with consensus verification. Every output is checked by 4 independent models before delivery." },
               { title: "Lead gen + content + SEO + voice", desc: "Full business execution stack — generate leads, create content, optimize SEO, and make AI voice calls." },
               { title: "White-label for agencies", desc: "Rebrand the entire platform under your agency&apos;s name. Lindy has no white-label offering." },
             ].map((item) => (

@@ -20,6 +20,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { requireCronAuth } from "@/lib/cron-auth";
 import { createLogger } from "@/lib/logger";
 import { buildPosture } from "@/lib/soc2-monitor";
 import { collectFromInputs } from "@/lib/soc2-collector";
@@ -54,11 +55,17 @@ function collectReadings() {
 }
 
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  const supplied = req.headers.get("x-cron-secret");
-  if (!secret || supplied !== secret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Was an inline `x-cron-secret` check. Same secret as the cron/* routes
+  // but a different header, so any scheduler configured with the standard
+  // `Authorization: Bearer` — which is what requireCronAuth and Vercel's
+  // own cron invoker send — got 401 from exactly these two routes and no
+  // others. Both happen to be the evidence-generating jobs.
+  //
+  // requireCronAuth is also the audited path: it rejects an unset secret
+  // with 503 rather than comparing against "Bearer undefined", never
+  // fails open, and enforces in every environment including previews.
+  const authError = requireCronAuth(req);
+  if (authError) return authError;
   const now = new Date();
   const readings = collectReadings();
   const posture = buildPosture(readings, { now });

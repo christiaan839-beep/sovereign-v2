@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Sovereign Matrix vs Claude Managed Agents — Honest Comparison (2026)",
-  description: "Compare Sovereign Matrix (129 pre-built agents, 39+ models, $199/mo) vs Claude Managed Agents (pay-per-use). Multi-model agent platform vs single-model hosted agents.",
+  description: "Compare Sovereign Matrix (140 pre-built agents, 39+ models, $199/mo) vs Claude Managed Agents (pay-per-use). Multi-model agent platform vs single-model hosted agents.",
   keywords: ["Claude Managed Agents alternative", "Anthropic agents vs Sovereign", "multi-model agent platform", "Claude agents alternative", "model-agnostic AI agents"],
   alternates: { canonical: "https://sovereignmatrix.agency/vs/claude-agents" },
   openGraph: {
     title: "Sovereign Matrix vs Claude Managed Agents — Honest Comparison",
-    description: "129 pre-built agents with 39+ models at $199/mo vs Claude Managed Agents pay-per-use. See the full feature comparison.",
+    description: "140 pre-built agents with 39+ models at $199/mo vs Claude Managed Agents pay-per-use. See the full feature comparison.",
     url: "https://sovereignmatrix.agency/vs/claude-agents",
     type: "website",
   },

@@ -13,9 +13,11 @@
  * receipt URL can re-derive the canonical projection and verify the
  * signature against the server (without ever seeing the secret).
  *
- * This is the "verifiable AI output" claim that no agent SaaS ships
- * today. The infrastructure cost is one row per agent run — already
- * within the existing audit-log retention budget.
+ * The run is a proof rather than a log line: hand anyone the receipt
+ * URL and they can re-derive the canonical projection and check the
+ * signature themselves, without the secret. The infrastructure cost is
+ * one row per agent run — already within the existing audit-log
+ * retention budget.
  */
 import {
   createHmac,

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 /**
  * NVIDIA NIM API Proxy — Routes SOVEREIGN MATRIX requests to NVIDIA's NIM inference endpoints. 
- * Supports 30+ models across 7 operational tiers: Reasoning, Vision, Voice, Security, Code, RAG, Specialized.
+ * Supports 39+ models across 7 operational tiers: Reasoning, Vision, Voice, Security, Code, RAG, Specialized.
  * All requests are authenticated via the NVIDIA_NIM_API_KEY environment variable.
  * 
  * Security:

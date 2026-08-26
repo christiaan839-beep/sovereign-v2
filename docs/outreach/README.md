@@ -48,7 +48,7 @@ recipient gets one specific observation about their work.
 - Disclosure block in footer, every send, every channel.
 - No "world-class," "elite," "honored," "humbled," or "passionate."
   These templates were written after killing those exact words from
-  130+ agent system prompts in this repo. Don't add them back.
+  140 agent system prompts in this repo. Don't add them back.
 
 ## What this kit does NOT do
 

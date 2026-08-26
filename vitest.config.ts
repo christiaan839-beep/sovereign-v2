@@ -6,7 +6,12 @@ export default defineConfig({
     environment: "node",
     globals: true,
     testTimeout: 30000,
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx", "packages/**/*.test.ts"],
+    include: [
+      "src/**/*.test.ts",
+      "src/**/*.test.tsx",
+      "packages/**/*.test.ts",
+      "workers/**/*.test.ts",
+    ],
     exclude: ["node_modules", ".next"],
     coverage: {
       provider: "v8",

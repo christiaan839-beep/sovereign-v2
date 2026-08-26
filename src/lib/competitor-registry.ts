@@ -188,7 +188,7 @@ export const COMPETITORS: Competitor[] = [
     ],
     positioning: [
       'Jasper picked one job and did it well: content. If your only AI workflow is "write blog posts and ad copy with a consistent brand voice," Jasper is mature, polished, and built for marketing teams. There\'s no shame in starting there.',
-      "Sovereign Matrix is a category up. The content engine is one of 130+ agents — you also get lead generation, competitor research, voice cold-calling, programmatic SEO, and a multi-agent workflow runner. Pricing starts cheaper because cost-routing sends most calls to free providers (Cerebras, NIM) instead of OpenAI.",
+      "Sovereign Matrix is a category up. The content engine is one of 140 agents — you also get lead generation, competitor research, voice cold-calling, programmatic SEO, and a multi-agent workflow runner. Pricing starts cheaper because cost-routing sends most calls to free providers (Cerebras, NIM) instead of OpenAI.",
       "Most teams switch to Sovereign when they hit Jasper's edges: content gets drafted but never distributed, leads never get researched, and the team realises they need 5 tools to do what one platform should. The argument for Jasper is depth in one workflow. The argument for Sovereign is breadth without bloat.",
     ],
   },
@@ -289,7 +289,7 @@ export const COMPETITORS: Competitor[] = [
         feature: "Pre-built agents for SMB workflows",
         sovereign: true,
         competitor: false,
-        note: "130+ in Sovereign vs DIY in AutoGPT",
+        note: "140 in Sovereign vs DIY in AutoGPT",
       },
       {
         feature: "Pay nothing for the platform itself",
@@ -314,7 +314,7 @@ export const COMPETITORS: Competitor[] = [
     audience: "Curious link explorers.",
     comparison: [],
     positioning: [
-      "If you're here from a competitor's /vs/sovereign-matrix page, welcome. The pitch is simple: we replace your AI agency for $99/mo, run on cost-routed infra so most calls cost us $0, and ship 130+ pre-built agents you can compose into any business outcome.",
+      "If you're here from a competitor's /vs/sovereign-matrix page, welcome. The pitch is simple: we replace your AI agency for $99/mo, run on cost-routed infra so most calls cost us $0, and ship 140 pre-built agents you can compose into any business outcome.",
       "Read /case-studies for proof, /pricing for numbers, /marketplace for the agent inventory.",
     ],
   },

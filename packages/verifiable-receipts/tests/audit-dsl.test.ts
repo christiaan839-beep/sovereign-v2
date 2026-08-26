@@ -272,6 +272,69 @@ describe("queryReceipts — WHERE operators", () => {
     expect(r2.rows.length).toBe(0); // '.' must be literal, not match any char
   });
 
+  it("LIKE terminates on a pattern that used to hang the process", () => {
+    // The matcher compiled LIKE to a regex where every % became `.*`,
+    // which backtracks exponentially on a near-match. Measured against
+    // this exact 41-char value, inside the 200-char cap:
+    //   "%a" x 6  (12 chars) ->      51 ms
+    //   "%a" x 8  (16 chars) ->   1,247 ms
+    //   "%a" x 10 (20 chars) ->  16,937 ms
+    // Roughly 13x per four characters. The trust page invites auditors
+    // to paste queries, so that was a hang anyone could trigger.
+    const rows = [
+      {
+        verdictId: "x",
+        overall: "pass",
+        issuedAt: "z",
+        agentSlug: "a".repeat(40) + "!",
+      },
+    ];
+    for (const repeats of [10, 50, 100]) {
+      const pattern = "%a".repeat(repeats).slice(0, 200);
+      const started = Date.now();
+      const r = queryReceipts(
+        rows,
+        `SELECT * FROM receipts WHERE agentSlug LIKE '${pattern}'`,
+      );
+      const elapsed = Date.now() - started;
+      expect(r.rows.length).toBe(0);
+      // Generous by three orders of magnitude versus the old 16.9 s, and
+      // still fails loudly if the regex matcher ever comes back.
+      expect(elapsed, `${pattern.length}-char pattern took ${elapsed}ms`).toBeLessThan(250);
+    }
+  });
+
+  it("LIKE spans newlines, as SQL specifies", () => {
+    // The regex version used `.`, which does not match a newline in
+    // JavaScript, so _ and % silently failed on multi-line values. The
+    // scan compares characters directly and matches them.
+    const rows = [
+      { verdictId: "x", overall: "pass", issuedAt: "z", agentSlug: "a\nb" },
+    ];
+    expect(
+      queryReceipts(rows, "SELECT * FROM receipts WHERE agentSlug LIKE 'a_b'").rows.length,
+    ).toBe(1);
+    expect(
+      queryReceipts(rows, "SELECT * FROM receipts WHERE agentSlug LIKE 'a%b'").rows.length,
+    ).toBe(1);
+  });
+
+  it("LIKE handles the wildcard edge cases", () => {
+    const one = (slug: string, pattern: string) =>
+      queryReceipts(
+        [{ verdictId: "x", overall: "pass", issuedAt: "z", agentSlug: slug }],
+        `SELECT * FROM receipts WHERE agentSlug LIKE '${pattern}'`,
+      ).rows.length;
+
+    expect(one("abc", "%"), "% matches everything").toBe(1);
+    expect(one("abc", "%%%"), "repeated % collapses").toBe(1);
+    expect(one("abc", "%a%b%c%"), "interleaved wildcards").toBe(1);
+    expect(one("aaa", "%a"), "trailing literal after greedy %").toBe(1);
+    expect(one("abc", "abc%"), "trailing % matches empty").toBe(1);
+    expect(one("abc", "____"), "too many _ must not match").toBe(0);
+    expect(one("abc", "ab"), "a prefix is not a match without %").toBe(0);
+  });
+
   it("IN matches against a list", () => {
     const r = queryReceipts(
       FIXTURES,

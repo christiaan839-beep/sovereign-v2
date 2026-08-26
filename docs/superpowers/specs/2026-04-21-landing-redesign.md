@@ -73,8 +73,8 @@ Not "AI platform." Infrastructure implies permanence and that others build on to
 ### 04 · THE THREE MOATS
 - 3-column grid (stacks on mobile)
 - Column 1: **A2E Economy** — "Agents that hire agents. The first self-sustaining AI marketplace."
-- Column 2: **Semantic Memory** — "Every run makes it smarter. Compounding intelligence no one else has."
-- Column 3: **Model Sovereignty** — "39+ models. Best-in-class routing. Your data never trains anything."
+- Column 2: **Semantic Memory** — "Every run makes it smarter. Context compounds across runs instead of resetting."
+- Column 3: **Model Sovereignty** — "39+ models, routed per task. Your data never trains anything."
 - Cards: glassmorphism + copper top border + subtle copper glow on hover
 
 ### 05 · A2E ECONOMY SHOWCASE

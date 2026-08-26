@@ -10,9 +10,8 @@
  *
  * Most organizations seeking AIMS certification have to assemble
  * Clause 9 (performance evaluation) + Annex A control evidence by
- * hand. Closed-source vendors (Credo AI / Holistic AI / IBM
- * watsonx.governance) ship this for $50K-200K+/year. This package
- * is the Apache-2.0 open-source equivalent:
+ * hand. This package derives that evidence from VAOS receipts
+ * instead, under Apache-2.0:
  *
  *   Clause 4 — Context of the organization      (operator-authored)
  *   Clause 5 — Leadership                        (operator-authored)

@@ -42,6 +42,7 @@
     "chrome-extension",
     "mcp-server",
     "packages",
-    "scripts"
+    "scripts",
+    "workers"
   ]
 }

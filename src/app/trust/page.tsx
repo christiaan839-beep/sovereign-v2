@@ -63,7 +63,7 @@ const TRUST_PRIMITIVES: TrustPrimitive[] = [
     tag: "VAOS 2.0 / 3.0",
     title: "Post-quantum dual-signed receipts",
     summary:
-      "Every agent run mints an Ed25519 + ML-DSA-65 (FIPS 204) dual-signed receipt. Verifiable forever, including post-quantum harvest-now-decrypt-later attacks.",
+      "Every agent run mints an Ed25519-signed receipt (VAOS 2.0, v2= wire prefix) when a signing key is configured, and an HMAC-SHA256 receipt (VAOS 1.0, v1=) otherwise. ML-DSA-65 (FIPS 204) dual-signing is implemented as VAOS 3.0 and enabled per-deployment for long-retention verticals — it is not on by default.",
     links: [
       { label: "VAOS 2.0 spec", href: "/docs/specs/vaos-2.0" },
       { label: "VAOS 3.0 spec (post-quantum)", href: "/docs/specs/vaos-3.0" },
@@ -135,7 +135,7 @@ const TRUST_PRIMITIVES: TrustPrimitive[] = [
     tag: "Red-team",
     title: "Public adversarial corpus + ASR report",
     summary:
-      "Every BLOCK rule across 42 Guardian packs tested against a public adversarial corpus. Defender holds ≥ 90% block-rate; coverage stats sorted weakest-rule-first.",
+      "18 of the 125 Guardian rules across the 42 packs are exercised by the public adversarial corpus, and the defender holds ≥ 90% block-rate on those. The other 107 are not covered — red-team.ts skips any rule the corpus does not name — and the report sorts weakest-rule-first so the gap stays visible instead of being averaged away.",
     links: [
       {
         label: "Red-team module",
@@ -181,8 +181,9 @@ const TRUST_PRIMITIVES: TrustPrimitive[] = [
       "Three independent SDKs verify the same wire bytes byte-for-byte. Every regulator audit pipeline, every Python notebook, every Go cloud-tool can re-check a receipt.",
     links: [
       {
-        label: "TypeScript on npm",
-        href: "https://www.npmjs.com/package/@sovereign-matrix/verifiable-receipts",
+        // Not on the registry yet — link the source rather than a 404.
+        label: "TypeScript source",
+        href: "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/verifiable-receipts",
       },
       {
         label: "Python (PyPI ready)",
@@ -209,10 +210,10 @@ const TRUST_PRIMITIVES: TrustPrimitive[] = [
   },
   {
     category: "Audit query",
-    tag: "RAD-DSL 1.0",
+    tag: "RAD-DSL",
     title: "SQL over receipt sets",
     summary:
-      "Pure-TS SQL-flavored query language over receipt arrays. Auditors paste SELECT verdictId, agentSlug FROM receipts WHERE pack = 'hipaa-2026' AND overall = 'block' — get cryptographically-anchored rows back. Read-only by design.",
+      "Pure-TS SQL-flavored query language over receipt arrays. Auditors paste SELECT verdictId, agentSlug FROM receipts WHERE pack = 'hipaa-2026' AND overall = 'block' — get structured rows back over an in-memory receipt array. Read-only by construction — the grammar has no INSERT, UPDATE or DELETE. It filters and projects; it does not verify signatures.",
     links: [
       {
         label: "Audit-DSL source",

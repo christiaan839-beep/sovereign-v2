@@ -2,9 +2,9 @@
  * Receipt-Audit DSL (RAD-DSL) — pure-TS SQL-flavored query language
  * over receipt sets.
  *
- * No commercial competitor in the agentic-receipts space ships
- * anything like this. Regulators currently get receipts as a tar
- * file and grep through them — RAD-DSL lets them write:
+ * The problem it solves: a receipt set arrives as a tar file, and the
+ * only tool an auditor has is grep. RAD-DSL lets them ask the question
+ * directly instead:
  *
  *   SELECT verdictId, overall, agentSlug
  *   FROM receipts
@@ -553,30 +553,74 @@ function compareScalars(a: unknown, b: Value): number {
 }
 
 /**
- * SQL LIKE → regex translation. % matches any sequence; _ matches one
- * char. Everything else is treated literally (escaped).
- */
-/** Maximum LIKE-pattern length. Bounds the worst-case regex
- * backtracking surface. A pattern of 200 chars with all `%` is the
- * regex `^.*.*…200×…$`, which on a near-match input is still
- * exponential — but at length 200 the wall-clock cost is microseconds.
- * Patterns longer than this are rejected as a defensive ReDoS guard.
+ * Maximum LIKE-pattern length.
+ *
+ * Kept as a sanity bound on absurd input, NOT as a security control.
+ * It used to be the security control, and it did not work: the matcher
+ * compiled the pattern to a regex where every `%` became `.*`, and on a
+ * near-match input that backtracks exponentially. Measured against a
+ * 41-character value, well inside the 200-char cap:
+ *
+ *   "%a" × 6  (12 chars)  →      51 ms
+ *   "%a" × 8  (16 chars)  →   1,247 ms
+ *   "%a" × 10 (20 chars)  →  16,937 ms
+ *
+ * Roughly 13× per four characters, so the cap permitted an unbounded
+ * hang. The old comment here asserted "at length 200 the wall-clock
+ * cost is microseconds", which was never measured and was wrong by
+ * every order of magnitude available.
+ *
+ * The matcher below is linear-scan instead, so the bound is now
+ * cosmetic rather than load-bearing.
  */
 const LIKE_PATTERN_MAX_LENGTH = 200;
 
+/**
+ * SQL LIKE, matched by scan rather than by regex. `%` matches any
+ * sequence including empty; `_` matches exactly one character; every
+ * other character matches itself literally.
+ *
+ * Standard two-pointer wildcard match: on a mismatch, fall back to the
+ * most recent `%` and advance the consumed prefix by one. Worst case is
+ * O(value × pattern) and there is no backtracking tree to explode, so
+ * the pathological patterns above now return in microseconds for real.
+ *
+ * One deliberate behaviour change: the regex version used `.`, which in
+ * JavaScript does not match a newline, so `_` and `%` silently failed to
+ * span multi-line values. Scanning compares characters directly, so both
+ * now match newlines — which is what SQL LIKE is specified to do.
+ */
 function likeMatch(value: string, pattern: string): boolean {
-  if (pattern.length > LIKE_PATTERN_MAX_LENGTH) {
-    // Defensive: refuse oversized patterns rather than risk ReDoS.
-    return false;
+  if (pattern.length > LIKE_PATTERN_MAX_LENGTH) return false;
+
+  let v = 0;
+  let p = 0;
+  let starP = -1;
+  let starV = 0;
+
+  while (v < value.length) {
+    const pc = p < pattern.length ? pattern[p] : undefined;
+    if (pc !== undefined && (pc === "_" || pc === value[v])) {
+      v++;
+      p++;
+    } else if (pc === "%") {
+      // Remember where the wildcard was, then try matching it as empty.
+      starP = p;
+      starV = v;
+      p++;
+    } else if (starP !== -1) {
+      // Mismatch: let the last `%` swallow one more character and retry.
+      p = starP + 1;
+      starV++;
+      v = starV;
+    } else {
+      return false;
+    }
   }
-  let regex = "^";
-  for (const ch of pattern) {
-    if (ch === "%") regex += ".*";
-    else if (ch === "_") regex += ".";
-    else regex += ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-  regex += "$";
-  return new RegExp(regex).test(value);
+
+  // Trailing `%`s can match the empty remainder; anything else cannot.
+  while (p < pattern.length && pattern[p] === "%") p++;
+  return p === pattern.length;
 }
 
 // ── Public surface ────────────────────────────────────────────────────

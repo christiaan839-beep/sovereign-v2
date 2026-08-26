@@ -53,8 +53,18 @@ def fixtures() -> list[dict]:
     return _load_fixtures()
 
 
-def test_loads_at_least_10_fixtures(fixtures: list[dict]) -> None:
-    assert len(fixtures) >= 10
+def test_loads_the_documented_corpus(fixtures: list[dict]) -> None:
+    """Exact, not ">= 10".
+
+    The README states "11 fixtures x 3 verifiers = 33 checks, 5 accept /
+    6 reject". A floor assertion lets that arithmetic drift silently the
+    moment someone adds a fixture; an exact one makes the documented
+    number fail when it goes stale.
+    """
+    assert len(fixtures) == 11
+    accept = sum(1 for f in fixtures if f["expected"]["ok"])
+    assert accept == 5
+    assert len(fixtures) - accept == 6
 
 
 @pytest.mark.parametrize("fixture", _load_fixtures(), ids=lambda f: f["__filename"])

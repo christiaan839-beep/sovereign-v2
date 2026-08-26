@@ -1,28 +1,29 @@
 {
   "version": "0.0.1",
+  "_comment": "Launch targets resolve executables from PATH so this file works on any machine. It previously pinned an absolute nvm path and a macOS Python.framework path, which meant it only ran on one laptop — and this file ships in the Skills Pack.",
   "configurations": [
     {
       "name": "nextjs-dev",
-      "runtimeExecutable": "/bin/bash",
-      "runtimeArgs": ["-c", "export PATH=/Users/christiaanwillemdewet/.nvm/versions/node/v22.22.0/bin:$PATH && npm run dev"],
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
       "port": 3000,
       "autoPort": true
     },
     {
       "name": "websocket-voice",
-      "runtimeExecutable": "/bin/bash",
-      "runtimeArgs": ["-c", "export PATH=/Users/christiaanwillemdewet/.nvm/versions/node/v22.22.0/bin:$PATH && npm run ws"],
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "ws"],
       "port": 8080
     },
     {
       "name": "ghost-protocol",
-      "runtimeExecutable": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "runtimeExecutable": "python3",
       "runtimeArgs": ["nemo_ghost.py"],
       "port": 8001
     },
     {
       "name": "nemoclaw-daemon",
-      "runtimeExecutable": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "runtimeExecutable": "python3",
       "runtimeArgs": ["server/python-agents/nemoclaw_os.py"],
       "port": 9090
     },

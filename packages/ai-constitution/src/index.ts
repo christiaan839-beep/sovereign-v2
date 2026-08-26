@@ -23,12 +23,12 @@
  * becomes the `constitutionHash` field on every receipt minted under
  * this constitution.
  *
- * This is genuinely novel: Anthropic ships Constitutional AI as a
- * training methodology; we ship it as an inference-time cryptographic
- * commitment. The two compose — a Claude model trained on a
- * constitution + our wrapper that anchors every output to a
- * verifiable constitution hash = the strongest currently-available
- * accountability primitive for autonomous agents.
+ * Anthropic ships Constitutional AI as a training methodology; this
+ * package is the inference-time counterpart — a cryptographic
+ * commitment rather than a training objective. The two compose: a
+ * model trained on a constitution, plus a wrapper that anchors every
+ * output to a verifiable constitution hash, so a reader can check
+ * after the fact which constitution an output was minted under.
  *
  * AGI/ASI safety implication: when autonomous agents take consequential
  * actions, "did the agent follow the rules?" becomes the central

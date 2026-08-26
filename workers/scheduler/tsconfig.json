@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["@cloudflare/workers-types"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true
+  },
+  // src/ only. The tests deliberately are NOT here: they read
+  // vercel.json via node:fs and run under the root vitest in Node, while
+  // this project declares only @cloudflare/workers-types. Keeping the
+  // Node lib out means Worker code that reaches for a Node API fails
+  // this check instead of failing at the edge, which is the point.
+  "include": ["src/**/*.ts"]
+}

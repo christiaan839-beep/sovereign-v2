@@ -78,7 +78,7 @@ Apply at https://ycombinator.com/apply. Application takes ~2 hours if you use th
 
 **Anything else investors should know? (1500 chars):**
 
-> The codebase is the proof: 145 agent endpoints across 8 LLM providers, 2,438 tests passing, 143 cooks shipped, 38 DB tables, 22 vertical landing pages, 7 cryptographic moats. Single founder shipped this in [N] months. Live at sovereignmatrix.agency.
+> The codebase is the proof: 140 agent endpoints across 8 LLM providers, 4,500+ tests passing, 38 DB tables, 22 vertical landing pages, 7 cryptographic primitives with frozen public specs. Single founder shipped this in [N] months. Every number here is reproducible from a clone: `npm test`, `npm run gen:registry -- --check`. Live at sovereignmatrix.agency.
 >
 > The Auditor Replay Seat add-on SKU is wired through Stripe checkout (`src/lib/add-ons.ts` + `/api/payments/stripe/addon-checkout`); the webhook provisioner (`src/lib/add-on-provisioner.ts`) issues the anon-credential after a successful payment. Revenue loop is technically complete — needs the first signed customer to flip on.
 >
@@ -102,7 +102,7 @@ The pricing math:
 
 **Why are we going to be the team that succeeds?** (1500 chars)
 
-> I shipped 143 cooks across 7 cryptographic primitives in [N] months as a solo founder. The codebase is verifiable. The hard architectural work — designing crypto primitives nobody else has, mapping each onto the specific regulator (NERC CIP, ICH GCP, NAIC, SR 11-7, CSRD), and shipping vertical landing pages that procurement teams can read — is done.
+> I shipped 7 cryptographic primitives in [N] months as a solo founder, and the codebase is verifiable rather than described. The hard architectural work — specifying each primitive down to a frozen wire format with a public conformance corpus, mapping each onto the specific regulator (NERC CIP, ICH GCP, NAIC, SR 11-7, CSRD), and shipping vertical landing pages that procurement teams can read — is done.
 >
 > What I need is the GTM motion: warm intros into Big-4 partners, 1 design partner that converts to paid, and the runway to hire the first salesperson. YC's partner network at Vanta and Anthropic alumni specifically solves the wedge problem (Sustainability Assurance partner at Big-4 + Chief Model Risk Officer at a regional bank).
 

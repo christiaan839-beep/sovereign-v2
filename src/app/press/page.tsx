@@ -23,7 +23,7 @@ const TALKING_POINTS = [
   "Auditors verify any AI decision in their own browser tab via the Verify Receipt demo (sovereignmatrix.agency/demo/verify-receipt).",
   "22 vertical landings target the regulator-customer wedge — CSRD, SR 11-7, NERC CIP, 21 CFR Part 11, FedRAMP, NAIC AI Bias.",
   "7 cryptographic primitives shipped: HMAC + Ed25519 receipts, Merkle inclusion proofs, ZK pass-rate proofs, receipt-chain ratchet, output watermarking, model fingerprinting, anonymous-credential auditor seats.",
-  "2,400+ tests passing. 145 agent endpoints across 8 LLM providers. 38 DB tables.",
+  "4,500+ tests passing (npm test). 140 agent endpoints across 8 LLM providers. 38 DB tables.",
 ];
 
 const PRESS_FAQ = [
@@ -41,7 +41,7 @@ const PRESS_FAQ = [
   },
   {
     q: "Where is it in production?",
-    a: "Live at sovereignmatrix.agency. 18 PRs merged in the last 30 days, 54 cooks shipped (130-154). Open codebase visible to investors + design partners.",
+    a: "Live at sovereignmatrix.agency. The codebase is open to investors and design partners: 140 agent endpoints, 4,500+ passing tests, and a public conformance corpus a third party can run against their own implementation.",
   },
   {
     q: "What's the funding status?",
@@ -158,8 +158,8 @@ export default function PressPage() {
             cryptographic verification layer for AI agents. Every agent decision
             is signed under HMAC-SHA256 + Ed25519 and committed to a
             tamper-evident Merkle chain — auditors verify any output in their
-            own workpaper system. The platform ships 145 agent endpoints across
-            8 LLM providers, 7 cryptographic moats, and 22 vertical landings
+            own workpaper system. The platform ships 140 agent endpoints across
+            8 LLM providers, 7 cryptographic primitives, and 22 vertical landings
             targeting regulated industries (CSRD, SR 11-7, NERC CIP, 21 CFR Part
             11, NAIC AI Bias, FedRAMP). Live at sovereignmatrix.agency.
           </p>

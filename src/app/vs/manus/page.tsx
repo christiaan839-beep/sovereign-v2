@@ -6,11 +6,11 @@ import Link from "next/link";
 
 const COMPARISON = [
   { feature: "Computer-use / browser control", sovereign: true, competitor: true, note: "Both offer browser automation — Manus pioneered full desktop control" },
-  { feature: "Multi-agent orchestration", sovereign: true, competitor: false, note: "Sovereign runs 130 specialized agents in concert; Manus is a single general agent" },
+  { feature: "Multi-agent orchestration", sovereign: true, competitor: false, note: "Sovereign runs 140 specialized agents in concert; Manus is a single general agent" },
   { feature: "Lead generation", sovereign: true, competitor: false, note: "Sovereign has dedicated lead gen agents; Manus doesn't focus on GTM" },
   { feature: "Content creation", sovereign: true, competitor: false, note: "End-to-end content pipeline with SEO; not a Manus use case" },
   { feature: "Voice calling (AI)", sovereign: true, competitor: false, note: "Sovereign makes autonomous voice calls; Manus operates visually" },
-  { feature: "Multi-model routing (36+ models)", sovereign: true, competitor: false, note: "Sovereign routes across 36+ models; Manus uses a single model" },
+  { feature: "Multi-model routing (39+ models)", sovereign: true, competitor: false, note: "Sovereign routes across 39+ models; Manus uses a single model" },
   { feature: "Consensus verification (4 models)", sovereign: true, competitor: false, note: "Every output checked by 4 independent models" },
   { feature: "White-label for agencies", sovereign: true, competitor: false, note: "Sovereign offers full white-label; Manus does not" },
   { feature: "Flat pricing (no usage surprises)", sovereign: true, competitor: false, note: "$199/mo flat vs variable usage-based billing" },
@@ -63,7 +63,7 @@ export default function VsManusPage() {
           <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] text-center">
             <p className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-2">Sovereign Node</p>
             <p className="text-3xl font-black text-emerald-400">$199<span className="text-sm text-emerald-500/50">/mo</span></p>
-            <p className="text-xs text-neutral-500 mt-1">130 agents + 36 models + flat pricing</p>
+            <p className="text-xs text-neutral-500 mt-1">140 agents + 39+ models + flat pricing</p>
           </div>
         </div>
       </section>
@@ -133,9 +133,9 @@ export default function VsManusPage() {
           <h2 className="text-xl font-bold text-white mb-4 text-center">Where Sovereign wins</h2>
           <div className="grid md:grid-cols-2 gap-4">
             {[
-              { title: "130 specialized agents", desc: "Not one general agent. 130 purpose-built agents for leads, content, SEO, voice, competitive intel, code, and more." },
-              { title: "Multi-model consensus", desc: "36+ models with consensus verification. Every output is checked by 4 independent models before delivery." },
-              { title: "Flat, predictable pricing", desc: "No usage surprises. $199/mo covers 130 agents and 36 models. Manus charges per task with variable costs." },
+              { title: "140 specialized agents", desc: "Not one general agent. 140 purpose-built agents for leads, content, SEO, voice, competitive intel, code, and more." },
+              { title: "Multi-model consensus", desc: "39+ models with consensus verification. Every output is checked by 4 independent models before delivery." },
+              { title: "Flat, predictable pricing", desc: "No usage surprises. $199/mo covers 140 agents and 39+ models. Manus charges per task with variable costs." },
               { title: "Local execution + safety", desc: "Run locally via Ollama for full data control. 5-layer safety pipeline on every action. White-label for agencies." },
             ].map((item) => (
               <div key={item.title} className="p-5 rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02]">

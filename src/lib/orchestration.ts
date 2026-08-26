@@ -1,7 +1,7 @@
 /**
  * SOVEREIGN MATRIX — Multi-agent orchestration (Cook 37 / Tier 1 #2)
  *
- * Compose the 145 agents into typed workflows. n8n-for-AI but with
+ * Compose the 140 agents into typed workflows. n8n-for-AI but with
  * cryptographic receipts: every step's input + output is preserved so
  * the full workflow can be replayed end-to-end.
  *

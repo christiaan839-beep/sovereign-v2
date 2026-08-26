@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { checkAgentAccess, checkFeatureAccess, getAvailableAgents, getLockedFeatures } from "@/lib/paywall";
+import { AGENT_SLUGS } from "@/lib/agent-slugs";
 
 describe("paywall.ts — Plan Gating", () => {
   // ── Free tier ──
@@ -12,7 +13,10 @@ describe("paywall.ts — Plan Gating", () => {
   it("free: returns upgrade URL", () => { expect(checkAgentAccess("voice-closer", "free").upgradeUrl).toBe("/dashboard/billing"); });
   it("free: returns required plan", () => { expect(checkAgentAccess("voice-closer", "free").requiredPlan).toBeTruthy(); });
   it("free: gets 3 agents", () => { expect(getAvailableAgents("free").total).toBe(3); });
-  it("free: shows locked count", () => { expect(getAvailableAgents("free").locked).toBe(126); });
+  it("free: locks every agent it does not grant", () => {
+    const free = getAvailableAgents("free");
+    expect(free.locked).toBe(AGENT_SLUGS.length - free.total);
+  });
 
   // ── Starter tier ──
   it("starter: allows email-sequence", () => { expect(checkAgentAccess("email-sequence", "starter").allowed).toBe(true); });
@@ -30,7 +34,11 @@ describe("paywall.ts — Plan Gating", () => {
   // ── Node tier ──
   it("node: allows ALL agents", () => { expect(checkAgentAccess("cosmos-video", "node").allowed).toBe(true); });
   it("node: allows voice-closer", () => { expect(checkAgentAccess("voice-closer", "node").allowed).toBe(true); });
-  it("node: gets all 129 agents", () => { expect(getAvailableAgents("node").total).toBe(129); });
+  it("node: gets every agent that exists", () => {
+    // Was pinned to 129 while the platform shipped 140 — the paid tier
+    // under-reported what the customer bought. Tie it to the generated list.
+    expect(getAvailableAgents("node").total).toBe(AGENT_SLUGS.length);
+  });
   it("node: zero locked", () => { expect(getAvailableAgents("node").locked).toBe(0); });
 
   // ── Enterprise tier ──

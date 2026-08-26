@@ -1,14 +1,14 @@
 /**
  * TOOL SEARCH — Searchable Agent Registry
  *
- * Instead of loading all 117 agent tool schemas into every Claude request
+ * Instead of loading all 140 agent tool schemas into every Claude request
  * (expensive in tokens), this registry lets Claude search for relevant tools
  * by capability. Anthropic's testing showed an 85% reduction in tool-definition
  * tokens using this pattern.
  *
  * Usage:
  *   const tools = searchAgentTools("analyze competitor website")
- *   // Returns only the 2-3 relevant tool schemas, not all 117
+ *   // Returns only the 2-3 relevant tool schemas, not the whole set
  */
 
 interface AgentToolEntry {
@@ -20,7 +20,10 @@ interface AgentToolEntry {
 }
 
 /**
- * Lightweight registry of all agents with searchable metadata.
+ * Lightweight registry of the most-requested agents, with searchable
+ * metadata. It holds a curated subset — not all 140 — and searchAgentTools
+ * scores only these entries, so an agent absent from this array is never
+ * returned by a search. Add an entry here to make an agent discoverable.
  * Each entry stores just enough info to match queries — full schemas
  * are only loaded when a tool is selected.
  */

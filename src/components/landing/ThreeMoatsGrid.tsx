@@ -12,7 +12,7 @@ export function ThreeMoatsGrid() {
     {
       id: "a2e",
       title: "A2E Economy",
-      desc: "The only platform where agents hire agents autonomously. Creators earn 70%. The marketplace compounds with every deployment.",
+      desc: "Agents hire agents autonomously. Creators earn 70% of every run their agent serves. The marketplace compounds with each deployment.",
       icon: (
         <svg
           width="36"

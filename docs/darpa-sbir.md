@@ -46,7 +46,7 @@ Sovereign Matrix has shipped seven cryptographic primitives that together produc
 
 **Significance to DoD / DARPA mission:**
 
-The next decade of DoD AI deployment requires assurance primitives that are mathematically verifiable, not policy-stipulated. The 7 primitives Sovereign ships are pure, library-grade implementations that any federal AI deployment can adopt without changing model providers. Adoption velocity matters; we are the only commercial-off-the-shelf option ready today.
+The next decade of DoD AI deployment requires assurance primitives that are mathematically verifiable, not policy-stipulated. The 7 primitives Sovereign ships are pure, library-grade implementations that any federal AI deployment can adopt without changing model providers. They are Apache-2.0 and installable today; the wire formats are frozen and the conformance corpus is public, so a second implementation can be written against them without our involvement.
 
 ---
 
@@ -87,7 +87,7 @@ Adjacent prior art:
 - **HuggingFace Inference Endpoints** — model-hosting infrastructure, no audit trail.
 - **Anthropic Constitutional AI** — output filtering, no cryptographic chain-of-custody.
 
-Sovereign Matrix is differentiated by being **commercial-off-the-shelf today** with seven primitives already shipping in production code with 2,400+ tests passing.
+Sovereign Matrix is differentiated by being **commercial-off-the-shelf today** with seven primitives already shipping in production code under 4,500+ passing tests.
 
 ---
 

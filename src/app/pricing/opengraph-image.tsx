@@ -13,7 +13,7 @@ export default function OGImage() {
           <span style={{ color: "#10b981", fontSize: "14px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const }}>Pricing</span>
         </div>
         <h1 style={{ color: "white", fontSize: "56px", fontWeight: 900, margin: 0 }}>$199/month. Flat.</h1>
-        <p style={{ color: "#737373", fontSize: "24px", marginTop: "16px" }}>No credits. No per-token fees. 130 agents. 39+ models.</p>
+        <p style={{ color: "#737373", fontSize: "24px", marginTop: "16px" }}>No credits. No per-token fees. 140 agents. 39+ models.</p>
         <div style={{ display: "flex", gap: "24px", marginTop: "40px" }}>
           {[
             { name: "Free", price: "$0" },

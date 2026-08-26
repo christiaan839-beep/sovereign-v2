@@ -428,7 +428,8 @@ export default function CompareMatrixPage() {
           Vanta and Drata sell compliance scoreboards but ship no cryptographic
           primitive — auditors trust their screenshot. Lindy, Clay, Manus,
           CrewAI ship AI agents but no audit trail an examiner can verify.
-          Sovereign is the only stack at the intersection.
+          Of the alternatives compared below, Sovereign is the one at the
+          intersection — scroll the matrix and check the row yourself.
         </p>
       </header>
 

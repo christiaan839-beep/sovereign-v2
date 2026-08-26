@@ -6,7 +6,7 @@ Founder-facing playbook. Action this manually — Claude can build assets, only 
 
 ## The 60-second pitch (use this exact wording)
 
-> Vanta sold for $2.45B at $200M ARR doing compliance scoreboards. They don't have the cryptographic layer underneath. We do — every AI agent decision produces a signed receipt the auditor verifies in their own workpaper system. Same buyer as Vanta (CCO, CISO, Chief Audit Executive), 10× bigger budget unlock once AI moves into regulated workflows. Live at sovereignmatrix.agency. 145 agents, 2,438 tests, 7 cryptographic primitives nobody else has. Looking for [stage-appropriate ask] to close [N] design-partner pilots in the next 90 days.
+> Vanta sold for $2.45B at $200M ARR doing compliance scoreboards. They don't have the cryptographic layer underneath. We do — every AI agent decision produces a signed receipt the auditor verifies in their own workpaper system. Same buyer as Vanta (CCO, CISO, Chief Audit Executive), 10× bigger budget unlock once AI moves into regulated workflows. Live at sovereignmatrix.agency. 140 agents, 4,500+ tests, 7 cryptographic primitives with frozen public specs. Looking for [stage-appropriate ask] to close [N] design-partner pilots in the next 90 days.
 
 Drop in:
 
@@ -112,7 +112,7 @@ YC application draft is in `docs/yc-application.md`.
 >
 > Hi [Name],
 >
-> I noticed you led [portfolio comp — Vanta / Drata / HashiCorp / Snyk] at [firm]. We're building the cryptographic layer underneath every AI agent decision. Live at sovereignmatrix.agency with 2,438 tests passing and 7 cryptographic primitives (HMAC + Ed25519 receipts, ZK pass-rate proofs, receipt-chain ratchet, anonymous credentials for auditor replay).
+> I noticed you led [portfolio comp — Vanta / Drata / HashiCorp / Snyk] at [firm]. We're building the cryptographic layer underneath every AI agent decision. Live at sovereignmatrix.agency with 4,500+ tests passing and 7 cryptographic primitives (HMAC + Ed25519 receipts, ZK pass-rate proofs, receipt-chain ratchet, anonymous credentials for auditor replay).
 >
 > 60-second verify demo: sovereignmatrix.agency/demo/verify-receipt — auditors verify any AI decision in their own browser tab.
 >

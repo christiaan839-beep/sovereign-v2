@@ -57,7 +57,7 @@ export const PLANS: Record<
     priceDisplay: CANONICAL_PLANS.node.priceDisplayZar,
     monthlyAmount: CANONICAL_PLANS.node.priceZarCents / 100,
     features: [
-      "All 129 agents",
+      "All 140 agents",
       "2,000 tasks/month",
       "Local execution",
       "Voice agents",

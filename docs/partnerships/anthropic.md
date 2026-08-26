@@ -28,7 +28,7 @@ verifiable forever by any independent party.
 - **Post-quantum dual-signed receipts** (VAOS 2.0/3.0 wire formats,
   frozen specs)
 - **Threshold cosigning** (VAOS-TRS 1.0) and **streaming attestation**
-  (VAOS-RSA 1.0) — primitives no other receipt-layer vendor ships
+  (VAOS-RSA 1.0) — both specified and implemented, specs in docs/specs/
 - **RFC 9162 transparency log** + witness federation
 - **Three-language symmetric verifier** (TypeScript / Python / Go)
   with a public conformance corpus
@@ -63,7 +63,10 @@ gets a concrete deliverable for the "what about audit?" question.
 ## Proof links
 
 - npm: `@sovereign-matrix/verifiable-receipts`
-- GitHub: `christiaan839-beep/sovereign-v2` (Apache 2.0)
+- GitHub: `christiaan839-beep/sovereign-v2` — platform proprietary; the
+  VAOS spec (CC0), the `vaos-verifier` package (MIT) and the CLI (MIT)
+  are permissive carve-outs, and most packages under `packages/` ship
+  their own Apache-2.0 licence. See `LICENSE`.
 - Live transparency log: `https://sovereignmatrix.agency/api/transparency/sth`
 - Live witness observations: `https://sovereignmatrix.agency/api/transparency/witness/observations`
 - IETF draft: `docs/specs/ietf-draft-vaos-00.md` in the repo

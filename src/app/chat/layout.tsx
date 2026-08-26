@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "AI Chat — Talk to 130+ Agents | Sovereign Matrix",
-  description: "Chat with 130+ specialized AI agents. Get leads, write content, analyze competitors — all from one conversation.",
+  title: "AI Chat — Talk to 140 Agents | Sovereign Matrix",
+  description: "Chat with 140 specialized AI agents. Get leads, write content, analyze competitors — all from one conversation.",
   openGraph: {
-    title: "AI Chat — Talk to 130+ Agents | Sovereign Matrix",
-    description: "Chat with 130+ specialized AI agents. Get leads, write content, analyze competitors — all from one conversation.",
+    title: "AI Chat — Talk to 140 Agents | Sovereign Matrix",
+    description: "Chat with 140 specialized AI agents. Get leads, write content, analyze competitors — all from one conversation.",
     siteName: "Sovereign Matrix",
   },
 };
