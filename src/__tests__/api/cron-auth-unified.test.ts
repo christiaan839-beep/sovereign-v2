@@ -22,6 +22,11 @@ const SECRET = "test-cron-secret";
 const ROUTES = [
   { name: "_cron/audit-bundles", load: () => import("@/app/api/_cron/audit-bundles/route") },
   { name: "_cron/soc2-indicators", load: () => import("@/app/api/_cron/soc2-indicators/route") },
+  // Added later: this one was missed by the first unification and kept
+  // reading a raw `x-cron-secret` header. It is the job that anchors the
+  // audit log to Bitcoin, so it 401'ing silently is the failure nobody
+  // notices until an auditor asks for the anchor.
+  { name: "cron/audit-log-anchor", load: () => import("@/app/api/cron/audit-log-anchor/route") },
 ] as const;
 
 const req = (headers: Record<string, string>) =>
@@ -86,4 +91,42 @@ describe("scheduled routes share one auth contract", () => {
       });
     });
   }
+});
+
+describe("no scheduled route reads a raw cron header", () => {
+  // The per-route tests above only cover routes someone remembered to
+  // list. This reads vercel.json — the actual schedule — and checks every
+  // route it names. `audit-log-anchor` was missed by the first
+  // unification precisely because nothing enumerated the schedule.
+  it("every path in vercel.json uses requireCronAuth", async () => {
+    const { readFileSync, existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
+
+    const vercel = JSON.parse(readFileSync(join(process.cwd(), "vercel.json"), "utf8")) as {
+      crons?: { path: string }[];
+    };
+    const offenders: string[] = [];
+
+    for (const cron of vercel.crons ?? []) {
+      const file = join(process.cwd(), "src", "app", cron.path.replace(/^\//, ""), "route.ts");
+      if (!existsSync(file)) {
+        offenders.push(`${cron.path} — no route.ts at ${file}`);
+        continue;
+      }
+      const src = readFileSync(file, "utf8");
+
+      // /api/health/ping is deliberately open: it is a liveness probe and
+      // is meant to answer an unauthenticated GET.
+      if (cron.path === "/api/health/ping") continue;
+
+      if (/headers\.get\(\s*["'`]x-cron-secret/.test(src)) {
+        offenders.push(`${cron.path} reads the retired x-cron-secret header`);
+      }
+      if (!/requireCronAuth/.test(src)) {
+        offenders.push(`${cron.path} does not call requireCronAuth`);
+      }
+    }
+
+    expect(offenders, `\n${offenders.join("\n")}\n`).toEqual([]);
+  });
 });

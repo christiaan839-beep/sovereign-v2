@@ -6,23 +6,32 @@
  * logic itself: the jobs stay where they are, in the Next.js app, and
  * this only replaces the thing calling them.
  *
- * That matters for the migration. Every scheduled route already accepts
- * `Authorization: Bearer $CRON_SECRET` — unified in commit 0869b31,
- * before which `_cron/*` checked a different header and would have
- * silently 401'd here. So moving the scheduler off Vercel needs no
- * application change at all.
+ * That matters for the migration. Every scheduled route accepts
+ * `Authorization: Bearer $CRON_SECRET`, so moving the scheduler off
+ * Vercel needs no application change. Getting there took two passes:
+ * 0869b31 converted the two `_cron/*` routes, and a later sweep caught
+ * `cron/audit-log-anchor`, which was still reading a raw `x-cron-secret`
+ * header and would have 401'd against this Worker while the other nine
+ * ran. That is the job anchoring the audit log to Bitcoin, so its
+ * silent absence is the one nobody notices until an auditor asks.
+ * `cron-auth-unified.test.ts` now enumerates vercel.json rather than a
+ * hand-written list, so a fourth route cannot drift the same way.
  *
  * COST. Cloudflare bills Workers on CPU time, and explicitly does not
  * count time spent awaiting `fetch()`. This Worker parses ten cron
  * expressions and then waits on the network, so a tick costs well under
  * a millisecond of CPU even though it may stay open for seconds. It fits
- * the free plan's 10 ms/invocation budget with room to spare.
+ * the free plan's 10 ms/invocation budget with room to spare, and the
+ * 15-minute wall-time limit for Cron Triggers dwarfs the per-job
+ * timeouts in jobs.ts.
  *
- * FAILURE MODEL. A job that errors, times out, or returns 5xx is logged
- * and skipped; the others still run. There is no retry — the next
+ * FAILURE MODEL. A job that errors, times out, or returns non-2xx is
+ * logged and skipped; the others still run. There is no retry — the next
  * matching tick is the retry, which for a once-a-minute job is a minute
  * away and for a weekly one is a week. If that is not acceptable for a
  * given job, the job needs its own durable queue, not a louder scheduler.
+ * When EVERY due job fails the invocation throws, so Cloudflare's Cron
+ * Trigger "Past Events" table shows red — see the scheduled handler.
  */
 
 import { compileCron, matches, type CompiledCron } from "./cron.js";
@@ -131,39 +140,62 @@ function assertConfigured(env: Env): string | null {
 }
 
 export default {
-  /** Cron Trigger entry point. Configured as `* * * * *` in wrangler.jsonc. */
-  async scheduled(event: { scheduledTime: number }, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) {
+  /**
+   * Cron Trigger entry point. Configured as `* * * * *` in wrangler.jsonc.
+   *
+   * This `await`s rather than using `ctx.waitUntil`. The runtime already
+   * waits for the promise the handler returns (up to the 15-minute cron
+   * limit), and awaiting is what makes the throw below meaningful:
+   * Cloudflare records an invocation in the Cron Trigger "Past Events"
+   * table as a success unless it fails. A handler that catches
+   * everything and never rejects shows green forever — including while
+   * every job is 401ing, which for this scheduler is precisely the state
+   * that must not look healthy.
+   */
+  async scheduled(event: { scheduledTime: number }, env: Env) {
     const problem = assertConfigured(env);
     if (problem) {
-      console.error(JSON.stringify({ level: "error", msg: `scheduler misconfigured: ${problem}` }));
-      return;
+      // Throw, don't return: a misconfigured scheduler that reports
+      // success is worse than one that reports nothing.
+      throw new Error(`scheduler misconfigured: ${problem}`);
     }
 
     const at = new Date(event.scheduledTime);
-    // waitUntil keeps the isolate alive for the in-flight fetches after
-    // the handler returns; without it Cloudflare may cancel them.
-    ctx.waitUntil(
-      runDue(at, env).then((results) => {
-        if (results.length === 0) {
-          if (env.VERBOSE === "1") {
-            console.log(JSON.stringify({ level: "debug", at: at.toISOString(), due: 0 }));
-          }
-          return;
-        }
-        for (const r of results) {
-          console.log(
-            JSON.stringify({
-              level: r.ok ? "info" : "error",
-              at: at.toISOString(),
-              path: r.path,
-              status: r.status,
-              ms: r.ms,
-              ...(r.error ? { error: r.error } : {}),
-            }),
-          );
-        }
-      }),
-    );
+    const results = await runDue(at, env);
+
+    if (results.length === 0) {
+      if (env.VERBOSE === "1") {
+        console.log(JSON.stringify({ level: "debug", at: at.toISOString(), due: 0 }));
+      }
+      return;
+    }
+
+    for (const r of results) {
+      console.log(
+        JSON.stringify({
+          level: r.ok ? "info" : "error",
+          at: at.toISOString(),
+          path: r.path,
+          status: r.status,
+          ms: r.ms,
+          ...(r.error ? { error: r.error } : {}),
+        }),
+      );
+    }
+
+    // Fail the invocation only when EVERY due job failed. That is the
+    // systemic signature — wrong CRON_SECRET, wrong ORIGIN, origin down —
+    // and it belongs in the dashboard. A single job failing among several
+    // is logged above and visible in `wrangler tail`; marking the whole
+    // tick red for it would leave the table permanently red, since
+    // job-runner alone fires 1,440 times a day.
+    const failed = results.filter((r) => !r.ok);
+    if (failed.length === results.length) {
+      throw new Error(
+        `all ${results.length} due job(s) failed: ` +
+          failed.map((f) => `${f.path} ${f.status ?? f.error}`).join("; "),
+      );
+    }
   },
 
   /**

@@ -6,7 +6,15 @@
  * OpenTimestamps public calendars. Result is persisted to the
  * audit_log_anchors table for later third-party verification.
  *
- * Security: requires CRON_SECRET in the x-cron-secret header.
+ * Security: CRON_SECRET via requireCronAuth — the caller must send
+ * `Authorization: Bearer $CRON_SECRET`, the same header every other
+ * scheduled route expects. This route was the last one still reading
+ * a raw `x-cron-secret` header: any standard scheduler (Vercel's own
+ * invoker, the Cloudflare Worker in workers/scheduler, curl in a
+ * runbook) sends Bearer, so it would have 401'd silently while the
+ * other nine ran — and this is the job that anchors the audit log to
+ * Bitcoin, so its absence is exactly what nobody notices until an
+ * auditor asks for the anchor.
  *
  * Configuration: when no calendar URLs are configured, the route
  * returns ok:false but still records the chain head digest so an
@@ -16,6 +24,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { auditLogs, auditLogAnchors } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import { requireCronAuth } from "@/lib/cron-auth";
 import {
   anchorChainHead,
   digestForAnchor,
@@ -39,11 +48,8 @@ export const maxDuration = 60;
 const GENESIS = "0".repeat(64);
 
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  const supplied = req.headers.get("x-cron-secret");
-  if (!secret || supplied !== secret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = requireCronAuth(req);
+  if (unauthorized) return unauthorized;
 
   // Pull the full audit log ordered by createdAt. For a one-founder shop
   // this is fast; once volume warrants, switch to incremental anchoring

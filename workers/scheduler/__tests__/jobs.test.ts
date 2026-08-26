@@ -105,3 +105,51 @@ describe("dispatch", () => {
     expect(results.every((r) => r.ok)).toBe(true);
   });
 });
+
+describe("the invocation status Cloudflare records", () => {
+  // Cloudflare marks a Cron Trigger invocation successful unless the
+  // handler rejects. A scheduler that swallows every error therefore
+  // shows green in the dashboard while nothing runs — the exact state
+  // that must not look healthy.
+  const worker = async () => (await import("../src/index")).default;
+
+  it("throws when every due job fails", async () => {
+    vi.stubGlobal("fetch", async () => new Response("nope", { status: 401 }));
+    const w = await worker();
+    await expect(
+      w.scheduled({ scheduledTime: Date.parse("2026-04-08T00:00:00Z") }, ENV),
+    ).rejects.toThrow(/all \d+ due job\(s\) failed/);
+  });
+
+  it("does not throw when only some fail", async () => {
+    vi.stubGlobal("fetch", async (url: string) =>
+      String(url).includes("job-runner")
+        ? new Response("nope", { status: 500 })
+        : new Response("{}", { status: 200 }),
+    );
+    const w = await worker();
+    await expect(
+      w.scheduled({ scheduledTime: Date.parse("2026-04-08T00:00:00Z") }, ENV),
+    ).resolves.toBeUndefined();
+  });
+
+  it("throws rather than firing unauthenticated when misconfigured", async () => {
+    const spy = vi.fn();
+    vi.stubGlobal("fetch", spy);
+    const w = await worker();
+    await expect(
+      w.scheduled({ scheduledTime: Date.now() }, { ORIGIN: "https://x.test", CRON_SECRET: "" }),
+    ).rejects.toThrow(/CRON_SECRET is not set/);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-https or trailing-slash origin", async () => {
+    const w = await worker();
+    await expect(
+      w.scheduled({ scheduledTime: Date.now() }, { ORIGIN: "http://x.test", CRON_SECRET: "s" }),
+    ).rejects.toThrow(/https/);
+    await expect(
+      w.scheduled({ scheduledTime: Date.now() }, { ORIGIN: "https://x.test/", CRON_SECRET: "s" }),
+    ).rejects.toThrow(/trailing slash/);
+  });
+});

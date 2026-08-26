@@ -19,10 +19,15 @@ schedule does not run at all.
 
 Cloudflare Cron Triggers accept `* * * * *` without argument.
 
-**No application change is required.** Every scheduled route already
-accepts `Authorization: Bearer $CRON_SECRET` — unified in commit
-`0869b31`, before which `_cron/*` checked a different header and would
-have silently 401'd here. That header is exactly what this Worker sends.
+**No application change is required.** Every scheduled route accepts
+`Authorization: Bearer $CRON_SECRET`, which is exactly what this Worker
+sends. Getting there took two passes: `0869b31` converted the two
+`_cron/*` routes, and a later sweep caught `cron/audit-log-anchor`,
+still reading a raw `x-cron-secret` header — it would have 401'd here
+while the other nine ran, and it is the job that anchors the audit log
+to Bitcoin. `src/__tests__/api/cron-auth-unified.test.ts` now enumerates
+`vercel.json` rather than a hand-written list, so a fourth route cannot
+drift the same way.
 
 ## Deploy
 
@@ -81,6 +86,17 @@ which for a once-a-minute job is a minute and for a weekly one is a
 week. If a job needs stronger delivery than that, it needs a durable
 queue, not a louder scheduler.
 
+**When the dashboard goes red.** Cloudflare records a Cron Trigger
+invocation as a success unless the handler rejects, so a scheduler that
+catches everything shows green forever — including while every job is
+401ing. The handler therefore `await`s the work and **throws when every
+due job failed**, which is the systemic signature: wrong `CRON_SECRET`,
+wrong `ORIGIN`, origin down. One job failing among several is logged and
+left green on purpose; `job-runner` alone fires 1,440 times a day, so
+reddening the whole tick for a single blip would make the table useless.
+A misconfigured Worker throws before sending anything, rather than
+firing unauthenticated requests.
+
 **Timeouts.** Each job carries its own `timeoutMs` and is aborted past
 it, so one slow endpoint cannot delay the rest of the tick or hold the
 Worker open.
@@ -95,7 +111,7 @@ both exist. When Vercel is gone, delete that test with `vercel.json` and
 ## Tests
 
 ```bash
-npx vitest run workers/          # from the repo root — 32 tests
+npx vitest run workers/          # from the repo root — 43 tests
 ```
 
 They run as part of the main suite. The cron matcher is checked by
