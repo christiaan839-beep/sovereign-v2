@@ -71,6 +71,9 @@ const eslintConfig = defineConfig([
     "server/**",
     // MCP server (separate TypeScript project)
     "mcp-server/**",
+    // Staged for extraction into its own repo — own tsconfig, own
+    // lint/test gates in its CI workflow. Not part of the app build.
+    "ai-act-receipts/**",
   ]),
 ]);
 
