@@ -57,19 +57,48 @@ type inclusionFixture struct {
 	} `json:"expected"`
 }
 
-func TestConformance_LoadsAtLeast10Fixtures(t *testing.T) {
+// TestConformance_LoadsTheDocumentedCorpus asserts the exact corpus size
+// and accept/reject split, not a floor.
+//
+// The README states "11 fixtures x 3 verifiers = 33 checks, 5 accept /
+// 6 reject". A ">= 10" assertion lets that arithmetic drift silently the
+// moment someone adds a fixture; an exact one makes the documented
+// number fail when it goes stale.
+func TestConformance_LoadsTheDocumentedCorpus(t *testing.T) {
 	entries, err := os.ReadDir(fixturesDir)
 	if err != nil {
 		t.Fatalf("read fixtures dir: %v", err)
 	}
-	count := 0
+	count, accept := 0, 0
 	for _, e := range entries {
-		if strings.HasSuffix(e.Name(), ".json") {
-			count++
+		if !strings.HasSuffix(e.Name(), ".json") {
+			continue
+		}
+		count++
+		raw, err := os.ReadFile(filepath.Join(fixturesDir, e.Name()))
+		if err != nil {
+			t.Fatalf("read %s: %v", e.Name(), err)
+		}
+		var fx struct {
+			Expected struct {
+				OK bool `json:"ok"`
+			} `json:"expected"`
+		}
+		if err := json.Unmarshal(raw, &fx); err != nil {
+			t.Fatalf("parse %s: %v", e.Name(), err)
+		}
+		if fx.Expected.OK {
+			accept++
 		}
 	}
-	if count < 10 {
-		t.Fatalf("expected at least 10 fixtures, got %d", count)
+	if count != 11 {
+		t.Fatalf("expected exactly 11 fixtures, got %d", count)
+	}
+	if accept != 5 {
+		t.Fatalf("expected exactly 5 accept fixtures, got %d", accept)
+	}
+	if count-accept != 6 {
+		t.Fatalf("expected exactly 6 reject fixtures, got %d", count-accept)
 	}
 }
 

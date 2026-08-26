@@ -117,8 +117,15 @@ function verifyV2Receipt(receipt: V2Fixture["receipt"]): {
 describe("Cross-language conformance — TypeScript verifier", () => {
   const fixtures = loadFixtures();
 
-  it("loaded at least 10 fixtures across both primitives", () => {
-    expect(fixtures.length).toBeGreaterThanOrEqual(10);
+  it("loaded exactly the documented corpus", () => {
+    // Exact, not ">= 10". The README states "11 fixtures x 3 verifiers =
+    // 33 checks, 5 accept / 6 reject", and a floor assertion lets that
+    // arithmetic drift silently the moment someone adds a fixture. This
+    // makes the documented number a thing that fails when it goes stale.
+    expect(fixtures.length).toBe(11);
+    const accept = fixtures.filter((f) => f.expected.ok).length;
+    expect(accept).toBe(5);
+    expect(fixtures.length - accept).toBe(6);
   });
 
   for (const fixture of fixtures) {

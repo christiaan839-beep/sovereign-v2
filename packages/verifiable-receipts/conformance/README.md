@@ -3,9 +3,26 @@
 **License:** Apache 2.0.
 
 This directory makes the "three-language symmetric verifier" claim
-**publicly auditable**. A single JSON fixture corpus is checked by
-three independent reference verifiers — TypeScript, Python, and Go.
-Every fixture has an `expected.ok` field; every verifier MUST agree.
+**publicly auditable**. A single JSON fixture corpus is checked by three
+reference verifiers — TypeScript, Python and Go. Every fixture carries an
+`expected.ok` field; every verifier MUST agree.
+
+**What that does and does not prove.** The three are independent
+*implementations* — separate languages, runtimes, crypto libraries and
+integer semantics — so they catch the failures that actually bite in
+practice: a base64 alphabet difference, an Ed25519 library that accepts a
+malleable signature, a hex decoder that truncates, a bit-length operator
+that differs on the right edge of an odd tree.
+
+They are **not** algorithmically independent. Both ports say so in their
+own source: `transparency.py` — "Matches the TypeScript canonical
+verifier"; `transparency.go` — "Byte-identical with the TypeScript
+canonical verifier". The inclusion verifiers are deliberate ports of one
+inner/border decomposition, so a bug in that decomposition would pass all
+three. Closing that gap needs a fourth verifier written from RFC 6962
+alone by someone who has not read this code. Until then, read agreement
+here as "no encoding or crypto-stack divergence", not as "the algorithm
+is correct".
 
 ## Why this exists
 
@@ -92,8 +109,45 @@ Fixtures cover:
 - RFC 9162 inclusion proof: single-leaf · 4-leaf (idx 1) · 7-leaf
   asymmetric (idx 4) · tampered-root reject · out-of-range index
 
-10 fixtures × 3 verifiers = **30 cross-language conformance checks
-per CI run.**
+11 fixtures × 3 verifiers = **33 cross-language conformance checks per
+run** — 5 that must be accepted, 6 that must be rejected. The count is
+asserted in the harnesses themselves, so adding a fixture without
+updating them fails rather than silently drifting.
+
+## Running them
+
+```bash
+./packages/verifiable-receipts/conformance/run-all.sh
+```
+
+```console
+  conformance — 11 fixtures, three verifiers
+
+  ✓ TypeScript   932ms
+  ✓ Python       279ms
+  ✓ Go          1048ms
+
+  all 3 harnesses agree on all 11 fixtures
+```
+
+One command, one definition of "all three agree", exit non-zero on any
+disagreement. A missing toolchain prints `skipped` and **still exits
+non-zero** — a corpus that reports success while testing one language out
+of three is precisely the failure this corpus exists to prevent. CI calls
+this script and nothing else, so CI and your laptop cannot drift into two
+different answers.
+
+Three negative paths are exercised rather than assumed:
+
+- `go` removed from `PATH` → reports `skipped`, exits 1.
+- One fixture's `expected.ok` flipped → every harness disagrees, exits 1.
+- A twelfth fixture added → every harness fails the exact-count assertion.
+
+That last one is why the Go step passes `-count=1`. Without it `go test`
+replayed a previous PASS after the corpus had changed underneath it:
+TypeScript and Python failed on the drifted corpus while Go reported
+green in half its usual time. A conformance runner that can serve a
+stale pass is worse than no runner.
 
 ## How to add a fixture
 
@@ -101,9 +155,10 @@ per CI run.**
    (`@sovereign-matrix/verifiable-receipts`). Issuer-side signing is
    the only canonical path.
 2. Write the fixture to `fixtures/<name>.json`.
-3. Run all three harnesses. They MUST all agree on the new
+3. Run `./run-all.sh`. All three harnesses MUST agree on the new
    fixture's expected outcome.
-4. Commit the fixture; CI runs all three harnesses on every push.
+4. Commit the fixture. The `conformance` job in `.github/workflows/ci.yml`
+   runs that same script on every push.
 
 ## Regenerating the corpus
 

@@ -144,6 +144,54 @@ jobs:
       - name: Run tests
         run: npm test
 
+  conformance:
+    name: Cross-language conformance
+    # The corpus is checked by TypeScript, Python and Go verifiers over one
+    # fixture set. This job exists because the conformance README used to
+    # claim "CI runs all three harnesses on every push" while no workflow
+    # installed Go or Python — so the claim was false on a store whose whole
+    # position is that its numbers can be re-run.
+    #
+    # Every gate lives in conformance/run-all.sh, not in this file, for the
+    # same reason scripts/verify.mjs exists in the extraction repos: a check
+    # written into YAML runs only when CI runs. The script skips a missing
+    # toolchain loudly and exits non-zero, so a partial run can never read
+    # as agreement.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Install dependencies
+        run: |
+          for attempt in 1 2 3; do
+            if npm ci; then exit 0; fi
+            echo "npm ci attempt $attempt failed; backing off..."
+            sleep $((attempt * 5))
+          done
+          exit 1
+
+      - name: Install Python harness dependencies
+        run: python -m pip install --quiet pytest 'cryptography>=42'
+
+      - name: Run all three harnesses
+        run: ./packages/verifiable-receipts/conformance/run-all.sh
+
   security-audit:
     name: Security Audit
     runs-on: ubuntu-22.04
