@@ -150,8 +150,7 @@ export default function ForClinicalTrialsPage() {
         <p className="mt-6 text-neutral-400 text-base leading-relaxed max-w-2xl">
           ICH GCP E6(R3) + 21 CFR Part 11 demand attributable, contemporaneous,
           tamper-evident records with cryptographic signatures. Sovereign Matrix
-          is the only AI agent stack that ships an inspection-ready TMF posture
-          board out of the box.
+          ships an inspection-ready TMF posture board out of the box.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <Link

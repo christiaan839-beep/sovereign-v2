@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://sovereignmatrix.agency/for-agencies" },
   openGraph: {
     title: "White-Label AI Agents for Agencies",
-    description: "Rebrand Sovereign Matrix as your own. Full white-label. 130+ agents.",
+    description: "Rebrand Sovereign Matrix as your own. Full white-label. 140 agents.",
     url: "https://sovereignmatrix.agency/for-agencies",
     type: "website",
   },

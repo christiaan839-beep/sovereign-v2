@@ -75,7 +75,7 @@ The demo:
 Total: 17.6 seconds.
 
 Tweet 4:
-The tech nobody else has:
+What's under it:
 
 • 35+ AI models — auto-routed per task ($0/token)
 • 4-model consensus — answers verified by independent AIs

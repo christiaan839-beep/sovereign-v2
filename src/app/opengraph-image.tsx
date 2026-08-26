@@ -79,7 +79,7 @@ export default function OGImage() {
             maxWidth: "600px",
           }}
         >
-          130 AI agents. 39+ models. $199/mo flat.
+          140 AI agents. 39+ models. $199/mo flat.
         </p>
 
         {/* Bottom stats */}

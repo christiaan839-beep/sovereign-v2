@@ -1,7 +1,7 @@
 /**
  * AGENT TIERS — quality gating for the marketplace surface.
  *
- * The platform ships ~135 agent endpoints. Roughly 15 are flagship —
+ * The platform ships ~140 agent endpoints. Roughly 15 are flagship —
  * curated copy, marketing pages, real test coverage. The rest are
  * useful long-tail tools: shipped, tested at the factory level, but
  * not individually marketed.

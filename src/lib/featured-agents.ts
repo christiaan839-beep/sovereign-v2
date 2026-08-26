@@ -1,7 +1,7 @@
 /**
  * FEATURED AGENTS — production-grade subset of AGENT_SLUGS.
  *
- * The full registry has 130+ agent route folders (see agent-slugs.ts).
+ * The full registry has 140 agent route folders (see agent-slugs.ts).
  * This file pins the subset that's tested, polished, and demo-ready —
  * the agents we're willing to put in front of a paying customer or
  * recruiter without a "this is a stub" caveat.
@@ -20,7 +20,7 @@
  *   4. Add the slug to FEATURED_AGENTS below.
  *
  * The marketplace UI defaults to FEATURED. Users can toggle to "all
- * 130+ agents" if they want to browse the long tail.
+ * 140 agents" if they want to browse the long tail.
  */
 
 import { AGENT_SLUG_SET } from "@/lib/agent-slugs";

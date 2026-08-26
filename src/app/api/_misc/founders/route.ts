@@ -17,7 +17,7 @@ const log = createLogger("founders");
  * Founders get:
  *   - 10,000 agent runs/month (same as enterprise)
  *   - All 25 playbooks
- *   - All 35+ AI models
+ *   - All 39+ AI models
  *   - Priority support
  *   - "Founding Member" badge
  *   - Free forever (as long as they stay active)
@@ -58,7 +58,7 @@ export async function GET() {
       benefits: [
         "10,000 agent runs/month (enterprise-level)",
         "All 25 playbooks + industry packs",
-        "All 35+ AI models",
+        "All 39+ AI models",
         "Priority support",
         "Founding Member badge",
         "Free forever while active",

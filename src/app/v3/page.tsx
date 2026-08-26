@@ -140,7 +140,7 @@ const RECEIPT: PageReceipt = {
     {
       field: "moat",
       display: "Why nothing else closes this",
-      body: "Vanta + Drata ship compliance scoreboards but no cryptographic primitive — auditors trust the screenshot. Lindy + Clay + Manus + CrewAI ship AI agents but no audit trail an examiner can verify. Sovereign is the only stack at the intersection: compliance + AI agents + cryptographic chain-of-custody. The combined moat is built, tested, and live.",
+      body: "Vanta + Drata ship compliance scoreboards but no cryptographic primitive — auditors trust the screenshot. Lindy + Clay + Manus + CrewAI ship AI agents but no audit trail an examiner can verify. Sovereign sits at the intersection: compliance + AI agents + cryptographic chain-of-custody. Built, tested, and live — the feature-by-feature matrix is at /vs/compare.",
       citations: [
         {
           id: "cite_011",

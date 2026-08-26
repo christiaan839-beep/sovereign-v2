@@ -7,7 +7,7 @@ import Link from "next/link";
 const COMPARISON = [
   { feature: "Pre-built specialized agents (130)", sovereign: true, competitor: false, note: "CrewAI provides the framework — you build every agent yourself" },
   { feature: "No-code operation", sovereign: true, competitor: false, note: "CrewAI requires Python to define agents, tasks, and crews" },
-  { feature: "Multi-model routing (36+ models)", sovereign: true, competitor: "partial", note: "CrewAI supports multiple LLMs but requires manual configuration per agent" },
+  { feature: "Multi-model routing (39+ models)", sovereign: true, competitor: "partial", note: "CrewAI supports multiple LLMs but requires manual configuration per agent" },
   { feature: "Agent collaboration", sovereign: true, competitor: true, note: "Both support multi-agent workflows and task delegation" },
   { feature: "Hosted platform (zero infra)", sovereign: true, competitor: "partial", note: "CrewAI Enterprise offers hosting; open-source requires self-hosting" },
   { feature: "Open-source", sovereign: false, competitor: true, note: "CrewAI is fully open-source under MIT license" },
@@ -134,7 +134,7 @@ export default function VsCrewAIPage() {
           <div className="grid md:grid-cols-2 gap-4">
             {[
               { title: "Zero setup, zero infrastructure", desc: "No Python environment, no Docker, no server provisioning. Sign up, describe what you need, and agents execute immediately on our hosted platform." },
-              { title: "130 pre-built agents", desc: "Purpose-built agents for leads, content, SEO, voice, competitive intel, and more — ready to run. With CrewAI, every agent is custom-built from scratch." },
+              { title: "140 pre-built agents", desc: "Purpose-built agents for leads, content, SEO, voice, competitive intel, and more — ready to run. With CrewAI, every agent is custom-built from scratch." },
               { title: "Non-technical users welcome", desc: "Marketing teams, agencies, and founders can run sophisticated agent workflows without writing a single line of code." },
               { title: "Built-in safety + consensus", desc: "Every output passes a 5-layer safety pipeline and consensus verification across 4 independent models. With CrewAI, safety guardrails are your responsibility." },
             ].map((item) => (

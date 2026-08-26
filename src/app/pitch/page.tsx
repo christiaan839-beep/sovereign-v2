@@ -22,9 +22,9 @@ export const metadata: Metadata = {
 };
 
 const PROOF = [
-  "145 agent endpoints across 8 LLM providers",
-  "2,400+ tests passing · 0 type errors · 0 lint errors",
-  "7 cryptographic primitives nobody else has",
+  "140 agent endpoints across 8 LLM providers",
+  "4,500+ tests passing — run npm test and count them yourself",
+  "7 cryptographic primitives, Apache-2.0, specs frozen and public",
   "22 vertical landings mapped to specific regulators",
   "Live demo: verify a real receipt in your browser",
 ];
@@ -65,7 +65,7 @@ export default function PitchPage() {
           </p>
           <p>
             <span className="text-white font-semibold">Where we are:</span> Solo
-            technical founder. 54 cooks shipped this month. Self-serve revenue
+            technical founder. Self-serve revenue
             surface live (`/starter-packs` $99-$999 SKUs). Stripe webhook →
             Auditor Replay Seat provisioning fully wired. Pre-revenue but the
             revenue loop is technically complete the moment the first customer

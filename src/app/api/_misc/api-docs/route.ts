@@ -21,7 +21,7 @@ export async function GET() {
     info: {
       title: "Sovereign Matrix API",
       version: "2.0.0",
-      description: "Multi-agent AI platform with 129 agents, 29 playbooks, and 15 integration connectors.",
+      description: "Multi-agent AI platform with 140 agents, 29 playbooks, and 15 integration connectors.",
     },
     servers: [
       { url: "https://sovereignmatrix.agency", description: "Production" },

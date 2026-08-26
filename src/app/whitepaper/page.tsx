@@ -15,7 +15,7 @@ const SECTIONS = [
     id: "architecture",
     title: "The Autonomous Agency Operating System",
     icon: Cpu,
-    content: "Sovereign Matrix runs 130+ specialized agents — each built for one job. Lead generation agents find and qualify prospects. Content agents write blog posts and social media. SEO agents audit websites and build keyword strategies. Voice agents make sales calls with sub-200ms latency. Code agents write, test, and deploy software. Instead of one general-purpose chatbot trying to do everything, the platform assigns each task to an agent trained specifically for that type of work. The result: higher quality output, faster execution, and fewer errors.",
+    content: "Sovereign Matrix runs 140 specialized agents — each built for one job. Lead generation agents find and qualify prospects. Content agents write blog posts and social media. SEO agents audit websites and build keyword strategies. Voice agents make sales calls with sub-200ms latency. Code agents write, test, and deploy software. Instead of one general-purpose chatbot trying to do everything, the platform assigns each task to an agent trained specifically for that type of work. The result: higher quality output, faster execution, and fewer errors.",
   },
   {
     id: "routing",

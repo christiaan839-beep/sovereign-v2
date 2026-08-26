@@ -12,7 +12,7 @@ const COMPARISON = [
   { feature: "Content creation", sovereign: true, competitor: false, note: "Zapier connects to AI tools but doesn\u0027t create content itself" },
   { feature: "AI voice calling", sovereign: true, competitor: false, note: "No native voice capabilities" },
   { feature: "Competitive analysis", sovereign: true, competitor: false, note: "No built-in competitor scanning" },
-  { feature: "Multi-model routing (36+ models)", sovereign: true, competitor: false, note: "Zapier uses single-model integrations per Zap step" },
+  { feature: "Multi-model routing (39+ models)", sovereign: true, competitor: false, note: "Zapier uses single-model integrations per Zap step" },
   { feature: "Consensus verification (4 models)", sovereign: true, competitor: false, note: "No multi-model quality checking" },
   { feature: "Local/offline execution", sovereign: true, competitor: false, note: "Cloud-only" },
   { feature: "White-label for agencies", sovereign: true, competitor: false, note: "No white-label offering" },
@@ -63,7 +63,7 @@ export default function VsZapierPage() {
           <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] text-center">
             <p className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-2">Sovereign Node</p>
             <p className="text-3xl font-black text-emerald-400">$199<span className="text-sm text-emerald-500/50">/mo</span></p>
-            <p className="text-xs text-neutral-500 mt-1">Unlimited agent executions + 130 agents + 36 models</p>
+            <p className="text-xs text-neutral-500 mt-1">Unlimited agent executions + 140 agents + 39+ models</p>
           </div>
         </div>
       </section>
@@ -135,7 +135,7 @@ export default function VsZapierPage() {
             {[
               { title: "Agents that think, not just trigger", desc: "Zapier automates steps you design. Sovereign agents understand context, plan their own execution, and self-correct when things go wrong." },
               { title: "Content + lead gen built in", desc: "Sovereign agents write blog posts, generate leads, run competitive scans, and make AI voice calls — capabilities Zapier doesn\u0027t have natively." },
-              { title: "Multi-model intelligence", desc: "36+ models with consensus verification. Every output is checked by 4 independent models. Zapier calls one model per step." },
+              { title: "Multi-model intelligence", desc: "39+ models with consensus verification. Every output is checked by 4 independent models. Zapier calls one model per step." },
               { title: "No task limits", desc: "Zapier\u0027s Team plan caps at 2,000 tasks/month. Sovereign Node gives you unlimited agent executions for $199/mo." },
             ].map((item) => (
               <div key={item.title} className="p-5 rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02]">

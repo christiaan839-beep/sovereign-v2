@@ -261,11 +261,11 @@ export default function PricingComparePage() {
           <div className="grid md:grid-cols-2 gap-4">
             {[
               {
-                title: "130 purpose-built agents",
+                title: "140 purpose-built agents",
                 desc: "Not templates. Not prompts. Autonomous agents that plan multi-step workflows, self-correct, and deliver finished outputs.",
               },
               {
-                title: "39 models, 4-model consensus",
+                title: "39+ models, 4-model consensus",
                 desc: "Every critical output is generated, critiqued, and revised by independent models before you see it. No other platform does this.",
               },
               {

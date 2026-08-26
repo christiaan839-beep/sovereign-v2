@@ -132,7 +132,7 @@ export default function SovereignApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: text,
-          systemInstruction: "You are Sovereign AI — a powerful assistant backed by 35+ AI models. Be helpful, direct, and actionable. Use markdown for formatting. Never use AI slop phrases.",
+          systemInstruction: "You are Sovereign AI — a powerful assistant backed by 39+ AI models. Be helpful, direct, and actionable. Use markdown for formatting. Never use AI slop phrases.",
         }),
       });
 
@@ -178,7 +178,7 @@ export default function SovereignApp() {
           });
           const demoData = await demoRes.json();
           setMessages((prev) =>
-            prev.map((m) => m.id === assistantMsg.id ? { ...m, content: demoData.output || demoData.result || "Sign in to use all 130 agents.", model: "Demo" } : m)
+            prev.map((m) => m.id === assistantMsg.id ? { ...m, content: demoData.output || demoData.result || "Sign in to use all 140 agents.", model: "Demo" } : m)
           );
         }
       }
@@ -232,7 +232,7 @@ export default function SovereignApp() {
             </div>
             <h2 className="text-xl font-bold text-white mb-2">What can I help you with?</h2>
             <p className="text-sm text-neutral-400 max-w-sm mb-8">
-              I have 35+ AI models and 130 specialized agents. Ask me anything — I&apos;ll pick the best model for your task automatically.
+              I have 39+ AI models and 140 specialized agents. Ask me anything — I&apos;ll pick the best model for your task automatically.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg w-full">
               {SUGGESTIONS.slice(0, 4).map((s) => (

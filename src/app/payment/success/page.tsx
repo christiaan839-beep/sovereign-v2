@@ -82,7 +82,7 @@ function PaymentSuccessContent() {
         </h1>
         <p className="text-neutral-400 text-base mb-8 max-w-md mx-auto">
           Your <span className="text-white font-medium">{planLabel}</span> plan is active.
-          All 130+ agents and 39+ models are ready to use.
+          All 140 agents and 39+ models are ready to use.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-2 mb-8">

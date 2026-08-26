@@ -239,10 +239,10 @@ export default function ForInsurancePage() {
             It cares if you can prove it.
           </h2>
           <p className="text-sm text-neutral-300 max-w-2xl mb-6">
-            Sovereign Matrix is the only stack that produces bias scores
-            per-decision + a cryptographic receipt your examiner can replay.
-            Every other AI tool generates the decision; we generate the
-            evidence.
+            Sovereign Matrix produces a bias score per decision and a
+            cryptographic receipt your examiner can replay. Most AI tooling
+            stops at generating the decision; the receipt is the part that
+            survives an examination.
           </p>
           <Link
             href="/contact?vertical=insurance"

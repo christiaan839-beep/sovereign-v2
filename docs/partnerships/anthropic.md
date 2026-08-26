@@ -28,7 +28,7 @@ verifiable forever by any independent party.
 - **Post-quantum dual-signed receipts** (VAOS 2.0/3.0 wire formats,
   frozen specs)
 - **Threshold cosigning** (VAOS-TRS 1.0) and **streaming attestation**
-  (VAOS-RSA 1.0) — primitives no other receipt-layer vendor ships
+  (VAOS-RSA 1.0) — both specified and implemented, specs in docs/specs/
 - **RFC 9162 transparency log** + witness federation
 - **Three-language symmetric verifier** (TypeScript / Python / Go)
   with a public conformance corpus

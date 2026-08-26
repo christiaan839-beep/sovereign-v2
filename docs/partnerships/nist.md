@@ -41,9 +41,10 @@ Certificate Transparency.
   `multiAgentCascadePack` operationalizes the §Multi-Agent Scaling
   - 17.2× error-amplification bound; `nistAiRmfPack` adds
     AI 600-1 risk-control ID + provenance flag requirements.
-- **FIPS 204 (ML-DSA-65)** — we're the only Apache-2.0 receipt
-  layer shipping post-quantum dual-signed receipts (VAOS 3.0 wire
-  format).
+- **FIPS 204 (ML-DSA-65)** — the VAOS 3.0 wire format carries an
+  Ed25519 signature and an ML-DSA-65 signature over the same
+  canonical digest, so a receipt stays verifiable if either scheme
+  falls. Apache-2.0; spec at docs/specs/vaos-3.0.md.
 - **AI 800-1 (Adversarial ML Test Plan)** — our public red-team
   module + adversarial corpus cover 14 attack classes including
   every OWASP-Agentic-Top-10 risk.

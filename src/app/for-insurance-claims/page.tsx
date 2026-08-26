@@ -154,9 +154,9 @@ export default function ForInsuranceClaimsPage() {
         </h1>
         <p className="mt-6 text-neutral-400 text-base leading-relaxed max-w-2xl">
           NAIC&rsquo;s AI/ML Model Bulletin requires documented testing, ongoing
-          monitoring, and decisional traceability. Lindy and Clay can&rsquo;t
-          prove a denied claim wasn&rsquo;t hallucinated. Sovereign Matrix is
-          the only AI agent stack that ships cryptographic chain-of-custody for
+          monitoring, and decisional traceability. A denied claim is the one a
+          regulator reads back to you, and it has to be provable rather than
+          plausible. Sovereign Matrix ships cryptographic chain-of-custody for
           every adjudication decision.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">

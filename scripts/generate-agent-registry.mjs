@@ -31,6 +31,13 @@ const __filename = fileURLToPath(import.meta.url);
 const ROOT = resolve(__filename, "../..");
 const AGENTS_DIR = join(ROOT, "src/app/api/_agents");
 const OUT_FILE = join(ROOT, "src/app/api/agents/registry.ts");
+// The client-safe slug list. It carries its own copy of the slugs because
+// importing registry.ts from a "use client" component drags every agent
+// route into the client bundle. That copy drifted to 136 slugs against a
+// 140-agent registry — four agents with working routes were invisible on
+// /agents, /marketplace, /api/agents and the OpenAPI spec, because the
+// file claimed to be generated but nothing generated it. Now it is.
+const SLUGS_FILE = join(ROOT, "src/lib/agent-slugs.ts");
 
 function listAgentSlugs() {
   if (!existsSync(AGENTS_DIR)) {
@@ -81,17 +88,52 @@ export const AGENT_SLUGS: readonly string[] = Object.freeze(
   return banner + body + footer;
 }
 
+function renderSlugs(slugs) {
+  const banner = `/**
+ * AUTO-GENERATED — DO NOT EDIT BY HAND.
+ *
+ * AGENT_SLUGS — client-safe list of agent identifiers.
+ *
+ * The full registry at src/app/api/agents/registry.ts maps slugs to dynamic
+ * route imports. Importing that map from a "use client" component drags every
+ * agent route into the client bundle (Turbopack statically analyses the
+ * dynamic import arms and pulls Node-only code like fs/path through transitive
+ * \`persist.ts\` / \`pinecone\` deps). This file is a pure data array — safe to
+ * import anywhere.
+ *
+ * Regenerate: npm run gen:registry
+ * Verify:     npm run gen:registry -- --check (exit 1 if stale)
+ *
+ * Count: ${slugs.length} agents
+ */
+
+export const AGENT_SLUGS: ReadonlyArray<string> = Object.freeze([
+`;
+  const body = slugs.map((slug) => `  ${JSON.stringify(slug)},\n`).join("");
+  const footer = `]);
+
+export const AGENT_SLUG_SET: ReadonlySet<string> = new Set(AGENT_SLUGS);
+`;
+  return banner + body + footer;
+}
+
 function main() {
   const slugs = listAgentSlugs();
-  const next = render(slugs);
+  const targets = [
+    { file: OUT_FILE, next: render(slugs), label: "registry" },
+    { file: SLUGS_FILE, next: renderSlugs(slugs), label: "slug list" },
+  ];
 
   const checkMode = process.argv.includes("--check");
-  const current = existsSync(OUT_FILE) ? readFileSync(OUT_FILE, "utf8") : "";
 
   if (checkMode) {
-    if (current !== next) {
+    const stale = targets.filter(
+      (t) => (existsSync(t.file) ? readFileSync(t.file, "utf8") : "") !== t.next,
+    );
+    if (stale.length > 0) {
       process.stderr.write(
-        `registry is stale (${slugs.length} agents on disk, file out of date).\n` +
+        `${stale.map((t) => t.label).join(" + ")} stale ` +
+          `(${slugs.length} agents on disk, file out of date).\n` +
           `Run: npm run gen:registry\n`,
       );
       process.exit(1);
@@ -100,13 +142,21 @@ function main() {
     return;
   }
 
-  if (current === next) {
+  const written = [];
+  for (const t of targets) {
+    const current = existsSync(t.file) ? readFileSync(t.file, "utf8") : "";
+    if (current === t.next) continue;
+    writeFileSync(t.file, t.next, "utf8");
+    written.push(t.file);
+  }
+
+  if (written.length === 0) {
     process.stdout.write(`registry unchanged — ${slugs.length} agents\n`);
     return;
   }
-
-  writeFileSync(OUT_FILE, next, "utf8");
-  process.stdout.write(`wrote ${OUT_FILE} — ${slugs.length} agents\n`);
+  process.stdout.write(
+    `wrote ${written.join(", ")} — ${slugs.length} agents\n`,
+  );
 }
 
 main();

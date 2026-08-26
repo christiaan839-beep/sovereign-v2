@@ -227,7 +227,7 @@ Sovereign Matrix isn't competing for a slice. We're building the infrastructure 
 
 5. **Agency white-label** — Each agency brings 20+ captive users. Multi-sided network effect.
 
-6. **Glasswing narrative** — Only platform positioned around frontier model safety. CISOs remember who was first.
+6. **Glasswing narrative** — Positioned around frontier model safety rather than checklist compliance.
 
 7. **Flat pricing** — $199/mo vs $715+ in tools. The economic argument never expires.
 

@@ -23,7 +23,7 @@ const config: VerticalConfig = {
   heroLine1: "Your AI",
   heroHighlight: "commerce engine.",
   heroBlurb:
-    "130 agents handle your entire catalog at once. Voice agents handle customer inquiries 24/7.",
+    "140 agents handle your entire catalog at once. Voice agents handle customer inquiries 24/7.",
   capabilitiesHeadline: "Automate the catalog. Focus on growth.",
   capabilitiesBlurb:
     "Every task that slows your merchandising team — automated, verified, and ready to publish.",
@@ -104,7 +104,7 @@ const config: VerticalConfig = {
     },
     {
       icon: Zap,
-      label: "130 Agents",
+      label: "140 Agents",
       desc: "Full catalog processing — descriptions, pricing, reviews, and ads in parallel",
     },
   ],

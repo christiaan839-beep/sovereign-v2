@@ -141,7 +141,7 @@ export default async function VsCompetitorPage({ params }: RouteContext) {
               {competitor.ourPricing}
             </p>
             <p className="text-[11px] text-emerald-400/80 mt-2">
-              130+ agents · Whitelabel · ZAR / USD billing
+              140 agents · Whitelabel · ZAR / USD billing
             </p>
           </div>
         </div>

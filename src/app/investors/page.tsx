@@ -230,7 +230,7 @@ export default function InvestorsPage() {
 
       <section className="max-w-6xl mx-auto px-6 py-12">
         <h2 className="text-sm uppercase tracking-[0.3em] text-neutral-500 mb-6">
-          What we ship that nobody else does
+          What we ship
         </h2>
         <div className="grid md:grid-cols-2 gap-4">
           {MOATS.map((m) => (

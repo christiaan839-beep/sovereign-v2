@@ -63,7 +63,7 @@ export default function VsHubSpotPage() {
           <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] text-center">
             <p className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-2">Sovereign Node</p>
             <p className="text-3xl font-black text-emerald-400">$199<span className="text-sm text-emerald-500/50">/mo</span></p>
-            <p className="text-xs text-neutral-500 mt-1">130 agents + 36 models + everything below</p>
+            <p className="text-xs text-neutral-500 mt-1">140 agents + 39+ models + everything below</p>
           </div>
         </div>
       </section>
@@ -134,8 +134,8 @@ export default function VsHubSpotPage() {
           <div className="grid md:grid-cols-2 gap-4">
             {[
               { title: "Autonomous execution", desc: "Sovereign agents don't wait for instructions. Give them a goal — they plan the steps, execute, and self-correct." },
-              { title: "130 specialized agents", desc: "Not one AI assistant. 130 purpose-built agents for leads, content, SEO, voice, code, competitive intel, and more." },
-              { title: "Multi-model intelligence", desc: "36+ models with consensus verification. Every output is checked by 4 independent models before delivery." },
+              { title: "140 specialized agents", desc: "Not one AI assistant. 140 purpose-built agents for leads, content, SEO, voice, code, competitive intel, and more." },
+              { title: "Multi-model intelligence", desc: "39+ models with consensus verification. Every output is checked by 4 independent models before delivery." },
               { title: "10x cheaper at scale", desc: "HubSpot Pro starts at $890/mo. Sovereign Node covers more capabilities for $199/mo." },
             ].map((item) => (
               <div key={item.title} className="p-5 rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02]">

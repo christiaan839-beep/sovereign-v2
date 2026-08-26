@@ -12,7 +12,7 @@ const COMPARISON = [
   { feature: "Lead generation + enrichment", sovereign: true, competitor: false, note: "Sovereign has dedicated lead-gen agents. n8n requires you to build lead workflows from scratch." },
   { feature: "Content creation", sovereign: true, competitor: false, note: "Sovereign agents write, edit, and publish content end-to-end. n8n can trigger AI APIs but doesn&apos;t create content natively." },
   { feature: "AI voice calling", sovereign: true, competitor: false, note: "Built-in voice agents for outbound calls. n8n has no native voice capability." },
-  { feature: "Multi-model routing (36+ models)", sovereign: true, competitor: false, note: "Sovereign routes tasks across 36+ models. n8n connects to one AI provider per node." },
+  { feature: "Multi-model routing (39+ models)", sovereign: true, competitor: false, note: "Sovereign routes tasks across 39+ models. n8n connects to one AI provider per node." },
   { feature: "Consensus verification (4 models)", sovereign: true, competitor: false, note: "Every output checked by 4 independent models. n8n has no multi-model verification." },
   { feature: "White-label for agencies", sovereign: true, competitor: false, note: "Full white-label support. n8n has no white-label offering." },
   { feature: "Competitive analysis", sovereign: true, competitor: false, note: "Built-in competitor scanning agents. n8n requires custom workflow builds." },
@@ -63,7 +63,7 @@ export default function VsN8nPage() {
           <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] text-center">
             <p className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-2">Sovereign Node</p>
             <p className="text-3xl font-black text-emerald-400">$199<span className="text-sm text-emerald-500/50">/mo</span></p>
-            <p className="text-xs text-neutral-500 mt-1">130 agents + 36 models + everything below</p>
+            <p className="text-xs text-neutral-500 mt-1">140 agents + 39+ models + everything below</p>
           </div>
         </div>
       </section>
@@ -136,8 +136,8 @@ export default function VsN8nPage() {
           <div className="grid md:grid-cols-2 gap-4">
             {[
               { title: "Agents that think, not just execute", desc: "Give a Sovereign agent a goal and it plans its own steps. n8n requires you to design every workflow node by node." },
-              { title: "130 pre-built agents", desc: "Leads, content, SEO, voice calling, competitive analysis — ready to run. n8n starts with an empty canvas." },
-              { title: "Multi-model intelligence", desc: "36+ models with consensus verification. Every output is checked by 4 independent models before delivery." },
+              { title: "140 pre-built agents", desc: "Leads, content, SEO, voice calling, competitive analysis — ready to run. n8n starts with an empty canvas." },
+              { title: "Multi-model intelligence", desc: "39+ models with consensus verification. Every output is checked by 4 independent models before delivery." },
               { title: "Built for non-technical users", desc: "Business teams run playbooks without designing workflows. n8n is powerful but requires technical knowledge to set up." },
             ].map((item) => (
               <div key={item.title} className="p-5 rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02]">

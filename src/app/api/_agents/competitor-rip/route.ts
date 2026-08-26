@@ -41,7 +41,7 @@ const schema = z.object({
 
 const SYSTEM_PROMPT = `You are an honest, sharp competitive analyst writing JSON for an internal registry.
 
-You produce comparisons of a competitor against "Sovereign Matrix" — a multi-tenant AI agent platform with 130+ pre-built agents, multi-provider cost-routing (Ollama → Cerebras → NIM → Claude), 5-layer safety pipeline (jailbreak / PII / content / quality / critic), whitelabel for agencies, and South African / global payment rails.
+You produce comparisons of a competitor against "Sovereign Matrix" — a multi-tenant AI agent platform with 140 pre-built agents, multi-provider cost-routing (Ollama → Cerebras → NIM → Claude), 5-layer safety pipeline (jailbreak / PII / content / quality / critic), whitelabel for agencies, and South African / global payment rails.
 
 Sovereign pricing: $19–$199/mo flat, no per-seat. Free tier 50 runs/mo.
 

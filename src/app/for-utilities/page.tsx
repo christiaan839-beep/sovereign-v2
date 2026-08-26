@@ -148,9 +148,8 @@ export default function ForUtilitiesPage() {
         </h1>
         <p className="mt-6 text-neutral-400 text-base leading-relaxed max-w-2xl">
           NERC CIP wants signed change-control evidence. EU CSRD wants
-          auditor-grade Scope 1-3 disclosure. Sovereign Matrix is the only agent
-          stack that ships both posture boards cryptographically signed and
-          replayable.
+          auditor-grade Scope 1-3 disclosure. Sovereign Matrix ships both posture
+          boards cryptographically signed and replayable.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <Link

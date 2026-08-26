@@ -1,7 +1,7 @@
 {
   "name": "@sovereign-matrix/soc2-evidence",
   "version": "0.1.0",
-  "description": "SOC 2 Trust Service Criteria evidence-binder exporter. Takes a set of VAOS receipts and emits the auditor-ready evidence package mapped to the 2017 TSC (CC1-CC9 + A1 + C1 + PI1 + P-series) (Markdown + JSON). Apache-2.0; Vanta / Drata charge $5-50K/yr for the same deliverable.",
+  "description": "SOC 2 Trust Service Criteria evidence-binder exporter. Takes a set of VAOS receipts and emits the auditor-ready evidence package mapped to the 2017 TSC (CC1-CC9 + A1 + C1 + PI1 + P-series) (Markdown + JSON). Apache-2.0.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -155,10 +155,9 @@ export default function ForPharmacovigilancePage() {
         </h1>
         <p className="mt-6 text-neutral-400 text-base leading-relaxed max-w-2xl">
           ICH E2B(R3) + EU GVP demand that every PV decision be traceable to
-          source. CrewAI and Relevance can do triage; they can&rsquo;t produce
-          the audit trail. Sovereign Matrix is the only AI agent stack that
-          ships ALCOA+ records and cryptographic chain-of-custody for every
-          safety signal.
+          source. Triage is the easy half; the audit trail is what an inspector
+          asks for. Sovereign Matrix ships ALCOA+ records and cryptographic
+          chain-of-custody for every safety signal.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <Link

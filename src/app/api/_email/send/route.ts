@@ -230,7 +230,7 @@ function renderTemplate(
   const templates: Record<string, string> = {
     welcome: `
       <h2 style="color: #00B7FF; font-weight: 300; font-size: 22px;">Welcome to Sovereign Matrix</h2>
-      <p>Your account is active. All 130+ agents and 39+ models are ready to use.</p>
+      <p>Your account is active. All 140 agents and 39+ models are ready to use.</p>
       <p>Account ID: <strong style="color: white;">${safe.nodeId || "UMB-NX-00000"}</strong></p>
       <a href="${safe.dashboardUrl || "#"}" style="display: inline-block; padding: 12px 30px; background: #00B7FF15; border: 1px solid #00B7FF30; color: #00B7FF; text-decoration: none; border-radius: 8px; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 20px;">Open Dashboard →</a>`,
 

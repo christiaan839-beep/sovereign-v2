@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "API Reference — Sovereign Matrix",
     description:
-      "REST API documentation for 130+ AI agents. Authentication, playbooks, webhooks, rate limits, and code examples.",
+      "REST API documentation for 140 AI agents. Authentication, playbooks, webhooks, rate limits, and code examples.",
     url: "https://sovereignmatrix.agency/developers/docs",
     type: "website",
   },
