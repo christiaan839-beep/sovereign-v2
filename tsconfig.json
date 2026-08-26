@@ -41,6 +41,7 @@
     "playwright.config.ts",
     "chrome-extension",
     "mcp-server",
+    "ai-act-receipts",
     "packages",
     "scripts"
   ]

@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.tgz
+pack.json
+handshake.jsonl
+*.pem
+.DS_Store

@@ -5,6 +5,12 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
+  # Manual "Run workflow" button. Exists so a run can be re-dispatched
+  # from scratch after an account-level outage (exhausted Actions
+  # minutes, revoked permissions) without pushing an empty commit —
+  # re-running a failed run reuses the original run context, which is
+  # not always enough to pick up a changed account state.
+  workflow_dispatch:
 
 # Explicit minimum-viable permissions. Org-level "restrict default
 # workflow permissions" can otherwise leave actions/checkout@v4
