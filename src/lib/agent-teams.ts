@@ -5,8 +5,10 @@
  * contexts, coordinated by a lead agent. Each agent brings a different
  * perspective, and the lead synthesizes the final output.
  *
- * This is the architecture that no competitor has — CrewAI does sequential
- * chaining, but Agent Teams do parallel debate with adversarial critique.
+ * Members run in parallel rather than in a sequential chain, so each
+ * writes its critique without having seen the others' conclusions. That
+ * independence is what makes the lead's synthesis worth more than the
+ * first member's answer.
  *
  * Usage:
  *   const result = await runAgentTeam({

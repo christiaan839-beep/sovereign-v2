@@ -4,20 +4,23 @@ import { NIM_MODELS as _NIM_MODELS } from "@/lib/llm-router";
 const log = createLogger("competitive-moat");
 
 /**
- * COMPETITIVE MOAT — Three capabilities that NO competitor has.
+ * Three capabilities layered on top of a single model call.
  *
- * 1. Multi-model consensus on every output (beats Jasper's single-model)
- * 2. Live web intelligence (beats Apollo's stale database)
- * 3. Cross-agent learning (beats all — compound intelligence)
+ * 1. Multi-model consensus on an output
+ * 2. Live web intelligence rather than a cached corpus
+ * 3. Cross-agent learning across runs
  *
- * These aren't features. They're architectural advantages
- * that can't be replicated by adding a feature flag.
+ * Named claims about competitors, and the "+22.8pp accuracy" figure
+ * that used to sit under §1, were removed rather than restated: no
+ * benchmark in this repository produces them, and a number with no
+ * measurement behind it is worse than no number.
  */
 
 // ─── 1. Consensus Verification ─────────────────────────────
-// Apollo/Jasper/SEMrush use ONE model. We use FOUR.
-// Generate → Critique → Synthesize → Verify
-// +22.8pp accuracy improvement over single-model output.
+// Generate → Critique → Synthesize → Verify, across more than one
+// model. Whether that beats a single call on a given task is an
+// empirical question this module does not answer; it provides the
+// mechanism, not the evidence.
 
 export interface ConsensusResult {
   output: string;

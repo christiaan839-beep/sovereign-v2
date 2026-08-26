@@ -15,16 +15,11 @@
  * - Data sources used
  * - Time taken
  *
- * This is the feature NO competitor has. When a user sees:
- *   "4 models agreed. Quality: 94/100. 5 safety checks passed. 700ms."
- * They trust the output more than any competitor's unsupported claim.
- *
- * THE GAP WE FILL:
- * - ChatGPT: no transparency, single model, no safety info
- * - Jasper: no model info, no quality score
- * - Apollo: no verification, data accuracy unknown
- * - Every other platform: "here's your answer, trust us"
- * - Sovereign: "here's your answer, here's the proof"
+ * The point is that each line is checkable rather than asserted. When
+ * a user sees "4 models agreed. Quality: 94/100. 5 safety checks
+ * passed. 700ms.", every figure traces to a recorded step of the run
+ * that the receipt can be re-derived from — the alternative being
+ * "here is your answer, trust us".
  */
 
 export interface TransparencyCard {

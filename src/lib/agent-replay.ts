@@ -11,7 +11,9 @@
  * - What the critic changed
  * - The final output
  *
- * This is the "flight recorder" for AI agents. No other platform has this.
+ * A flight recorder for an agent run: every step is captured, so a run
+ * can be reconstructed after the fact instead of reasoned about from
+ * its output alone.
  *
  * Usage:
  *   const replay = startReplay("leads", userId);
