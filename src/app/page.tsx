@@ -542,8 +542,8 @@ function Hero() {
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-4 max-w-2xl mx-auto"
         >
           140 production agents that research, draft, qualify, and call — and
-          ship an Ed25519-signed receipt every time, post-quantum-ready via
-          ML-DSA-65 dual-signing. Built for teams that need AI{" "}
+          ship an Ed25519-signed receipt with every run, post-quantum-ready via
+          optional ML-DSA-65 dual-signing. Built for teams that need AI{" "}
           <em className="not-italic text-neutral-300">and</em> a paper trail.
         </motion.p>
         <motion.p

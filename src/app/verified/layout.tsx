@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Sovereign Verified — proof every AI output is auditable",
     description:
-      "Ed25519 + ML-DSA-65 dual-signed receipts (FIPS 204 post-quantum). Public verifier. Cross-origin readable. Bitcoin-anchored via OpenTimestamps. Audit-grade AI infrastructure.",
+      "Ed25519-signed receipts, with optional ML-DSA-65 dual-signing (FIPS 204 post-quantum). Public verifier. Cross-origin readable. Bitcoin-anchored via OpenTimestamps. Audit-grade AI infrastructure.",
     url: "https://sovereignmatrix.agency/verified",
     type: "website",
   },
