@@ -70,3 +70,19 @@ next-env.d.ts
 .idea/
 .vscode/
 .playwright-mcp/
+
+# ── Python ─────────────────────────────────────────────────────────────
+# A virtualenv was tracked here: 4,659 files, 92 MB, 70% of the repo by
+# file count. That is vendored third-party site-packages inside an
+# "All rights reserved" repository whose Agency Licence explicitly permits
+# handing the source to a client — i.e. redistributing other people's
+# packages with none of their notices. It is also machine-specific: the
+# compiled artefacts were built for python3.12 on one laptop.
+#
+# Recreate it instead:
+#   cd server/python-agents && python3 -m venv venv
+#   ./venv/bin/pip install -r requirements.txt
+venv/
+.venv/
+__pycache__/
+*.py[cod]
