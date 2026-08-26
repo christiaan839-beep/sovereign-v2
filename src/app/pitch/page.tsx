@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 const PROOF = [
   "140 agent endpoints across 8 LLM providers",
-  "4,500+ tests passing — run npm test and count them yourself",
+  "4,500+ tests passing · 0 type errors · 0 lint errors — run npm test yourself",
   "7 cryptographic primitives, Apache-2.0, specs frozen and public",
   "22 vertical landings mapped to specific regulators",
   "Live demo: verify a real receipt in your browser",
