@@ -1,0 +1,58 @@
+{
+  "name": "ai-act-receipts",
+  "version": "0.1.0",
+  "description": "Signed receipts around your Claude calls, and the EU AI Act Annex IV technical documentation that comes out the other end. Also an MCP server. Zero dependencies.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp.d.ts",
+      "import": "./dist/mcp.js"
+    }
+  },
+  "bin": {
+    "ai-act-receipts": "./dist/mcp.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/mcp.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "example": "node examples/quickstart.mjs",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "eu-ai-act",
+    "annex-iv",
+    "ai-compliance",
+    "ai-governance",
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "anthropic",
+    "audit",
+    "receipts",
+    "ed25519"
+  ],
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
