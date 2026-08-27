@@ -1,0 +1,3 @@
+## 2026-08-27 - Keyboard Accessibility for Hover-Revealed Elements
+**Learning:** Elements hidden behind hover states (e.g., using opacity-0 group-hover:opacity-100) are inaccessible to keyboard users unless the parent container also has focus-within:opacity-100 and the interactive elements inside have explicit focus-visible styles. Added aria-labels and aria-hidden to icon-only buttons as well.
+**Action:** Always pair group-hover:opacity-100 with focus-within:opacity-100 on interactive containers, and ensure all icon-only buttons have explicit focus rings (focus-visible:ring-2), aria-labels, and aria-hidden on the SVG.
