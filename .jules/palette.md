@@ -1,0 +1,3 @@
+## 2024-05-15 - Keyboard accessibility for hover-revealed elements
+**Learning:** Elements hidden behind opacity-0 group-hover:opacity-100 are completely inaccessible to keyboard-only users navigating via Tab because focus states do not trigger the parent's hover state, leaving the elements visually hidden but functionally active.
+**Action:** When using opacity-based hover patterns on parent containers, always apply focus-within:opacity-100 to the container to ensure it becomes visible when children receive focus. Additionally, ensure the interactive children have explicit focus-visible styles (focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color]) so the focus indicator is clear.
