@@ -8,6 +8,7 @@ import {
 import { buildPosture, type IndicatorReading } from "@/lib/soc2-monitor";
 import { buildScorecard } from "@/lib/compliance-mappings";
 import type { Metadata } from "next";
+import { packageUrl } from "@/lib/package-links";
 
 /**
  * /trust — Live trust posture page (Cook 89).
@@ -181,8 +182,8 @@ const TRUST_PRIMITIVES: TrustPrimitive[] = [
       "Three independent SDKs verify the same wire bytes byte-for-byte. Every regulator audit pipeline, every Python notebook, every Go cloud-tool can re-check a receipt.",
     links: [
       {
-        label: "TypeScript on npm",
-        href: "https://www.npmjs.com/package/@sovereign-matrix/verifiable-receipts",
+        label: "TypeScript verifier — source",
+        href: packageUrl("@sovereign-matrix/verifiable-receipts"),
       },
       {
         label: "Python (PyPI ready)",

@@ -35,6 +35,7 @@ import { SectionDivider } from "@/components/landing/SectionDivider";
 import { FilmGrain } from "@/components/landing/FilmGrain";
 import { HeroProofPill } from "@/components/landing/HeroProofPill";
 import { NewsletterSignup } from "@/components/landing/NewsletterSignup";
+import { packageUrl } from "@/lib/package-links";
 
 // Below-the-fold sections — dynamic-imported with skeleton placeholders
 // so the visitor's initial JS bundle is smaller, LCP is faster, and
@@ -1587,7 +1588,7 @@ function Footer() {
               { href: "/developers/docs", label: "API Docs" },
               { href: "/integrations", label: "Integrations" },
               {
-                href: "https://www.npmjs.com/package/@sovereignmatrix/mcp",
+                href: packageUrl("@sovereignmatrix/mcp"),
                 label: "MCP Server",
                 external: true,
               },

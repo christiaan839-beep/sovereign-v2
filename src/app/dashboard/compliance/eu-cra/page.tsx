@@ -81,7 +81,7 @@ export default function EuCraDashboard() {
       frameworkLabel="EU Cyber Resilience Act"
       description="Generate the CRA compliance report from your tenant's signed receipts. Annex I Part I (13 cybersecurity requirements) + Part II (8 vulnerability-handling requirements) + Article 14 post-market obligations + Article 13/Annex VII technical documentation. Open findings for REQUIRED items without evidence."
       previewUrl="/compliance/eu-cra"
-      npmPackage="@sovereign-matrix/eu-cra"
+      npmPackage="@sovereign-matrix/compliance"
       fields={FIELDS}
       dataMode="sample"
       receiptCount={512}

@@ -152,11 +152,8 @@ When you ship this in production:
 - `@sovereign-matrix/annex-iv` — EU AI Act Annex IV
 - `@sovereign-matrix/iso-42001` — AIMS
 - `@sovereign-matrix/iso-23894` — AI risk management
-- `@sovereign-matrix/nist-ai-rmf` — US federal
-- `@sovereign-matrix/soc2-evidence` — TSC binder
+- `@sovereign-matrix/compliance` — SOC 2, ISO 42001, NIST AI RMF, HIPAA, EU CRA
 - `@sovereign-matrix/gdpr-dpia` — Article 35 + 30
-- `@sovereign-matrix/hipaa-security` — 45 CFR § 164
-- `@sovereign-matrix/eu-cra` — EU Cyber Resilience Act
 - `@sovereign-matrix/mcp` — MCP server exposing all of the above
 
 ## Use cases (real, ranked by buyer urgency)

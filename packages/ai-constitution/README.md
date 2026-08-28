@@ -193,11 +193,8 @@ Asimov's Laws — except enforceable.
 - `@sovereign-matrix/annex-iv` — EU AI Act
 - `@sovereign-matrix/iso-42001` — AIMS
 - `@sovereign-matrix/iso-23894` — AI risk management
-- `@sovereign-matrix/nist-ai-rmf` — US federal
-- `@sovereign-matrix/soc2-evidence` — TSC binder
+- `@sovereign-matrix/compliance` — SOC 2, ISO 42001, NIST AI RMF, HIPAA, EU CRA
 - `@sovereign-matrix/gdpr-dpia` — EU privacy
-- `@sovereign-matrix/hipaa-security` — US healthcare
-- `@sovereign-matrix/eu-cra` — EU Cyber Resilience Act
 - `@sovereign-matrix/mcp` — Model Context Protocol server
 
 ## License

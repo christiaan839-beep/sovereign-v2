@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  buildSoc2Report,
-  toMarkdown,
-  type TscCriterionEvidence,
-} from "@sovereign-matrix/soc2-evidence";
+  buildComplianceReport,
+  byCategory,
+  groupTally,
+  renderMarkdown,
+  type ControlEvidence,
+} from "@sovereign-matrix/compliance";
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+import { packageUrl } from "@/lib/package-links";
 
 export const metadata: Metadata = {
   title: "SOC 2 Evidence Binder — Live Preview · Sovereign Matrix",
@@ -57,20 +60,19 @@ const SAMPLE_RECEIPTS: ReceiptRecord[] = (() => {
 })();
 
 export default function Soc2Preview() {
-  const report = buildSoc2Report({
+  const report = buildComplianceReport({
+    regulation: "soc2",
     scope: {
       organizationName: "Sample Operator — Acme AI Operations Ltd",
-      auditPeriodStart: "2026-01-01T00:00:00Z",
-      auditPeriodEnd: "2026-06-30T23:59:59Z",
-      inScope: [
-        "security",
-        "availability",
-        "confidentiality",
-        "processing-integrity",
-      ],
-      serviceAuditor: "Sample Big-4 CPA Firm LLP",
-      servicesDescription:
-        "AI-powered loan-underwriting platform delivering automated decisions for consumer loans 1k-50k EUR with cryptographic receipts on every output.",
+      systemName: "Loan underwriting platform",
+      periodStart: "2026-01-01T00:00:00Z",
+      periodEnd: "2026-06-30T23:59:59Z",
+      inScope: ["availability", "confidentiality", "processing-integrity"],
+      declarations: {
+        "Service auditor": "Sample Big-4 CPA Firm LLP",
+        Services:
+          "AI-powered loan-underwriting platform delivering automated decisions for consumer loans 1k-50k EUR with cryptographic receipts on every output.",
+      },
     },
     receipts: SAMPLE_RECEIPTS,
     controlOwners: {
@@ -82,14 +84,11 @@ export default function Soc2Preview() {
     coverageThresholdDays: 30,
   });
 
-  const md = toMarkdown(report);
-  const securityCount = report.criteria.filter(
-    (c: TscCriterionEvidence) => c.category === "security",
-  ).length;
-  const securityEvidenced = report.criteria.filter(
-    (c: TscCriterionEvidence) =>
-      c.category === "security" && c.evidenceCount > 0,
-  ).length;
+  const md = renderMarkdown(report);
+  const categories = byCategory(report);
+  const security = groupTally(categories, "security");
+  const securityCount = security.total;
+  const securityEvidenced = security.withEvidence;
 
   return (
     <div className="relative min-h-dvh bg-[#030303] text-white antialiased">
@@ -127,7 +126,7 @@ export default function Soc2Preview() {
             AICPA Trust Service Criteria 2017 evidence package, generated from a
             sample 6-month audit window using{" "}
             <code className="font-mono text-[14px] text-cyan-300/90">
-              @sovereign-matrix/soc2-evidence
+              @sovereign-matrix/compliance
             </code>
             .
           </p>
@@ -145,11 +144,11 @@ export default function Soc2Preview() {
               Install · Apache 2.0
             </p>
             <p className="text-[10px] font-mono text-neutral-600">
-              Zero runtime deps beyond verifiable-receipts
+              Zero runtime dependencies
             </p>
           </div>
           <pre className="px-5 py-4 overflow-x-auto font-mono text-[13px] leading-[1.6] text-cyan-300/95">
-            {`npm install @sovereign-matrix/soc2-evidence @sovereign-matrix/verifiable-receipts`}
+            {`npm install @sovereign-matrix/compliance`}
           </pre>
         </div>
 
@@ -161,7 +160,7 @@ export default function Soc2Preview() {
             <KV k="Organization" v={report.scope.organizationName} />
             <KV
               k="Audit period"
-              v={`${report.scope.auditPeriodStart.slice(0, 10)} → ${report.scope.auditPeriodEnd.slice(0, 10)}`}
+              v={`${report.scope.periodStart.slice(0, 10)} → ${report.scope.periodEnd.slice(0, 10)}`}
             />
             <KV
               k="Duration"
@@ -169,17 +168,17 @@ export default function Soc2Preview() {
             />
             <KV
               k="Categories in scope"
-              v={[
-                "security",
-                ...report.scope.inScope.filter((c: string) => c !== "security"),
-              ].join(", ")}
+              v={categories.map((c) => c.key).join(", ")}
             />
-            <KV k="Service auditor" v={report.scope.serviceAuditor ?? "n/a"} />
+            <KV
+              k="Service auditor"
+              v={report.scope.declarations?.["Service auditor"] ?? "n/a"}
+            />
             <KV
               k="Total receipts"
               v={report.reportingWindow.totalReceipts.toLocaleString()}
             />
-            <KV k="Services" v={report.scope.servicesDescription} wide />
+            <KV k="Services" v={report.scope.declarations?.Services ?? ""} wide />
           </div>
         </section>
 
@@ -190,7 +189,7 @@ export default function Soc2Preview() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatBig
               label="Criteria evidenced"
-              value={`${report.summary.criteriaWithEvidence} / ${report.summary.criteriaTotal}`}
+              value={`${report.summary.controlsWithEvidence} / ${report.summary.controlsTotal}`}
               tone="emerald"
             />
             <StatBig
@@ -223,10 +222,10 @@ export default function Soc2Preview() {
                 "privacy",
               ] as const
             ).map((cat) => {
-              const total = report.criteria.filter(
-                (c) => c.category === cat,
-              ).length;
-              const evidenced = report.summary.byCategory[cat];
+              const { total, withEvidence: evidenced } = groupTally(
+                categories,
+                cat,
+              );
               if (total === 0) {
                 return (
                   <div
@@ -283,11 +282,9 @@ export default function Soc2Preview() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {report.criteria
-                  .filter(
-                    (c: TscCriterionEvidence) => c.category === "security",
-                  )
-                  .map((c: TscCriterionEvidence) => (
+                {report.controls
+                  .filter((c: ControlEvidence) => c.category === "security")
+                  .map((c: ControlEvidence) => (
                     <tr
                       key={c.id}
                       className="hover:bg-white/[0.02] transition-colors"
@@ -297,22 +294,23 @@ export default function Soc2Preview() {
                       </td>
                       <td className="px-4 py-2 text-neutral-300">{c.title}</td>
                       <td className="px-4 py-2 text-right font-mono">
-                        {c.evidenceCount > 0 ? (
+                        {c.evidence.count > 0 ? (
                           <span className="text-emerald-400">
-                            {c.evidenceCount}
+                            {c.evidence.count}
                           </span>
                         ) : (
                           <span className="text-neutral-600">0</span>
                         )}
                       </td>
                       <td className="px-4 py-2 text-right font-mono">
-                        {c.daysOfCoverage < 30 && c.evidenceCount > 0 ? (
+                        {c.evidence.daysOfCoverage < 30 &&
+                        c.evidence.count > 0 ? (
                           <span className="text-amber-400">
-                            {c.daysOfCoverage}
+                            {c.evidence.daysOfCoverage}
                           </span>
-                        ) : c.daysOfCoverage >= 30 ? (
+                        ) : c.evidence.daysOfCoverage >= 30 ? (
                           <span className="text-emerald-400">
-                            {c.daysOfCoverage}
+                            {c.evidence.daysOfCoverage}
                           </span>
                         ) : (
                           <span className="text-neutral-600">0</span>
@@ -339,7 +337,7 @@ export default function Soc2Preview() {
               expanded pack coverage before the audit kickoff.
             </p>
             <ul className="grid md:grid-cols-2 gap-x-6 gap-y-1.5 text-[12px]">
-              {report.gaps.slice(0, 20).map((g: TscCriterionEvidence) => (
+              {report.gaps.slice(0, 20).map((g: ControlEvidence) => (
                 <li key={g.id} className="flex items-baseline gap-2">
                   <span className="font-mono text-amber-400/90 text-[11px]">
                     {g.id}
@@ -362,7 +360,7 @@ export default function Soc2Preview() {
           </h2>
           <p className="text-[13px] text-neutral-500 mb-6 max-w-2xl">
             The exact bytes{" "}
-            <code className="text-cyan-300/90">toMarkdown(report)</code>{" "}
+            <code className="text-cyan-300/90">renderMarkdown(report)</code>{" "}
             returned. Walk into the audit kickoff with this binder.
           </p>
           <div className="rounded-[6px] border border-white/[0.06] bg-black/40 max-h-[560px] overflow-y-auto">
@@ -400,10 +398,10 @@ export default function Soc2Preview() {
               <span aria-hidden="true">→</span>
             </Link>
             <Link
-              href="https://www.npmjs.com/package/@sovereign-matrix/soc2-evidence"
+              href={packageUrl("@sovereign-matrix/compliance")}
               className="inline-flex items-center gap-2 px-5 py-3 border border-white/[0.12] text-neutral-300 font-mono text-[13px] rounded-[3px] hover:text-white hover:border-white/25 transition-colors"
             >
-              View on npm
+              View source
             </Link>
             <Link
               href="/compliance/nist-ai-rmf"
@@ -416,9 +414,7 @@ export default function Soc2Preview() {
 
         <footer className="mt-16 pt-8 border-t border-white/[0.04] text-[12px] font-mono text-neutral-600">
           Generated by{" "}
-          <code className="text-cyan-300/80">
-            @sovereign-matrix/soc2-evidence
-          </code>{" "}
+          <code className="text-cyan-300/80">@sovereign-matrix/compliance</code>{" "}
           v0.1.0 · Apache 2.0 · schema{" "}
           <code className="text-cyan-300/80">vaos-soc2-evidence-v1</code>
         </footer>

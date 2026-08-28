@@ -4,7 +4,7 @@ import { VsPage, type VsPageData } from "@/components/vs/VsPage";
 export const metadata: Metadata = {
   title: "Sovereign Matrix vs Vanta — Open-source SOC 2 evidence (Apache 2.0)",
   description:
-    "Vanta charges $5-50K/year for SOC 2 evidence. Sovereign Matrix ships @sovereign-matrix/soc2-evidence Apache 2.0. Side-by-side comparison.",
+    "Vanta charges $5-50K/year for SOC 2 evidence. Sovereign Matrix ships @sovereign-matrix/compliance Apache 2.0. Side-by-side comparison.",
 };
 
 const DATA: VsPageData = {
@@ -29,7 +29,7 @@ const DATA: VsPageData = {
       feature: "SOC 2 evidence generation",
       competitor: "Built into the platform",
       sovereign: {
-        value: "@sovereign-matrix/soc2-evidence (free)",
+        value: "@sovereign-matrix/compliance (free)",
         tone: "good",
       },
     },
@@ -47,7 +47,7 @@ const DATA: VsPageData = {
       feature: "NIST AI RMF 1.0",
       competitor: { value: "Not covered", tone: "bad" },
       sovereign: {
-        value: "@sovereign-matrix/nist-ai-rmf (free)",
+        value: "@sovereign-matrix/compliance (free)",
         tone: "good",
       },
     },
@@ -121,8 +121,8 @@ const DATA: VsPageData = {
     "You want MCP tools that let Claude Code generate compliance reports from inside your editor.",
     "You want zero vendor lock-in — fork the repo and self-host if needed.",
   ],
-  npmPackageHighlight: "@sovereign-matrix/soc2-evidence",
-  installCommand: `npm install @sovereign-matrix/soc2-evidence @sovereign-matrix/verifiable-receipts`,
+  npmPackageHighlight: "@sovereign-matrix/compliance",
+  installCommand: `npm install @sovereign-matrix/compliance @sovereign-matrix/verifiable-receipts`,
 };
 
 export default function VsVantaPage() {

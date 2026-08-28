@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { packageUrl } from "@/lib/package-links";
 
 /**
  * Trust-chip pill — a single procurement-grade link, rendered as a
@@ -71,7 +72,7 @@ function Chip({ href, label, accent, external }: ChipProps) {
 const STANDARDS = [
   { href: "/spec", label: "VAOS 1.0 · 2.0 · 3.0", external: false },
   {
-    href: "https://www.npmjs.com/package/@sovereign-matrix/verifiable-receipts",
+    href: packageUrl("@sovereign-matrix/verifiable-receipts"),
     label: "OSS toolkit (Apache-2.0)",
     external: true,
   },

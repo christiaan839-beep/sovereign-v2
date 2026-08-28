@@ -31,6 +31,7 @@
  */
 
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+import { tallyEvidence } from "@sovereign-matrix/compliance";
 
 /**
  * Controller / processor identity per Article 30(1)(a) GDPR.
@@ -217,22 +218,13 @@ export function buildDpia(opts: BuildDpiaOptions): DpiaReport {
       };
     }
 
-    // Count receipt evidence across all mitigations' pack prefixes.
-    let evidenceCount = 0;
-    for (const r of receipts) {
-      const pack = typeof r.pack === "string" ? r.pack.toLowerCase() : "";
-      if (!pack) continue;
-      for (const m of userRisk.mitigations) {
-        if (
-          m.evidencePackPrefixes?.some((prefix) =>
-            pack.startsWith(prefix.toLowerCase()),
-          )
-        ) {
-          evidenceCount++;
-          break; // count once per receipt
-        }
-      }
-    }
+    // Receipt evidence across the union of this risk's mitigation
+    // prefixes. tallyEvidence counts each receipt once however many
+    // prefixes it matches, which is what "evidence for this risk" means.
+    const evidenceCount = tallyEvidence(
+      receipts,
+      userRisk.mitigations.flatMap((m) => m.evidencePackPrefixes ?? []),
+    ).count;
 
     return {
       activityId: a.id,

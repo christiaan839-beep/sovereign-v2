@@ -106,8 +106,7 @@ npm install -g \
   @sovereign-matrix/verifiable-receipts \
   @sovereign-matrix/annex-iv \
   @sovereign-matrix/iso-42001 \
-  @sovereign-matrix/nist-ai-rmf \
-  @sovereign-matrix/soc2-evidence
+  @sovereign-matrix/compliance
 ```
 
 Or rely on the `npx` form which resolves them on demand.

@@ -30,7 +30,7 @@ const EXPORTERS = [
   },
   {
     href: "/compliance/nist-ai-rmf",
-    npm: "@sovereign-matrix/nist-ai-rmf",
+    npm: "@sovereign-matrix/compliance",
     pill: "US federal",
     title: "NIST AI RMF 1.0",
     description:
@@ -41,7 +41,7 @@ const EXPORTERS = [
   },
   {
     href: "/compliance/soc2",
-    npm: "@sovereign-matrix/soc2-evidence",
+    npm: "@sovereign-matrix/compliance",
     pill: "Audit binder",
     title: "SOC 2 Trust Service Criteria",
     description:
@@ -61,7 +61,7 @@ const EXPORTERS = [
   },
   {
     href: "/compliance/hipaa",
-    npm: "@sovereign-matrix/hipaa-security",
+    npm: "@sovereign-matrix/compliance",
     pill: "US healthcare",
     title: "HIPAA Security Rule",
     description:
@@ -82,7 +82,7 @@ const EXPORTERS = [
   },
   {
     href: "/compliance/eu-cra",
-    npm: "@sovereign-matrix/eu-cra",
+    npm: "@sovereign-matrix/compliance",
     pill: "EU cybersecurity",
     title: "EU Cyber Resilience Act",
     description:

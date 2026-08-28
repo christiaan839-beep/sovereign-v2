@@ -40,7 +40,7 @@ const DATA: VsPageData = {
       feature: "NIST AI RMF 1.0",
       competitor: { value: "Yes — proprietary", tone: "good" },
       sovereign: {
-        value: "@sovereign-matrix/nist-ai-rmf (free)",
+        value: "@sovereign-matrix/compliance (free)",
         tone: "good",
       },
     },
@@ -53,7 +53,7 @@ const DATA: VsPageData = {
       feature: "HIPAA Security Rule",
       competitor: { value: "Not core focus", tone: "bad" },
       sovereign: {
-        value: "@sovereign-matrix/hipaa-security (free)",
+        value: "@sovereign-matrix/compliance (free)",
         tone: "good",
       },
     },
@@ -61,7 +61,7 @@ const DATA: VsPageData = {
       feature: "SOC 2 evidence binder",
       competitor: { value: "Not offered", tone: "bad" },
       sovereign: {
-        value: "@sovereign-matrix/soc2-evidence (free)",
+        value: "@sovereign-matrix/compliance (free)",
         tone: "good",
       },
     },
@@ -124,7 +124,7 @@ const DATA: VsPageData = {
   installCommand: `npm install \\
   @sovereign-matrix/annex-iv \\
   @sovereign-matrix/iso-42001 \\
-  @sovereign-matrix/nist-ai-rmf \\
+  @sovereign-matrix/compliance \\
   @sovereign-matrix/verifiable-receipts`,
 };
 

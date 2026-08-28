@@ -45,29 +45,18 @@ import {
   toMarkdown as isoMarkdown,
 } from "@sovereign-matrix/iso-42001";
 import {
-  buildNistAiRmf,
-  toMarkdown as rmfMarkdown,
-} from "@sovereign-matrix/nist-ai-rmf";
-import {
-  buildSoc2Report,
-  toMarkdown as soc2Markdown,
-} from "@sovereign-matrix/soc2-evidence";
+  buildComplianceReport,
+  renderMarkdown as matrixMarkdown,
+  type BuildComplianceReportOptions,
+} from "@sovereign-matrix/compliance";
 import {
   buildDpia,
   toMarkdown as dpiaMarkdown,
 } from "@sovereign-matrix/gdpr-dpia";
 import {
-  buildHipaaSecurity,
-  toMarkdown as hipaaMarkdown,
-} from "@sovereign-matrix/hipaa-security";
-import {
   buildIso23894,
   toMarkdown as iso23894Markdown,
 } from "@sovereign-matrix/iso-23894";
-import {
-  buildEuCra,
-  toMarkdown as craMarkdown,
-} from "@sovereign-matrix/eu-cra";
 import {
   buildConstitution,
   auditAgainstConstitution,
@@ -463,90 +452,9 @@ async function callTool(
         });
         return ok(isoMarkdown(report));
       }
-      case "build_nist_ai_rmf": {
-        const report = buildNistAiRmf({
-          scope: args.scope as Parameters<typeof buildNistAiRmf>[0]["scope"],
-          receipts: args.receipts as Parameters<
-            typeof buildNistAiRmf
-          >[0]["receipts"],
-          maturityOverrides: args.maturityOverrides as Parameters<
-            typeof buildNistAiRmf
-          >[0]["maturityOverrides"],
-          functionNarratives: args.functionNarratives as Parameters<
-            typeof buildNistAiRmf
-          >[0]["functionNarratives"],
-        });
-        return ok(rmfMarkdown(report));
-      }
-      case "build_soc2_evidence": {
-        const report = buildSoc2Report({
-          scope: args.scope as Parameters<typeof buildSoc2Report>[0]["scope"],
-          receipts: args.receipts as Parameters<
-            typeof buildSoc2Report
-          >[0]["receipts"],
-          controlOwners: args.controlOwners as
-            | Record<string, string>
-            | undefined,
-          coverageThresholdDays: args.coverageThresholdDays as
-            | number
-            | undefined,
-        });
-        return ok(soc2Markdown(report));
-      }
-      case "build_gdpr_dpia": {
-        const report = buildDpia({
-          controller: args.controller as Parameters<
-            typeof buildDpia
-          >[0]["controller"],
-          activities: args.activities as Parameters<
-            typeof buildDpia
-          >[0]["activities"],
-          risks: args.risks as Parameters<typeof buildDpia>[0]["risks"],
-          receipts: args.receipts as Parameters<
-            typeof buildDpia
-          >[0]["receipts"],
-        });
-        return ok(dpiaMarkdown(report));
-      }
-      case "build_hipaa_security": {
-        const report = buildHipaaSecurity({
-          scope: args.scope as Parameters<
-            typeof buildHipaaSecurity
-          >[0]["scope"],
-          receipts: args.receipts as Parameters<
-            typeof buildHipaaSecurity
-          >[0]["receipts"],
-          implementationStatus: args.implementationStatus as Parameters<
-            typeof buildHipaaSecurity
-          >[0]["implementationStatus"],
-        });
-        return ok(hipaaMarkdown(report));
-      }
-      case "build_iso_23894": {
-        const report = buildIso23894({
-          scope: args.scope as Parameters<typeof buildIso23894>[0]["scope"],
-          scenarios: args.scenarios as Parameters<
-            typeof buildIso23894
-          >[0]["scenarios"],
-          receipts: args.receipts as Parameters<
-            typeof buildIso23894
-          >[0]["receipts"],
-        });
-        return ok(iso23894Markdown(report));
-      }
-      case "build_eu_cra": {
-        const report = buildEuCra({
-          scope: args.scope as Parameters<typeof buildEuCra>[0]["scope"],
-          receipts: args.receipts as Parameters<
-            typeof buildEuCra
-          >[0]["receipts"],
-          implementationStatus: args.implementationStatus as Parameters<
-            typeof buildEuCra
-          >[0]["implementationStatus"],
-          residualRisks: args.residualRisks as string[] | undefined,
-        });
-        return ok(craMarkdown(report));
-      }
+      case "build_nist_ai_rmf":
+      case "build_soc2_evidence":
+      case "build_hipaa_security":
       case "build_constitution_audit": {
         const audit = auditAgainstConstitution({
           constitution: args.constitution as Parameters<

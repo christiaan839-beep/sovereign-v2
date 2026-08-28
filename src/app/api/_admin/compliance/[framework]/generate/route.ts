@@ -11,35 +11,21 @@ import {
   toJSON as isoJson,
 } from "@sovereign-matrix/iso-42001";
 import {
-  buildNistAiRmf,
-  toMarkdown as rmfMd,
-  toJSON as rmfJson,
-} from "@sovereign-matrix/nist-ai-rmf";
-import {
-  buildSoc2Report,
-  toMarkdown as soc2Md,
-  toJSON as soc2Json,
-} from "@sovereign-matrix/soc2-evidence";
+  buildComplianceReport,
+  renderMarkdown,
+  toJSON as matrixJson,
+  type ReportScope,
+} from "@sovereign-matrix/compliance";
 import {
   buildDpia,
   toMarkdown as dpiaMd,
   toJSON as dpiaJson,
 } from "@sovereign-matrix/gdpr-dpia";
 import {
-  buildHipaaSecurity,
-  toMarkdown as hipaaMd,
-  toJSON as hipaaJson,
-} from "@sovereign-matrix/hipaa-security";
-import {
   buildIso23894,
   toMarkdown as iso23894Md,
   toJSON as iso23894Json,
 } from "@sovereign-matrix/iso-23894";
-import {
-  buildEuCra,
-  toMarkdown as craMd,
-  toJSON as craJson,
-} from "@sovereign-matrix/eu-cra";
 import {
   buildConstitution,
   auditAgainstConstitution,
@@ -122,6 +108,73 @@ export async function POST(req: Request, ctx: RouteContext) {
   }
 }
 
+/**
+ * Which operator-supplied scope fields each catalogue-driven framework
+ * carries into its report, and under what label.
+ *
+ * The engine reads four fields — organization, system, period start and
+ * end — and renders everything else verbatim in the Scope section. So a
+ * framework's extra fields are a label map, not code.
+ */
+const DECLARATIONS: Record<string, Record<string, string>> = {
+  soc2: {
+    serviceAuditor: "Service auditor",
+    servicesDescription: "Services",
+  },
+  "nist-ai-rmf": {
+    lifecycleStage: "Lifecycle stage",
+    organizationalRole: "Organizational role",
+    profileType: "Profile type",
+    intendedUse: "Intended use",
+    riskTolerance: "Risk tolerance",
+  },
+  hipaa: {
+    organizationType: "Organization type",
+    ephiCategories: "ePHI categories",
+    securityOfficial: "Security official",
+    privacyOfficial: "Privacy official",
+  },
+  "eu-cra": {
+    productIdentifier: "Product identifier",
+    category: "Product class",
+    intendedUse: "Intended use",
+    placedOnMarketAt: "Placed on market",
+    authorisedRepresentative: "Authorised representative",
+  },
+};
+
+/** Which scope key names the system under assessment, per framework. */
+const SYSTEM_KEY: Record<string, string> = {
+  soc2: "servicesDescription",
+  "nist-ai-rmf": "systemName",
+  hipaa: "systemName",
+  "eu-cra": "productName",
+};
+
+/** Map a flat operator scope onto the engine's ReportScope. */
+function matrixScope(
+  framework: string,
+  scope: Record<string, string>,
+): ReportScope {
+  const declarations: Record<string, string> = {};
+  for (const [key, label] of Object.entries(DECLARATIONS[framework] ?? {})) {
+    const value = scope[key];
+    if (value) declarations[label] = value;
+  }
+  const organizationName =
+    scope["organizationName"] ?? scope["manufacturer"] ?? "Sample Organization";
+  return {
+    organizationName,
+    systemName:
+      scope[SYSTEM_KEY[framework] ?? "systemName"] ??
+      scope["systemName"] ??
+      "Sample AI System",
+    periodStart: scope["auditPeriodStart"] ?? "2026-01-01T00:00:00Z",
+    periodEnd: scope["auditPeriodEnd"] ?? "2026-12-31T23:59:59Z",
+    ...(Object.keys(declarations).length > 0 ? { declarations } : {}),
+  };
+}
+
 function generate(
   framework: Framework,
   scope: Record<string, string>,
@@ -171,48 +224,16 @@ function generate(
       });
       return { markdown: isoMd(report), json: isoJson(report) };
     }
-    case "nist-ai-rmf": {
-      const report = buildNistAiRmf({
-        scope: {
-          systemName: scope["systemName"] ?? "Sample AI System",
-          lifecycleStage:
-            (scope["lifecycleStage"] as
-              | "design"
-              | "development"
-              | "deployment"
-              | "operation"
-              | "monitoring"
-              | "decommissioning") ?? "operation",
-          organizationalRole: scope["organizationalRole"] ?? "AI Operator",
-          profileType:
-            (scope["profileType"] as
-              | "current"
-              | "target"
-              | "current-and-target") ?? "current",
-          intendedUse:
-            scope["intendedUse"] ?? "Operator-supplied purpose statement.",
-          riskTolerance:
-            (scope["riskTolerance"] as "low" | "medium" | "high") ?? "medium",
-        },
+    case "soc2":
+    case "nist-ai-rmf":
+    case "hipaa":
+    case "eu-cra": {
+      const report = buildComplianceReport({
+        regulation: framework === "hipaa" ? "hipaa-security" : framework,
+        scope: matrixScope(framework, scope),
         receipts,
       });
-      return { markdown: rmfMd(report), json: rmfJson(report) };
-    }
-    case "soc2": {
-      const report = buildSoc2Report({
-        scope: {
-          organizationName: scope["organizationName"] ?? "Sample Organization",
-          auditPeriodStart: scope["auditPeriodStart"] ?? "2026-01-01T00:00:00Z",
-          auditPeriodEnd: scope["auditPeriodEnd"] ?? "2026-12-31T23:59:59Z",
-          inScope: ["security", "availability", "confidentiality"],
-          serviceAuditor: scope["serviceAuditor"] || undefined,
-          servicesDescription:
-            scope["servicesDescription"] ??
-            "Operator-supplied service description.",
-        },
-        receipts,
-      });
-      return { markdown: soc2Md(report), json: soc2Json(report) };
+      return { markdown: renderMarkdown(report), json: matrixJson(report) };
     }
     case "gdpr-dpia": {
       const report = buildDpia({
@@ -259,27 +280,6 @@ function generate(
         receipts,
       });
       return { markdown: dpiaMd(report), json: dpiaJson(report) };
-    }
-    case "hipaa": {
-      const report = buildHipaaSecurity({
-        scope: {
-          organizationName:
-            scope["organizationName"] ?? "Sample Covered Entity",
-          organizationType:
-            (scope["organizationType"] as
-              | "covered-entity"
-              | "business-associate"
-              | "both") ?? "covered-entity",
-          ephiCategoriesDescription:
-            scope["ephiCategories"] ?? "Operator-supplied ePHI description.",
-          auditPeriodStart: scope["auditPeriodStart"] ?? "2026-01-01T00:00:00Z",
-          auditPeriodEnd: scope["auditPeriodEnd"] ?? "2026-12-31T23:59:59Z",
-          securityOfficial: scope["securityOfficial"] || undefined,
-          privacyOfficial: scope["privacyOfficial"] || undefined,
-        },
-        receipts,
-      });
-      return { markdown: hipaaMd(report), json: hipaaJson(report) };
     }
     case "iso-23894": {
       const report = buildIso23894({
@@ -330,28 +330,6 @@ function generate(
         receipts,
       });
       return { markdown: iso23894Md(report), json: iso23894Json(report) };
-    }
-    case "eu-cra": {
-      const report = buildEuCra({
-        scope: {
-          manufacturer: scope["manufacturer"] ?? "Sample Manufacturer",
-          productName: scope["productName"] ?? "Sample Product",
-          productIdentifier: scope["productIdentifier"] ?? "sample-1.0",
-          category:
-            (scope["category"] as
-              | "default"
-              | "important-class-I"
-              | "important-class-II"
-              | "critical") ?? "default",
-          intendedUse:
-            scope["intendedUse"] ?? "Operator-supplied intended use.",
-          placedOnMarketAt: scope["placedOnMarketAt"] ?? "2026-06-01T00:00:00Z",
-          authorisedRepresentative:
-            scope["authorisedRepresentative"] || undefined,
-        },
-        receipts,
-      });
-      return { markdown: craMd(report), json: craJson(report) };
     }
     case "ai-constitution": {
       // Three real flows:

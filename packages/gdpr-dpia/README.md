@@ -127,9 +127,7 @@ DPIA (the risk lens over the same activities).
 - `@sovereign-matrix/verifiable-receipts` — receipt primitive
 - `@sovereign-matrix/annex-iv` — EU AI Act
 - `@sovereign-matrix/iso-42001` — AIMS
-- `@sovereign-matrix/nist-ai-rmf` — US federal
-- `@sovereign-matrix/soc2-evidence` — Trust Service Criteria
-- `@sovereign-matrix/hipaa-security` — US healthcare
+- `@sovereign-matrix/compliance` — SOC 2, ISO 42001, NIST AI RMF, HIPAA, EU CRA
 - `@sovereign-matrix/gdpr-dpia` — **this** (EU privacy)
 
 ## License

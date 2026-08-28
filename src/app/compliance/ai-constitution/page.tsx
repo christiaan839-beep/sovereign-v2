@@ -7,6 +7,7 @@ import {
   type ConstitutionArticle,
 } from "@sovereign-matrix/ai-constitution";
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+import { packageUrl } from "@/lib/package-links";
 
 export const metadata: Metadata = {
   title: "Constitutional AI Anchoring — Live Preview · Sovereign Matrix",
@@ -331,10 +332,10 @@ export default function AiConstitutionPreview() {
               <span aria-hidden="true">→</span>
             </Link>
             <Link
-              href="https://www.npmjs.com/package/@sovereign-matrix/ai-constitution"
+              href={packageUrl("@sovereign-matrix/ai-constitution")}
               className="inline-flex items-center gap-2 px-5 py-3 border border-white/[0.12] text-neutral-300 font-mono text-[13px] rounded-[3px] hover:text-white hover:border-white/25 transition-colors"
             >
-              View on npm
+              View source
             </Link>
             <Link
               href="/compliance"

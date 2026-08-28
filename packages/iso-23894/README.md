@@ -95,19 +95,16 @@ exporter family):
 
 This shared taxonomy means an AI risk register in 23894 maps
 1-to-1 with NIST RMF subcategory coverage in
-`@sovereign-matrix/nist-ai-rmf`.
+`@sovereign-matrix/compliance`.
 
 ## Sibling packages
 
 - `@sovereign-matrix/verifiable-receipts` — the receipt primitive
 - `@sovereign-matrix/iso-42001` — AIMS (references 23894)
-- `@sovereign-matrix/nist-ai-rmf` — US federal RMF
+- `@sovereign-matrix/compliance` — SOC 2, ISO 42001, NIST AI RMF, HIPAA, EU CRA
 - `@sovereign-matrix/ai-constitution` — cryptographically-anchored policy
-- `@sovereign-matrix/eu-cra` — EU Cyber Resilience Act
 - `@sovereign-matrix/annex-iv` — EU AI Act Article 11
-- `@sovereign-matrix/soc2-evidence` — AICPA TSC binder
 - `@sovereign-matrix/gdpr-dpia` — Article 35 DPIA + Article 30 RoPA
-- `@sovereign-matrix/hipaa-security` — 45 CFR § 164.308-318
 
 ## License
 

@@ -28,6 +28,7 @@ import { desc, sql } from "drizzle-orm";
 import { getEd25519PublicKeyPem } from "@/lib/agent-runs";
 import { thresholdStatus } from "@/lib/threshold-signer";
 import { createLogger } from "@/lib/logger";
+import { packageUrl } from "@/lib/package-links";
 
 const log = createLogger("security-posture");
 
@@ -275,7 +276,7 @@ export async function GET() {
         name: "@sovereign-matrix/verifiable-receipts",
         license: "Apache-2.0",
         registry:
-          "https://www.npmjs.com/package/@sovereign-matrix/verifiable-receipts",
+          packageUrl("@sovereign-matrix/verifiable-receipts"),
         source:
           "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/verifiable-receipts",
         purpose:
@@ -284,7 +285,7 @@ export async function GET() {
       {
         name: "@sovereign-matrix/agent-sdk",
         license: "Apache-2.0",
-        registry: "https://www.npmjs.com/package/@sovereign-matrix/agent-sdk",
+        registry: packageUrl("@sovereign-matrix/agent-sdk"),
         source:
           "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/agent-sdk",
         purpose: "Typed client for the platform; verifies receipts locally.",
