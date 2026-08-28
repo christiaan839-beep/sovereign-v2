@@ -1,0 +1,3 @@
+## 2024-10-18 - Ensure keyboard accessibility on hover-hidden controls
+**Learning:** When controls (like action buttons on canvas nodes) are hidden behind a `group-hover:opacity-100` state, keyboard-only users cannot access them without hovering. Screen reader users without explicit ARIA labels on icon-only buttons receive no or unhelpful context.
+**Action:** Always add `focus-within:opacity-100` to the parent container hiding the controls (or the element itself). For the buttons themselves, add explicit `focus-visible:ring-2 focus-visible:outline-none` utilities. Lastly, add `aria-label` to the `<button>` and `aria-hidden="true"` to the internal SVG icon.
