@@ -24,19 +24,19 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, "..");
 
+// Dependency order matters: `compliance` carries the engine and the
+// regulation catalogues that iso-42001, iso-23894 and gdpr-dpia now
+// borrow, so it builds before them.
 const PACKAGES = [
   "openai-receipts",
   "anthropic-receipts",
   "google-receipts",
   "ai-sdk-receipts",
   "annex-iv",
+  "compliance",
   "iso-42001",
   "iso-23894",
-  "nist-ai-rmf",
-  "soc2-evidence",
   "gdpr-dpia",
-  "hipaa-security",
-  "eu-cra",
   "ai-constitution",
   "zk-compliance",
   "mcp",

@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  buildHipaaSecurity,
-  toMarkdown,
-  type HipaaSpecification,
-} from "@sovereign-matrix/hipaa-security";
+  buildComplianceReport,
+  byCategory,
+  byMeta,
+  groupTally,
+  renderMarkdown,
+  type ControlEvidence,
+} from "@sovereign-matrix/compliance";
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+import { packageUrl } from "@/lib/package-links";
 
 export const metadata: Metadata = {
   title: "HIPAA Security Rule — Live Preview · Sovereign Matrix",
@@ -45,19 +49,23 @@ const SAMPLE_RECEIPTS: ReceiptRecord[] = (() => {
 })();
 
 export default function HipaaPreview() {
-  const report = buildHipaaSecurity({
+  const report = buildComplianceReport({
+    regulation: "hipaa-security",
     scope: {
       organizationName: "Sample Operator — Acme Health AI Inc.",
-      organizationType: "business-associate",
-      ephiCategoriesDescription:
-        "AI-derived triage recommendations + clinician question/answer logs.",
-      auditPeriodStart: "2026-01-01T00:00:00Z",
-      auditPeriodEnd: "2026-12-31T23:59:59Z",
-      securityOfficial: "Sarah Patel, CISO",
-      privacyOfficial: "Dr. James Liu, Privacy Officer",
+      systemName: "Clinical triage assistant",
+      periodStart: "2026-01-01T00:00:00Z",
+      periodEnd: "2026-12-31T23:59:59Z",
+      declarations: {
+        "Organization type": "business-associate",
+        "ePHI categories":
+          "AI-derived triage recommendations + clinician question/answer logs.",
+        "Security official": "Sarah Patel, CISO",
+        "Privacy official": "Dr. James Liu, Privacy Officer",
+      },
     },
     receipts: SAMPLE_RECEIPTS,
-    implementationStatus: {
+    annotations: {
       "164.308(a)(2)": {
         status: "implemented",
         note: "Sarah Patel appointed Security Official 2024-01-15.",
@@ -69,7 +77,11 @@ export default function HipaaPreview() {
     },
   });
 
-  const md = toMarkdown(report);
+  const md = renderMarkdown(report);
+  const categories = byCategory(report);
+  const classes = byMeta(report, "classification");
+  const required = groupTally(classes, "required");
+  const addressable = groupTally(classes, "addressable");
 
   return (
     <div className="relative min-h-dvh bg-[#030303] text-white antialiased">
@@ -107,7 +119,7 @@ export default function HipaaPreview() {
             45 CFR § 164.308 / .310 / .312 / .314 / .316 evidence binder,
             generated from a sample 12-month audit window using{" "}
             <code className="font-mono text-[14px] text-cyan-300/90">
-              @sovereign-matrix/hipaa-security
+              @sovereign-matrix/compliance
             </code>
             .
           </p>
@@ -128,7 +140,7 @@ export default function HipaaPreview() {
             </p>
           </div>
           <pre className="px-5 py-4 overflow-x-auto font-mono text-[13px] leading-[1.6] text-cyan-300/95">
-            {`npm install @sovereign-matrix/hipaa-security @sovereign-matrix/verifiable-receipts`}
+            {`npm install @sovereign-matrix/compliance`}
           </pre>
         </div>
 
@@ -139,18 +151,18 @@ export default function HipaaPreview() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatBig
               label="Required evidenced"
-              value={`${report.summary.requiredEvidenced} / ${report.summary.requiredTotal}`}
+              value={`${required.withEvidence} / ${required.total}`}
               tone="emerald"
             />
             <StatBig
               label="Addressable evidenced"
-              value={`${report.summary.addressableEvidenced} / ${report.summary.addressableTotal}`}
+              value={`${addressable.withEvidence} / ${addressable.total}`}
               tone="emerald"
             />
             <StatBig
               label="Open findings"
-              value={report.findings.length.toString()}
-              tone={report.findings.length > 0 ? "amber" : "emerald"}
+              value={report.gaps.length.toString()}
+              tone={report.gaps.length > 0 ? "amber" : "emerald"}
             />
             <StatBig
               label="Audit duration"
@@ -172,10 +184,10 @@ export default function HipaaPreview() {
                 "policies",
               ] as const
             ).map((cat) => {
-              const total = report.specifications.filter(
-                (s: HipaaSpecification) => s.category === cat,
-              ).length;
-              const evidenced = report.summary.byCategory[cat];
+              const { total, withEvidence: evidenced } = groupTally(
+                categories,
+                cat,
+              );
               return (
                 <div
                   key={cat}
@@ -197,13 +209,13 @@ export default function HipaaPreview() {
           </div>
         </section>
 
-        {report.findings.length > 0 && (
+        {report.gaps.length > 0 && (
           <section className="mt-12 rounded-[6px] border border-amber-500/20 bg-amber-500/[0.04] p-5">
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-amber-400 mb-3">
               Open findings — REQUIRED specs without evidence
             </p>
             <ul className="grid md:grid-cols-2 gap-x-6 gap-y-1.5 text-[12px]">
-              {report.findings.slice(0, 20).map((f: HipaaSpecification) => (
+              {report.gaps.slice(0, 20).map((f: ControlEvidence) => (
                 <li key={f.id} className="flex items-baseline gap-2">
                   <span className="font-mono text-amber-400/90 text-[11px]">
                     {f.id}
@@ -211,9 +223,9 @@ export default function HipaaPreview() {
                   <span className="text-neutral-500 truncate">{f.title}</span>
                 </li>
               ))}
-              {report.findings.length > 20 && (
+              {report.gaps.length > 20 && (
                 <li className="text-neutral-600 italic">
-                  … + {report.findings.length - 20} more
+                  … + {report.gaps.length - 20} more
                 </li>
               )}
             </ul>
@@ -245,9 +257,9 @@ export default function HipaaPreview() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {report.specifications
-                  .filter((s: HipaaSpecification) => s.category === "technical")
-                  .map((s: HipaaSpecification) => (
+                {report.controls
+                  .filter((s: ControlEvidence) => s.category === "technical")
+                  .map((s: ControlEvidence) => (
                     <tr
                       key={s.id}
                       className="hover:bg-white/[0.02] transition-colors"
@@ -257,16 +269,16 @@ export default function HipaaPreview() {
                       </td>
                       <td className="px-4 py-2 text-neutral-300">{s.title}</td>
                       <td className="px-4 py-2 font-mono text-[10px] uppercase">
-                        {s.classification === "required" ? (
+                        {s.meta?.classification === "required" ? (
                           <span className="text-red-400/80">REQUIRED</span>
                         ) : (
                           <span className="text-amber-400/80">ADDRESSABLE</span>
                         )}
                       </td>
                       <td className="px-4 py-2 text-right font-mono">
-                        {s.evidenceCount > 0 ? (
+                        {s.evidence.count > 0 ? (
                           <span className="text-emerald-400">
-                            {s.evidenceCount}
+                            {s.evidence.count}
                           </span>
                         ) : (
                           <span className="text-neutral-600">0</span>
@@ -314,10 +326,10 @@ export default function HipaaPreview() {
               <span aria-hidden="true">→</span>
             </Link>
             <Link
-              href="https://www.npmjs.com/package/@sovereign-matrix/hipaa-security"
+              href={packageUrl("@sovereign-matrix/compliance")}
               className="inline-flex items-center gap-2 px-5 py-3 border border-white/[0.12] text-neutral-300 font-mono text-[13px] rounded-[3px] hover:text-white hover:border-white/25 transition-colors"
             >
-              View on npm
+              View source
             </Link>
             <Link
               href="/compliance/gdpr-dpia"
@@ -331,7 +343,7 @@ export default function HipaaPreview() {
         <footer className="mt-16 pt-8 border-t border-white/[0.04] text-[12px] font-mono text-neutral-600">
           Generated by{" "}
           <code className="text-cyan-300/80">
-            @sovereign-matrix/hipaa-security
+            @sovereign-matrix/compliance
           </code>{" "}
           v0.1.0 · Apache 2.0 · schema{" "}
           <code className="text-cyan-300/80">vaos-hipaa-security-v1</code>

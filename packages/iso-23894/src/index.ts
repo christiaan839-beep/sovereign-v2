@@ -21,6 +21,11 @@
  */
 
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+import {
+  attenuate,
+  scoreRisk,
+  tallyEvidence,
+} from "@sovereign-matrix/compliance";
 
 /**
  * AI risk-management scope per ISO/IEC 23894 § 4 (context establishment).
@@ -120,59 +125,6 @@ export interface BuildIso23894Options {
   receipts: ReceiptRecord[];
 }
 
-/**
- * Standard 5×5 risk matrix collapsing to a level.
- *   ┌──────────────┬──────────────────────────────────────────┐
- *   │              │ Negligible Minor Moderate Major Catastr. │
- *   ├──────────────┼──────────────────────────────────────────┤
- *   │ Almost cert. │ low        medium high     extreme extreme│
- *   │ Likely       │ low        medium high     high    extreme│
- *   │ Possible     │ very-low   low    medium   high    extreme│
- *   │ Unlikely     │ very-low   low    low      medium  high   │
- *   │ Rare         │ very-low   very-low low    medium  high   │
- *   └──────────────┴──────────────────────────────────────────┘
- */
-function scoreRisk(
-  likelihood: RiskScenario["likelihood"],
-  impact: RiskScenario["impact"],
-): RiskLevel {
-  const L: Record<RiskScenario["likelihood"], number> = {
-    rare: 0,
-    unlikely: 1,
-    possible: 2,
-    likely: 3,
-    "almost-certain": 4,
-  };
-  const I: Record<RiskScenario["impact"], number> = {
-    negligible: 0,
-    minor: 1,
-    moderate: 2,
-    major: 3,
-    catastrophic: 4,
-  };
-  // Use sum-of-indices banded to levels.
-  const s = L[likelihood] + I[impact];
-  if (s >= 7) return "extreme";
-  if (s >= 5) return "high";
-  if (s >= 3) return "medium";
-  if (s >= 1) return "low";
-  return "very-low";
-}
-
-/**
- * Apply evidence-count attenuation. Each receipt that evidences the
- * treatment shifts the inherent risk one band lower, up to 2 bands.
- * No magic — pure operator-explainable arithmetic.
- */
-function attenuate(inherent: RiskLevel, evidenceCount: number): RiskLevel {
-  const order: RiskLevel[] = ["very-low", "low", "medium", "high", "extreme"];
-  const idx = order.indexOf(inherent);
-  // Buckets: <10 evidence → 0 shift; 10-100 → 1 shift; 100+ → 2 shifts.
-  const shift = evidenceCount >= 100 ? 2 : evidenceCount >= 10 ? 1 : 0;
-  const newIdx = Math.max(0, idx - shift);
-  return order[newIdx]!;
-}
-
 export function buildIso23894(opts: BuildIso23894Options): Iso23894Report {
   const { scope, scenarios, receipts } = opts;
   const generatedAt = new Date().toISOString();
@@ -190,23 +142,16 @@ export function buildIso23894(opts: BuildIso23894Options): Iso23894Report {
 
   // Score every scenario.
   const scored: ScoredScenario[] = scenarios.map((s) => {
-    let evidenceCount = 0;
-    for (const r of receipts) {
-      const pack = typeof r.pack === "string" ? r.pack.toLowerCase() : "";
-      if (!pack) continue;
-      if (
-        s.evidencePackPrefixes.some((p) => pack.startsWith(p.toLowerCase()))
-      ) {
-        evidenceCount++;
-      }
-    }
+    const evidenceCount = tallyEvidence(
+      receipts,
+      s.evidencePackPrefixes,
+    ).count;
     const inherent = scoreRisk(s.likelihood, s.impact);
-    const residual = attenuate(inherent, evidenceCount);
     return {
       ...s,
       inherentRisk: inherent,
       evidenceCount,
-      residualRisk: residual,
+      residualRisk: attenuate(inherent, evidenceCount),
     };
   });
 

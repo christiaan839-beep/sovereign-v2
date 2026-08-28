@@ -5,7 +5,55 @@
 > updates this. If something is shipped, move it to the bottom log; if
 > something new is discovered, add it under the right severity band.
 
-Last refreshed: **2026-07-08** after wave 121 (deferred-flaw closeout + dependency hardening).
+Last refreshed: **2026-08-28** after wave 122 (compliance-exporter collapse + dead-link fix).
+
+---
+
+## Wave 122 — compliance-exporter collapse + dead npm links (2026-08-28)
+
+Five exporter packages differed only in their catalogue and their nouns.
+They are now one engine over five data packs, and the marketing surface
+no longer links to packages that do not exist.
+
+**`packages/compliance` — one engine, 220 controls.** SOC 2 (51 criteria),
+ISO/IEC 42001 Annex A (38 controls), NIST AI RMF (50 subcategories), HIPAA
+Security Rule (52 implementation specifications) and the EU CRA (29 Annex I
+requirements) are now `RegulationPack` data under `src/packs/`. One engine
+tallies evidence, finds gaps and renders the binder. Adding a framework is
+a data file, not a package.
+
+- `packages/{soc2-evidence,hipaa-security,eu-cra,nist-ai-rmf}` **deleted** —
+  fully absorbed. `packages/iso-42001` keeps its clause 4-10 narrative but
+  borrows the shared Annex A catalogue and `tallyEvidence`.
+  `packages/{iso-23894,gdpr-dpia}` now share `scoreRiskRegister` /
+  `tallyEvidence` instead of carrying their own copies. `packages/annex-iv`
+  is untouched: it builds a narrative document, not a matrix.
+- Catalogues were **extracted mechanically** from the old sources rather
+  than retyped, and the suite asserts the exact control counts (51 / 38 /
+  50 / 52 / 29) so a future edit that loses regulation text fails loudly.
+- `src/app/compliance/{soc2,hipaa,eu-cra,nist-ai-rmf}/page.tsx` rewired onto
+  the generic report. The admin route's four framework cases and
+  `packages/mcp`'s four tool cases each became one.
+- **New engine capability:** operator annotations (`{ status, note }` per
+  control id), generalising HIPAA's `implementationStatus` and the CRA's
+  per-requirement status. An annotated control leaves the gap list but
+  appears in the matrix with its rationale, so nothing goes quietly missing.
+
+**Dead npm links fixed.** `registry.npmjs.org` returns 404 for every
+`@sovereign-matrix/*` and `@sovereignmatrix/*` name — the landing page,
+trust page, security page and all nine compliance pages linked to them
+anyway. Links now go through `src/lib/package-links.ts`, which points at
+the source directory until a package is published; add a name to
+`PUBLISHED` there and every link to it becomes an npm link.
+
+Typecheck clean, 4,459 tests passing across 291 files, lint 0 errors,
+production build green.
+
+**Known gap this wave leaves:** net test count fell by 32 (four package
+test files deleted, one added). The behaviour they covered is covered by
+`packages/compliance/tests`, including an `it.each` over every pack, but
+the per-framework markdown-shape assertions are gone. If a framework's
+rendered document matters more than its numbers, that is worth re-adding.
 
 ---
 

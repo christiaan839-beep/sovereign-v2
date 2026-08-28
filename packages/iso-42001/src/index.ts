@@ -38,6 +38,8 @@
  */
 
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+import { tallyEvidence } from "@sovereign-matrix/compliance";
+import { ISO_42001_PACK } from "@sovereign-matrix/compliance/packs";
 
 /**
  * AIMS-level metadata that no receipt set can supply — the operator
@@ -188,261 +190,6 @@ export interface BuildIso42001Options {
   applicabilityOverrides?: Record<string, boolean>;
 }
 
-/**
- * ISO/IEC 42001:2023 Annex A reference controls. Tracks the
- * canonical id + parent objective + short title for the 38 controls
- * in the standard. Operators can override applicability per their
- * scope's statement of applicability (§ 6.1.3).
- *
- * Controls are mapped to receipt evidence via Guardian-pack tags
- * — when a receipt's `pack` field starts with one of the
- * `evidencePackPrefixes` it counts toward the control. Operators
- * with custom packs can extend the map by post-processing the
- * `annexAControls` array.
- */
-const ANNEX_A_CATALOG: Array<
-  Omit<AnnexAControl, "applicable" | "evidenceCount"> & {
-    evidencePackPrefixes: string[];
-  }
-> = [
-  // A.2 Policies related to AI
-  {
-    id: "A.2.2",
-    objective: "A.2 Policies related to AI",
-    title: "AI policy",
-    evidencePackPrefixes: ["iso42001", "ai-policy"],
-  },
-  {
-    id: "A.2.3",
-    objective: "A.2 Policies related to AI",
-    title: "Alignment with other organizational policies",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.2.4",
-    objective: "A.2 Policies related to AI",
-    title: "Review of the AI policy",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  // A.3 Internal organization
-  {
-    id: "A.3.2",
-    objective: "A.3 Internal organization",
-    title: "AI roles and responsibilities",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.3.3",
-    objective: "A.3 Internal organization",
-    title: "Reporting of concerns",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  // A.4 Resources for AI systems
-  {
-    id: "A.4.2",
-    objective: "A.4 Resources for AI systems",
-    title: "Resource documentation",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.4.3",
-    objective: "A.4 Resources for AI systems",
-    title: "Data resources",
-    evidencePackPrefixes: ["iso42001", "gdpr", "popia"],
-  },
-  {
-    id: "A.4.4",
-    objective: "A.4 Resources for AI systems",
-    title: "Tooling resources",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.4.5",
-    objective: "A.4 Resources for AI systems",
-    title: "System and computing resources",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.4.6",
-    objective: "A.4 Resources for AI systems",
-    title: "Human resources",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  // A.5 Assessing impacts of AI systems
-  {
-    id: "A.5.2",
-    objective: "A.5 Assessing impacts of AI systems",
-    title: "AI system impact assessment process",
-    evidencePackPrefixes: ["iso42001", "euAiAct", "eu-ai-act"],
-  },
-  {
-    id: "A.5.3",
-    objective: "A.5 Assessing impacts of AI systems",
-    title: "Documentation of AI system impact assessments",
-    evidencePackPrefixes: ["iso42001", "euAiAct", "eu-ai-act"],
-  },
-  {
-    id: "A.5.4",
-    objective: "A.5 Assessing impacts of AI systems",
-    title: "Assessing AI system impact on individuals and groups",
-    evidencePackPrefixes: ["iso42001", "fairness"],
-  },
-  {
-    id: "A.5.5",
-    objective: "A.5 Assessing impacts of AI systems",
-    title: "Assessing societal impacts",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  // A.6 AI system life cycle
-  {
-    id: "A.6.1.2",
-    objective: "A.6 AI system life cycle",
-    title: "Objectives for responsible development of AI system",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.6.1.3",
-    objective: "A.6 AI system life cycle",
-    title: "Processes for responsible AI development",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.6.2.2",
-    objective: "A.6 AI system life cycle",
-    title: "AI system requirements and specification",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.6.2.3",
-    objective: "A.6 AI system life cycle",
-    title: "Documentation of AI system design and development",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.6.2.4",
-    objective: "A.6 AI system life cycle",
-    title: "AI system verification and validation",
-    evidencePackPrefixes: ["iso42001", "owasp", "red-team"],
-  },
-  {
-    id: "A.6.2.5",
-    objective: "A.6 AI system life cycle",
-    title: "AI system deployment",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.6.2.6",
-    objective: "A.6 AI system life cycle",
-    title: "AI system operation and monitoring",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.6.2.7",
-    objective: "A.6 AI system life cycle",
-    title: "AI system technical documentation",
-    evidencePackPrefixes: ["iso42001", "euAiAct", "eu-ai-act"],
-  },
-  {
-    id: "A.6.2.8",
-    objective: "A.6 AI system life cycle",
-    title: "AI system event logs",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  // A.7 Data for AI systems
-  {
-    id: "A.7.2",
-    objective: "A.7 Data for AI systems",
-    title: "Data for development and enhancement of AI system",
-    evidencePackPrefixes: ["iso42001", "gdpr", "popia"],
-  },
-  {
-    id: "A.7.3",
-    objective: "A.7 Data for AI systems",
-    title: "Acquisition of data",
-    evidencePackPrefixes: ["iso42001", "gdpr", "popia"],
-  },
-  {
-    id: "A.7.4",
-    objective: "A.7 Data for AI systems",
-    title: "Quality of data for AI systems",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.7.5",
-    objective: "A.7 Data for AI systems",
-    title: "Data provenance",
-    evidencePackPrefixes: ["iso42001", "c2pa"],
-  },
-  {
-    id: "A.7.6",
-    objective: "A.7 Data for AI systems",
-    title: "Data preparation",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  // A.8 Information for interested parties of AI systems
-  {
-    id: "A.8.2",
-    objective: "A.8 Information for interested parties of AI systems",
-    title: "System documentation and information for users",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.8.3",
-    objective: "A.8 Information for interested parties of AI systems",
-    title: "External reporting",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.8.4",
-    objective: "A.8 Information for interested parties of AI systems",
-    title: "Communication of incidents",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.8.5",
-    objective: "A.8 Information for interested parties of AI systems",
-    title: "Information for interested parties",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  // A.9 Use of AI systems
-  {
-    id: "A.9.2",
-    objective: "A.9 Use of AI systems",
-    title: "Processes for responsible use of AI systems",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.9.3",
-    objective: "A.9 Use of AI systems",
-    title: "Objectives for responsible use of AI systems",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.9.4",
-    objective: "A.9 Use of AI systems",
-    title: "Intended use of AI systems",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  // A.10 Third-party and customer relationships
-  {
-    id: "A.10.2",
-    objective: "A.10 Third-party and customer relationships",
-    title: "Allocation of responsibilities",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.10.3",
-    objective: "A.10 Third-party and customer relationships",
-    title: "Suppliers",
-    evidencePackPrefixes: ["iso42001"],
-  },
-  {
-    id: "A.10.4",
-    objective: "A.10 Third-party and customer relationships",
-    title: "Customers",
-    evidencePackPrefixes: ["iso42001"],
-  },
-];
 
 /**
  * Build the structured ISO/IEC 42001 report from a receipt set.
@@ -463,7 +210,7 @@ export function buildIso42001(opts: BuildIso42001Options): Iso42001Report {
   // Validate override keys against the canonical catalog. A typoed key
   // (e.g. "A.99.99") silently no-opping would produce a wrong-and-confident
   // regulatory artifact — fail loud so the operator fixes the input.
-  const catalogIds = new Set(ANNEX_A_CATALOG.map((c) => c.id));
+  const catalogIds = new Set(ISO_42001_PACK.controls.map((c) => c.id));
   const unknown = Object.keys(applicabilityOverrides).filter(
     (k) => !catalogIds.has(k),
   );
@@ -530,28 +277,20 @@ export function buildIso42001(opts: BuildIso42001Options): Iso42001Report {
   const receiptsPerDay = total / spanDays;
 
   // Annex A control evidence — pack prefix match.
-  const annexAControls: AnnexAControl[] = ANNEX_A_CATALOG.map((catalog) => {
-    let evidenceCount = 0;
-    for (const r of receipts) {
-      const pack = typeof r.pack === "string" ? r.pack.toLowerCase() : "";
-      if (!pack) continue;
-      if (
-        catalog.evidencePackPrefixes.some((prefix) =>
-          pack.startsWith(prefix.toLowerCase()),
-        )
-      ) {
-        evidenceCount++;
-      }
-    }
-    const overrideApplicable = applicabilityOverrides[catalog.id];
-    return {
-      id: catalog.id,
-      objective: catalog.objective,
-      title: catalog.title,
-      applicable: overrideApplicable ?? true,
-      evidenceCount,
-    };
-  });
+  // The Annex A catalogue and the evidence tally are shared with every
+  // other framework — see @sovereign-matrix/compliance. What stays here
+  // is the part that is genuinely ISO 42001's: clauses 4-10, which are
+  // a management system narrative, not a control matrix.
+  const annexAControls: AnnexAControl[] = ISO_42001_PACK.controls.map(
+    (control) => ({
+      id: control.id,
+      objective: control.category,
+      title: control.title,
+      applicable: applicabilityOverrides[control.id] ?? true,
+      evidenceCount: tallyEvidence(receipts, control.evidencePackPrefixes)
+        .count,
+    }),
+  );
 
   return {
     schema: "vaos-iso-42001-v1",

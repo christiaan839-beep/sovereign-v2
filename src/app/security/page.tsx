@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { PrintButton } from "@/components/ui/PrintButton";
 import { LivePostureBanner } from "./LivePostureBanner";
+import { packageUrl } from "@/lib/package-links";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -195,12 +196,12 @@ export default function SecurityPage() {
             </a>
             <span className="text-neutral-600 mx-2">·</span>
             <a
-              href="https://www.npmjs.com/package/@sovereign-matrix/verifiable-receipts"
+              href={packageUrl("@sovereign-matrix/verifiable-receipts")}
               target="_blank"
               rel="noreferrer noopener"
               className="text-cyan-300 hover:text-cyan-200 underline underline-offset-4 decoration-cyan-500/40"
             >
-              OSS verifier on npm
+              OSS verifier — source
             </a>
           </p>
         </motion.div>

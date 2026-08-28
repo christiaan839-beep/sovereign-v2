@@ -6,6 +6,7 @@ import {
   type ProcessingActivity,
 } from "@sovereign-matrix/gdpr-dpia";
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+import { packageUrl } from "@/lib/package-links";
 
 export const metadata: Metadata = {
   title: "GDPR DPIA + RoPA — Live Preview · Sovereign Matrix",
@@ -380,10 +381,10 @@ export default function GdprDpiaPreview() {
               <span aria-hidden="true">→</span>
             </Link>
             <Link
-              href="https://www.npmjs.com/package/@sovereign-matrix/gdpr-dpia"
+              href={packageUrl("@sovereign-matrix/gdpr-dpia")}
               className="inline-flex items-center gap-2 px-5 py-3 border border-white/[0.12] text-neutral-300 font-mono text-[13px] rounded-[3px] hover:text-white hover:border-white/25 transition-colors"
             >
-              View on npm
+              View source
             </Link>
             <Link
               href="/compliance/hipaa"

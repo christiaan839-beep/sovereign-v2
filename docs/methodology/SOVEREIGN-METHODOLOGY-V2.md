@@ -544,8 +544,8 @@ Companion code (all Apache 2.0):
 - `@sovereign-matrix/verifiable-receipts` — receipt primitive
 - `@sovereign-matrix/annex-iv` — EU AI Act Annex IV exporter
 - `@sovereign-matrix/iso-42001` — ISO/IEC 42001 AIMS exporter
-- `@sovereign-matrix/nist-ai-rmf` — NIST AI RMF 1.0 profile exporter
-- `@sovereign-matrix/soc2-evidence` — SOC 2 evidence binder
+- `@sovereign-matrix/compliance` — one engine over 220 controls: SOC 2,
+  ISO/IEC 42001 Annex A, NIST AI RMF 1.0, HIPAA Security Rule, EU CRA
 - `@sovereign-matrix/openai-receipts` — OpenAI SDK wrapper
 - `@sovereign-matrix/anthropic-receipts` — Anthropic SDK wrapper
 - `@sovereign-matrix/google-receipts` — Google Gemini SDK wrapper

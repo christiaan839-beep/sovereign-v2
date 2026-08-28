@@ -40,7 +40,7 @@ const DATA: VsPageData = {
       feature: "NIST AI RMF 1.0",
       competitor: "Yes",
       sovereign: {
-        value: "@sovereign-matrix/nist-ai-rmf (free)",
+        value: "@sovereign-matrix/compliance (free)",
         tone: "good",
       },
     },
@@ -121,7 +121,7 @@ const DATA: VsPageData = {
   installCommand: `npm install \\
   @sovereign-matrix/annex-iv \\
   @sovereign-matrix/iso-42001 \\
-  @sovereign-matrix/nist-ai-rmf \\
+  @sovereign-matrix/compliance \\
   @sovereign-matrix/verifiable-receipts`,
 };
 

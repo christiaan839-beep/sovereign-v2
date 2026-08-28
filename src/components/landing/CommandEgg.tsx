@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Search, CornerDownLeft } from "lucide-react";
+import { packageUrl } from "@/lib/package-links";
 
 /**
  * CommandEgg — keyboard-triggered command palette.
@@ -45,7 +46,7 @@ const COMMANDS: Command[] = [
   },
   {
     label: "Installation: @sovereignmatrix/mcp",
-    href: "https://www.npmjs.com/package/@sovereignmatrix/mcp",
+    href: packageUrl("@sovereignmatrix/mcp"),
     hint: "Developer",
   },
   { label: "View the public changelog", href: "/changelog", hint: "Product" },

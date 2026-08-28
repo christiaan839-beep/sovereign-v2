@@ -33,7 +33,7 @@ const DATA: VsPageData = {
         tone: "good",
       },
       sovereign: {
-        value: "@sovereign-matrix/soc2-evidence (free)",
+        value: "@sovereign-matrix/compliance (free)",
         tone: "good",
       },
     },
@@ -46,7 +46,7 @@ const DATA: VsPageData = {
       feature: "HIPAA",
       competitor: "Built-in",
       sovereign: {
-        value: "@sovereign-matrix/hipaa-security (free)",
+        value: "@sovereign-matrix/compliance (free)",
         tone: "good",
       },
     },
@@ -64,7 +64,7 @@ const DATA: VsPageData = {
       feature: "NIST AI RMF 1.0",
       competitor: { value: "Not covered", tone: "bad" },
       sovereign: {
-        value: "@sovereign-matrix/nist-ai-rmf (free)",
+        value: "@sovereign-matrix/compliance (free)",
         tone: "good",
       },
     },
@@ -127,8 +127,8 @@ const DATA: VsPageData = {
     "You want post-quantum-signed evidence — Drata's evidence is screenshots + log files, not signed artifacts.",
     "You want zero vendor lock-in.",
   ],
-  npmPackageHighlight: "@sovereign-matrix/soc2-evidence",
-  installCommand: `npm install @sovereign-matrix/soc2-evidence @sovereign-matrix/verifiable-receipts`,
+  npmPackageHighlight: "@sovereign-matrix/compliance",
+  installCommand: `npm install @sovereign-matrix/compliance @sovereign-matrix/verifiable-receipts`,
 };
 
 export default function VsDrataPage() {

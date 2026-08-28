@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  buildEuCra,
-  toMarkdown,
-  type CraRequirement,
-} from "@sovereign-matrix/eu-cra";
+  buildComplianceReport,
+  byCategory,
+  groupTally,
+  renderMarkdown,
+  type ControlEvidence,
+} from "@sovereign-matrix/compliance";
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+import { packageUrl } from "@/lib/package-links";
 
 export const metadata: Metadata = {
   title: "EU Cyber Resilience Act — Live Preview · Sovereign Matrix",
@@ -46,18 +49,24 @@ const SAMPLE_RECEIPTS: ReceiptRecord[] = (() => {
 })();
 
 export default function EuCraPreview() {
-  const report = buildEuCra({
+  const report = buildComplianceReport({
+    regulation: "eu-cra",
     scope: {
-      manufacturer: "Sample Operator — Acme AI Inc.",
-      productName: "Sovereign Receipt Mint",
-      productIdentifier: "srm-1.0",
-      category: "important-class-II",
-      intendedUse:
-        "Server-side mint of cryptographically signed receipts for autonomous AI agents.",
-      placedOnMarketAt: "2026-06-01T00:00:00Z",
+      organizationName: "Sample Operator — Acme AI Inc.",
+      systemName: "Sovereign Receipt Mint (srm-1.0)",
+      periodStart: "2026-06-01T00:00:00Z",
+      periodEnd: "2026-12-31T23:59:59Z",
+      declarations: {
+        "Product class": "important-class-II",
+        "Intended use":
+          "Server-side mint of cryptographically signed receipts for autonomous AI agents.",
+        "Placed on market": "2026-06-01",
+        "Residual risk":
+          "Quantum-computer-led break of ECDSA signatures within 5-10 years (mitigated by ML-DSA-65 dual-signing); supply-chain attack via an upstream transitive npm dep (mitigated by SBOM + dependency-review CI).",
+      },
     },
     receipts: SAMPLE_RECEIPTS,
-    implementationStatus: {
+    annotations: {
       "AI.TD.4": {
         status: "compliant",
         note: "CE marking affixed 2026-06-01 per Annex V.",
@@ -67,13 +76,10 @@ export default function EuCraPreview() {
         note: "Product does not interact with other devices or networks.",
       },
     },
-    residualRisks: [
-      "Quantum-computer-led break of ECDSA signatures within 5-10 years (mitigated by ML-DSA-65 dual-signing).",
-      "Supply-chain attack via an upstream transitive npm dep (mitigated by SBOM + dependency-review CI).",
-    ],
   });
 
-  const md = toMarkdown(report);
+  const md = renderMarkdown(report);
+  const categories = byCategory(report);
 
   return (
     <div className="relative min-h-dvh bg-[#030303] text-white antialiased">
@@ -110,7 +116,7 @@ export default function EuCraPreview() {
             Annex I (Part I + Part II) + Article 13/14 evidence generated from a
             sample 12-month window using{" "}
             <code className="font-mono text-[14px] text-cyan-300/90">
-              @sovereign-matrix/eu-cra
+              @sovereign-matrix/compliance
             </code>
             .
           </p>
@@ -131,7 +137,7 @@ export default function EuCraPreview() {
             </p>
           </div>
           <pre className="px-5 py-4 overflow-x-auto font-mono text-[13px] leading-[1.6] text-cyan-300/95">
-            {`npm install @sovereign-matrix/eu-cra @sovereign-matrix/verifiable-receipts`}
+            {`npm install @sovereign-matrix/compliance`}
           </pre>
         </div>
 
@@ -142,18 +148,18 @@ export default function EuCraPreview() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Stat
               label="Total requirements"
-              value={report.summary.totalRequirements.toString()}
+              value={report.summary.controlsTotal.toString()}
               tone="neutral"
             />
             <Stat
               label="Compliant"
-              value={`${report.summary.compliant} / ${report.summary.totalRequirements}`}
+              value={`${report.summary.controlsWithEvidence + report.summary.controlsAnnotated} / ${report.summary.controlsTotal}`}
               tone="emerald"
             />
             <Stat
               label="Open findings"
-              value={report.findings.length.toString()}
-              tone={report.findings.length > 0 ? "amber" : "emerald"}
+              value={report.gaps.length.toString()}
+              tone={report.gaps.length > 0 ? "amber" : "emerald"}
             />
             <Stat
               label="Receipts in window"
@@ -173,10 +179,10 @@ export default function EuCraPreview() {
                 "documentation",
               ] as const
             ).map((cat) => {
-              const total = report.requirements.filter(
-                (r: CraRequirement) => r.category === cat,
-              ).length;
-              const evidenced = report.summary.byCategory[cat];
+              const { total, withEvidence: evidenced } = groupTally(
+                categories,
+                cat,
+              );
               return (
                 <div
                   key={cat}
@@ -198,13 +204,13 @@ export default function EuCraPreview() {
           </div>
         </section>
 
-        {report.findings.length > 0 && (
+        {report.gaps.length > 0 && (
           <section className="mt-12 rounded-[6px] border border-amber-500/20 bg-amber-500/[0.04] p-5">
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-amber-400 mb-3">
-              Open findings · {report.findings.length}
+              Open findings · {report.gaps.length}
             </p>
             <ul className="grid md:grid-cols-2 gap-x-6 gap-y-1.5 text-[12px]">
-              {report.findings.slice(0, 20).map((f: CraRequirement) => (
+              {report.gaps.slice(0, 20).map((f: ControlEvidence) => (
                 <li key={f.id} className="flex items-baseline gap-2">
                   <span className="font-mono text-amber-400/90 text-[11px]">
                     {f.id}
@@ -212,9 +218,9 @@ export default function EuCraPreview() {
                   <span className="text-neutral-500 truncate">{f.title}</span>
                 </li>
               ))}
-              {report.findings.length > 20 && (
+              {report.gaps.length > 20 && (
                 <li className="text-neutral-600 italic">
-                  … + {report.findings.length - 20} more
+                  … + {report.gaps.length - 20} more
                 </li>
               )}
             </ul>
@@ -241,9 +247,9 @@ export default function EuCraPreview() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {report.requirements
-                  .filter((r: CraRequirement) => r.category === "design")
-                  .map((r: CraRequirement) => (
+                {report.controls
+                  .filter((r: ControlEvidence) => r.category === "design")
+                  .map((r: ControlEvidence) => (
                     <tr
                       key={r.id}
                       className="hover:bg-white/[0.02] transition-colors"
@@ -253,12 +259,12 @@ export default function EuCraPreview() {
                       </td>
                       <td className="px-4 py-2 text-neutral-300">{r.title}</td>
                       <td className="px-4 py-2 font-mono text-neutral-500 text-[10px]">
-                        {r.annexReference}
+                        {r.meta?.annexReference}
                       </td>
                       <td className="px-4 py-2 text-right font-mono">
-                        {r.evidenceCount > 0 ? (
+                        {r.evidence.count > 0 ? (
                           <span className="text-emerald-400">
-                            {r.evidenceCount}
+                            {r.evidence.count}
                           </span>
                         ) : (
                           <span className="text-neutral-600">0</span>
@@ -306,17 +312,17 @@ export default function EuCraPreview() {
               <span aria-hidden="true">→</span>
             </Link>
             <Link
-              href="https://www.npmjs.com/package/@sovereign-matrix/eu-cra"
+              href={packageUrl("@sovereign-matrix/compliance")}
               className="inline-flex items-center gap-2 px-5 py-3 border border-white/[0.12] text-neutral-300 font-mono text-[13px] rounded-[3px] hover:text-white hover:border-white/25 transition-colors"
             >
-              View on npm
+              View source
             </Link>
           </div>
         </section>
 
         <footer className="mt-16 pt-8 border-t border-white/[0.04] text-[12px] font-mono text-neutral-600">
           Generated by{" "}
-          <code className="text-cyan-300/80">@sovereign-matrix/eu-cra</code>{" "}
+          <code className="text-cyan-300/80">@sovereign-matrix/compliance</code>{" "}
           v0.1.0 · Apache 2.0 · schema{" "}
           <code className="text-cyan-300/80">vaos-eu-cra-v1</code>
         </footer>

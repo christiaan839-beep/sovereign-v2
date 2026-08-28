@@ -1,0 +1,81 @@
+{
+  "name": "@sovereign-matrix/compliance",
+  "version": "0.1.0",
+  "description": "One engine, every framework. Turns a set of VAOS receipts into a control-by-control evidence matrix for SOC 2, ISO/IEC 42001, the NIST AI RMF, the HIPAA Security Rule and the EU Cyber Resilience Act (Markdown + JSON). Each framework is data, not code \u2014 adding one is a catalogue file. Apache-2.0.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./engine": {
+      "types": "./dist/engine.d.ts",
+      "import": "./dist/engine.js"
+    },
+    "./risk": {
+      "types": "./dist/risk.d.ts",
+      "import": "./dist/risk.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./helpers": {
+      "types": "./dist/helpers.d.ts",
+      "import": "./dist/helpers.js"
+    },
+    "./packs": {
+      "types": "./dist/packs/index.d.ts",
+      "import": "./dist/packs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "compliance",
+    "compliance-as-code",
+    "audit-evidence",
+    "soc2",
+    "iso-42001",
+    "iso-iec-42001",
+    "nist-ai-rmf",
+    "hipaa",
+    "hipaa-security-rule",
+    "eu-cra",
+    "cyber-resilience-act",
+    "vaos",
+    "verifiable-receipts",
+    "ai-audit",
+    "ai-governance",
+    "sovereign-matrix"
+  ],
+  "author": "Sovereign Matrix",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/compliance",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
+    "directory": "packages/compliance"
+  },
+  "bugs": "https://github.com/christiaan839-beep/sovereign-v2/issues",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

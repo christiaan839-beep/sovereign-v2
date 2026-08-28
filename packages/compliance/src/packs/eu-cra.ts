@@ -1,0 +1,270 @@
+/**
+ * EU Cyber Resilience Act — Regulation (EU) 2024/2847, Annex I.
+ *
+ * Annex I Part I covers product security properties; Part II covers
+ * vulnerability handling. Both are represented, along with the
+ * post-market and documentation duties from the Act's body.
+ *
+ * 29 requirements. Data only — the engine renders it.
+ *
+ * @packageDocumentation
+ */
+
+import type { RegulationPack } from "../types.js";
+
+export const EU_CRA_PACK: RegulationPack = {
+  id: "eu-cra",
+  standard: "EU Cyber Resilience Act (Regulation (EU) 2024/2847)",
+  reportTitle: "EU Cyber Resilience Act — Compliance Evidence Report",
+  schema: "vaos-eu-cra-v1",
+  preamble:
+    "This report maps the essential cybersecurity requirements of Annex I of Regulation (EU) 2024/2847 to receipt-derived evidence. The CRA applies to products with digital elements placed on the EU market; conformity assessment remains the manufacturer's responsibility and this document is an input to it, not a substitute.",
+  controlNoun: { singular: "requirement", plural: "requirements" },
+  categories: [
+    "design",
+    "vulnerability-handling",
+    "post-market",
+    "documentation",
+  ],
+  metaColumns: [
+    { key: "annexReference", header: "Annex ref." },
+  ],
+  controls: [
+    // ── design ──────────────────────────────────────────────────────
+    {
+      id: "AI.I.1",
+      category: "design",
+      title: "Designed/developed to provide an appropriate level of cybersecurity",
+      objective: "Products with digital elements shall be designed, developed and produced in such a way that they ensure an appropriate level of cybersecurity based on the risks.",
+      evidencePackPrefixes: ["cra", "soc2-cc6", "owasp", "secure-design"],
+      meta: { annexReference: "Annex I, Part I, point (1)" },
+    },
+    {
+      id: "AI.I.2",
+      category: "design",
+      title: "No exploitable known vulnerabilities",
+      objective: "Products shall be made available on the market without known exploitable vulnerabilities.",
+      evidencePackPrefixes: ["cra", "vuln-scan", "owasp"],
+      meta: { annexReference: "Annex I, Part I, point (2)" },
+    },
+    {
+      id: "AI.I.3",
+      category: "design",
+      title: "Secure-by-default configuration",
+      objective: "Products shall be delivered with a secure-by-default configuration.",
+      evidencePackPrefixes: ["cra", "secure-defaults", "hardening"],
+      meta: { annexReference: "Annex I, Part I, point (3)(a)" },
+    },
+    {
+      id: "AI.I.3.b",
+      category: "design",
+      title: "Security updates capability",
+      objective: "Products shall ensure that security updates can be installed, also automatically where applicable.",
+      evidencePackPrefixes: ["cra", "update-mechanism"],
+      meta: { annexReference: "Annex I, Part I, point (3)(b)" },
+    },
+    {
+      id: "AI.I.3.c",
+      category: "design",
+      title: "Protection from unauthorised access",
+      objective: "Ensure protection from unauthorised access by appropriate control mechanisms (authentication, identity, access management).",
+      evidencePackPrefixes: ["cra", "auth", "iam", "rbac", "mfa"],
+      meta: { annexReference: "Annex I, Part I, point (3)(c)" },
+    },
+    {
+      id: "AI.I.3.d",
+      category: "design",
+      title: "Confidentiality of stored, transmitted, or processed data",
+      objective: "Protect the confidentiality of stored, transmitted, or otherwise processed data (encryption at rest + in transit).",
+      evidencePackPrefixes: ["cra", "encryption", "tls", "aes"],
+      meta: { annexReference: "Annex I, Part I, point (3)(d)" },
+    },
+    {
+      id: "AI.I.3.e",
+      category: "design",
+      title: "Integrity of stored, transmitted, or processed data",
+      objective: "Protect the integrity of stored, transmitted, or otherwise processed data, commands, programs, configurations against any manipulation or modification not authorised by the user.",
+      evidencePackPrefixes: ["cra", "integrity", "vaos", "signing"],
+      meta: { annexReference: "Annex I, Part I, point (3)(e)" },
+    },
+    {
+      id: "AI.I.3.f",
+      category: "design",
+      title: "Data minimisation",
+      objective: "Process only data that is adequate, relevant, and limited to what is necessary in relation to the intended purpose (data minimisation).",
+      evidencePackPrefixes: ["cra", "gdpr", "data-minimization"],
+      meta: { annexReference: "Annex I, Part I, point (3)(f)" },
+    },
+    {
+      id: "AI.I.3.g",
+      category: "design",
+      title: "Availability of essential and basic functions",
+      objective: "Protect the availability of essential and basic functions, also after an incident (mitigation/resilience).",
+      evidencePackPrefixes: ["cra", "availability", "bcp", "dr"],
+      meta: { annexReference: "Annex I, Part I, point (3)(g)" },
+    },
+    {
+      id: "AI.I.3.h",
+      category: "design",
+      title: "Minimise negative impact on the availability of services provided by other devices",
+      objective: "Minimise the negative impact of products themselves or connected devices on the availability of services provided by other devices or networks.",
+      evidencePackPrefixes: ["cra", "rate-limit", "resource-isolation"],
+      meta: { annexReference: "Annex I, Part I, point (3)(h)" },
+    },
+    {
+      id: "AI.I.3.i",
+      category: "design",
+      title: "Minimal attack surface",
+      objective: "Be designed, developed and produced to limit attack surfaces, including external interfaces.",
+      evidencePackPrefixes: ["cra", "attack-surface", "hardening"],
+      meta: { annexReference: "Annex I, Part I, point (3)(i)" },
+    },
+    {
+      id: "AI.I.3.j",
+      category: "design",
+      title: "Reduce impact via mitigation techniques",
+      objective: "Be designed, developed and produced to reduce the impact of an incident using appropriate exploitation mitigation mechanisms and techniques.",
+      evidencePackPrefixes: ["cra", "exploit-mitigation"],
+      meta: { annexReference: "Annex I, Part I, point (3)(j)" },
+    },
+    {
+      id: "AI.I.3.k",
+      category: "design",
+      title: "Security-relevant information access + logging",
+      objective: "Provide security-related information by recording and monitoring relevant internal activity (logging mechanisms).",
+      evidencePackPrefixes: ["cra", "audit-log", "siem", "vaos"],
+      meta: { annexReference: "Annex I, Part I, point (3)(k)" },
+    },
+    {
+      id: "AI.I.3.l",
+      category: "design",
+      title: "Secure data deletion / portability",
+      objective: "Provide the possibility for users to securely and easily remove on a permanent basis all data and settings + transfer them in a structured machine-readable format.",
+      evidencePackPrefixes: ["cra", "data-deletion", "gdpr-art-20"],
+      meta: { annexReference: "Annex I, Part I, point (3)(l)" },
+    },
+    // ── vulnerability-handling ──────────────────────────────────────
+    {
+      id: "AI.II.1",
+      category: "vulnerability-handling",
+      title: "Identify and document vulnerabilities",
+      objective: "Identify and document vulnerabilities and components contained in the product, including by drawing up a software bill of materials in a commonly used and machine-readable format.",
+      evidencePackPrefixes: ["cra", "sbom", "vuln-scan"],
+      meta: { annexReference: "Annex I, Part II, point (1)" },
+    },
+    {
+      id: "AI.II.2",
+      category: "vulnerability-handling",
+      title: "Address and remediate vulnerabilities without delay",
+      objective: "In relation to the risks posed, address and remediate vulnerabilities without delay, including by providing security updates.",
+      evidencePackPrefixes: ["cra", "patch-mgmt"],
+      meta: { annexReference: "Annex I, Part II, point (2)" },
+    },
+    {
+      id: "AI.II.3",
+      category: "vulnerability-handling",
+      title: "Apply effective and regular tests/reviews",
+      objective: "Apply effective and regular tests and reviews of the security of the product.",
+      evidencePackPrefixes: ["cra", "pen-test", "red-team", "owasp"],
+      meta: { annexReference: "Annex I, Part II, point (3)" },
+    },
+    {
+      id: "AI.II.4",
+      category: "vulnerability-handling",
+      title: "Public disclosure of fixed vulnerabilities",
+      objective: "Once a security update has been made available, share and publicly disclose information about fixed vulnerabilities (advisories).",
+      evidencePackPrefixes: ["cra", "advisory", "cve"],
+      meta: { annexReference: "Annex I, Part II, point (4)" },
+    },
+    {
+      id: "AI.II.5",
+      category: "vulnerability-handling",
+      title: "Coordinated vulnerability disclosure policy",
+      objective: "Put in place and enforce a policy on coordinated vulnerability disclosure.",
+      evidencePackPrefixes: ["cra", "cvd", "security-txt"],
+      meta: { annexReference: "Annex I, Part II, point (5)" },
+    },
+    {
+      id: "AI.II.6",
+      category: "vulnerability-handling",
+      title: "Sharing of information on potential vulnerabilities",
+      objective: "Facilitate the sharing of information about potential vulnerabilities, including by providing a contact address for the reporting of vulnerabilities.",
+      evidencePackPrefixes: ["cra", "security-txt"],
+      meta: { annexReference: "Annex I, Part II, point (6)" },
+    },
+    {
+      id: "AI.II.7",
+      category: "vulnerability-handling",
+      title: "Secure update distribution",
+      objective: "Provide for mechanisms to securely distribute updates for products with digital elements.",
+      evidencePackPrefixes: ["cra", "secure-update", "signed-artifact"],
+      meta: { annexReference: "Annex I, Part II, point (7)" },
+    },
+    {
+      id: "AI.II.8",
+      category: "vulnerability-handling",
+      title: "Dissemination of security patches without delay",
+      objective: "Ensure that, where security patches or updates are available, they are disseminated without delay and free of charge.",
+      evidencePackPrefixes: ["cra", "patch-mgmt", "auto-update"],
+      meta: { annexReference: "Annex I, Part II, point (8)" },
+    },
+    // ── post-market ─────────────────────────────────────────────────
+    {
+      id: "AI.PM.1",
+      category: "post-market",
+      title: "Reporting actively exploited vulnerabilities to ENISA within 24h",
+      objective: "Manufacturer shall notify ENISA + CSIRT of any actively exploited vulnerability within 24 hours of becoming aware.",
+      evidencePackPrefixes: ["cra", "incident-response", "enisa"],
+      meta: { annexReference: "Article 14(1)" },
+    },
+    {
+      id: "AI.PM.2",
+      category: "post-market",
+      title: "Reporting severe incidents",
+      objective: "Notify ENISA + CSIRT of any severe incident having an impact on the security of the product within 24 hours.",
+      evidencePackPrefixes: ["cra", "incident-response"],
+      meta: { annexReference: "Article 14(3)" },
+    },
+    {
+      id: "AI.PM.3",
+      category: "post-market",
+      title: "User information for vulnerabilities/incidents",
+      objective: "Inform users of the affected product about any incident or actively exploited vulnerability + corrective measures.",
+      evidencePackPrefixes: ["cra", "user-comm"],
+      meta: { annexReference: "Article 14(6)" },
+    },
+    // ── documentation ───────────────────────────────────────────────
+    {
+      id: "AI.TD.1",
+      category: "documentation",
+      title: "Technical documentation maintained",
+      objective: "Draw up technical documentation in accordance with Annex VII and keep it up to date.",
+      evidencePackPrefixes: ["cra", "tech-doc"],
+      meta: { annexReference: "Article 13(1)(a) + Annex VII" },
+    },
+    {
+      id: "AI.TD.2",
+      category: "documentation",
+      title: "Cybersecurity risk assessment performed",
+      objective: "Carry out a cybersecurity risk assessment + take its outcome into account during planning, design, development, production, delivery, and maintenance.",
+      evidencePackPrefixes: ["cra", "risk-assessment", "iso-23894"],
+      meta: { annexReference: "Article 13(1)(b)" },
+    },
+    {
+      id: "AI.TD.3",
+      category: "documentation",
+      title: "EU Declaration of Conformity",
+      objective: "Draw up an EU declaration of conformity per Annex V + ensure it accompanies the product.",
+      evidencePackPrefixes: ["cra", "doc"],
+      meta: { annexReference: "Article 13(8)" },
+    },
+    {
+      id: "AI.TD.4",
+      category: "documentation",
+      title: "CE marking applied",
+      objective: "Affix the CE marking on the product visibly, legibly, and indelibly per Articles 30(1)-(6).",
+      evidencePackPrefixes: ["cra"],
+      meta: { annexReference: "Article 13(15)" },
+    },
+  ],
+};

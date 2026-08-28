@@ -107,6 +107,8 @@ This is how the engineering memory survives context resets.
 
 ### Lib Architecture (`src/lib/` — 120+ modules)
 
+- Compliance: exporters live in `packages/compliance` (one engine + 5 regulation packs), NOT as one package per framework — add a framework by adding `packages/compliance/src/packs/<id>.ts` and one registry line
+- Package links: never hard-code an `npmjs.com/package/@sovereign-matrix/...` URL — nothing is published yet, so use `packageUrl()` from `src/lib/package-links.ts`
 - Security: `auth-guard.ts`, `api-guard.ts`, `input-sanitizer.ts`, `jailbreak-detect.ts`, `content-safety.ts`, `nemo-guardrails.ts`
 - Reliability: `circuit-breaker.ts`, `retry.ts`, `error-recovery.ts`, `rate-limit.ts` (Upstash)
 - Output pipeline: `output-verifier.ts` (5-layer), `output-refiner.ts`, `output-transparency.ts`, `quality-scorer.ts`

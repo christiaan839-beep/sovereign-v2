@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  buildNistAiRmf,
-  toMarkdown,
-  type RmfSubcategory,
-} from "@sovereign-matrix/nist-ai-rmf";
+  buildComplianceReport,
+  byCategory,
+  byMeta,
+  groupTally,
+  renderMarkdown,
+  type ControlEvidence,
+} from "@sovereign-matrix/compliance";
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+import { packageUrl } from "@/lib/package-links";
 
 export const metadata: Metadata = {
   title: "NIST AI RMF 1.0 Profile — Live Preview · Sovereign Matrix",
@@ -45,31 +49,43 @@ const SAMPLE_RECEIPTS: ReceiptRecord[] = (() => {
   return out;
 })();
 
+/**
+ * Operator self-assessed maturity, 0-4. Receipts cannot establish this —
+ * it is a human judgement about how embedded a practice is — so it sits
+ * beside the sample scope rather than coming out of the report.
+ */
+const MATURITY: Record<string, number> = {
+  "GOVERN-1.1": 3,
+  "GOVERN-2.1": 4,
+  "MEASURE-2.7": 3,
+  "MANAGE-2.4": 4,
+};
+
 export default function NistAiRmfPreview() {
-  const report = buildNistAiRmf({
+  const report = buildComplianceReport({
+    regulation: "nist-ai-rmf",
     scope: {
-      systemName: "Sample Operator — Acme Loan Underwriting AI",
-      lifecycleStage: "operation",
-      organizationalRole: "AI Operator (financial services)",
-      profileType: "current",
-      intendedUse:
-        "Automated decisioning for consumer loan applications EUR 1k-50k.",
-      riskTolerance: "medium",
+      organizationName: "Sample Operator — Acme Financial AI Ltd",
+      systemName: "Acme Loan Underwriting AI",
+      periodStart: "2026-01-01T00:00:00Z",
+      periodEnd: "2026-06-30T23:59:59Z",
+      declarations: {
+        "Lifecycle stage": "operation",
+        "Organizational role": "AI Operator (financial services)",
+        "Profile type": "current",
+        "Intended use":
+          "Automated decisioning for consumer loan applications EUR 1k-50k.",
+        "Risk tolerance": "medium",
+        GOVERN:
+          "AI Governance Committee meets quarterly. Chair: Chief Risk Officer. Charter and minutes published at docs/governance/ai-committee.md.",
+      },
     },
     receipts: SAMPLE_RECEIPTS,
-    maturityOverrides: {
-      "GOVERN-1.1": 3,
-      "GOVERN-2.1": 4,
-      "MEASURE-2.7": 3,
-      "MANAGE-2.4": 4,
-    },
-    functionNarratives: {
-      GOVERN:
-        "AI Governance Committee meets quarterly. Chair: Chief Risk Officer. Charter and minutes published at docs/governance/ai-committee.md.",
-    },
   });
 
-  const md = toMarkdown(report);
+  const md = renderMarkdown(report);
+  const functions = byCategory(report);
+  const characteristics = byMeta(report, "characteristic");
 
   return (
     <div className="relative min-h-dvh bg-[#030303] text-white antialiased">
@@ -108,7 +124,7 @@ export default function NistAiRmfPreview() {
             federal AI risk-management standard. This page generates the GOVERN
             / MAP / MEASURE / MANAGE profile from a sample receipt set using{" "}
             <code className="font-mono text-[14px] text-cyan-300/90">
-              @sovereign-matrix/nist-ai-rmf
+              @sovereign-matrix/compliance
             </code>
             .
           </p>
@@ -129,7 +145,7 @@ export default function NistAiRmfPreview() {
             </p>
           </div>
           <pre className="px-5 py-4 overflow-x-auto font-mono text-[13px] leading-[1.6] text-cyan-300/95">
-            {`npm install @sovereign-matrix/nist-ai-rmf @sovereign-matrix/verifiable-receipts`}
+            {`npm install @sovereign-matrix/compliance`}
           </pre>
         </div>
 
@@ -139,14 +155,7 @@ export default function NistAiRmfPreview() {
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {(["GOVERN", "MAP", "MEASURE", "MANAGE"] as const).map((fn) => {
-              const summary =
-                fn === "GOVERN"
-                  ? report.govern
-                  : fn === "MAP"
-                    ? report.map
-                    : fn === "MEASURE"
-                      ? report.measure
-                      : report.manage;
+              const summary = groupTally(functions, fn);
               return (
                 <div
                   key={fn}
@@ -156,14 +165,14 @@ export default function NistAiRmfPreview() {
                     {fn}
                   </p>
                   <p className="font-serif text-[28px] tracking-tight mb-1">
-                    {summary.evidenced}{" "}
+                    {summary.withEvidence}{" "}
                     <span className="text-neutral-600 text-[16px]">
-                      / {summary.subcategoryCount}
+                      / {summary.total}
                     </span>
                   </p>
                   <p className="text-[11px] text-neutral-500 leading-relaxed">
                     subcategories evidenced ·{" "}
-                    {summary.totalReceipts.toLocaleString()} receipts
+                    {summary.evidenceCount.toLocaleString()} receipts
                     attributable
                   </p>
                 </div>
@@ -182,11 +191,7 @@ export default function NistAiRmfPreview() {
             your receipt set evidences strongly.
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {(
-              Object.entries(report.coverage.byCharacteristic) as Array<
-                [string, number]
-              >
-            ).map(([k, v]) => (
+            {characteristics.map(({ key: k, withEvidence: v }) => (
               <div
                 key={k}
                 className="rounded-[6px] border border-white/[0.06] bg-white/[0.015] px-4 py-3 flex items-baseline justify-between"
@@ -209,7 +214,7 @@ export default function NistAiRmfPreview() {
             Subcategory evidence
           </h2>
           <p className="text-[13px] text-neutral-500 mb-6 max-w-2xl">
-            All {report.subcategories.length} subcategories with receipt-
+            All {report.controls.length} subcategories with receipt-
             derived evidence counts. Maturity column reflects operator
             self-assessment (0 = not implemented, 4 = optimized).
           </p>
@@ -224,7 +229,7 @@ export default function NistAiRmfPreview() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {report.subcategories.slice(0, 30).map((s: RmfSubcategory) => (
+                {report.controls.slice(0, 30).map((s: ControlEvidence) => (
                   <tr
                     key={s.id}
                     className="hover:bg-white/[0.02] transition-colors"
@@ -232,18 +237,18 @@ export default function NistAiRmfPreview() {
                     <td className="px-4 py-2 font-mono text-cyan-300/90 text-[11px]">
                       {s.id}
                     </td>
-                    <td className="px-4 py-2 text-neutral-300">{s.outcome}</td>
+                    <td className="px-4 py-2 text-neutral-300">{s.title}</td>
                     <td className="px-4 py-2 text-right font-mono">
-                      {s.evidenceCount > 0 ? (
+                      {s.evidence.count > 0 ? (
                         <span className="text-emerald-400">
-                          {s.evidenceCount}
+                          {s.evidence.count}
                         </span>
                       ) : (
                         <span className="text-neutral-600">0</span>
                       )}
                     </td>
                     <td className="px-4 py-2 text-right font-mono text-neutral-400">
-                      {s.maturityLevel ?? "-"}
+                      {MATURITY[s.id] ?? "-"}
                     </td>
                   </tr>
                 ))}
@@ -251,8 +256,8 @@ export default function NistAiRmfPreview() {
             </table>
           </div>
           <p className="text-[11px] text-neutral-600 mt-3 italic">
-            Showing 30 of {report.subcategories.length} subcategories. Full
-            report available via toMarkdown / toJSON.
+            Showing 30 of {report.controls.length} subcategories. Full
+            report available via renderMarkdown / toJSON.
           </p>
         </section>
 
@@ -262,7 +267,7 @@ export default function NistAiRmfPreview() {
           </h2>
           <p className="text-[13px] text-neutral-500 mb-6 max-w-2xl">
             The exact bytes{" "}
-            <code className="text-cyan-300/90">toMarkdown(report)</code>{" "}
+            <code className="text-cyan-300/90">renderMarkdown(report)</code>{" "}
             returned. Hand to your federal procurement officer; ingest the JSON
             into GovRAMP/FedRAMP tooling.
           </p>
@@ -301,10 +306,10 @@ export default function NistAiRmfPreview() {
               <span aria-hidden="true">→</span>
             </Link>
             <Link
-              href="https://www.npmjs.com/package/@sovereign-matrix/nist-ai-rmf"
+              href={packageUrl("@sovereign-matrix/compliance")}
               className="inline-flex items-center gap-2 px-5 py-3 border border-white/[0.12] text-neutral-300 font-mono text-[13px] rounded-[3px] hover:text-white hover:border-white/25 transition-colors"
             >
-              View on npm
+              View source
             </Link>
             <Link
               href="/compliance/soc2"
@@ -318,7 +323,7 @@ export default function NistAiRmfPreview() {
         <footer className="mt-16 pt-8 border-t border-white/[0.04] text-[12px] font-mono text-neutral-600">
           Generated by{" "}
           <code className="text-cyan-300/80">
-            @sovereign-matrix/nist-ai-rmf
+            @sovereign-matrix/compliance
           </code>{" "}
           v0.1.0 · Apache 2.0 · schema{" "}
           <code className="text-cyan-300/80">vaos-nist-ai-rmf-v1</code>

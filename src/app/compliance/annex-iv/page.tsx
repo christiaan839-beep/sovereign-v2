@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buildAnnexIv, toMarkdown } from "@sovereign-matrix/annex-iv";
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+import { packageUrl } from "@/lib/package-links";
 
 export const metadata: Metadata = {
   title: "EU AI Act Annex IV — Live Preview · Sovereign Matrix",
@@ -303,10 +304,10 @@ export default function AnnexIvPreview() {
               <span aria-hidden="true">→</span>
             </Link>
             <Link
-              href="https://www.npmjs.com/package/@sovereign-matrix/annex-iv"
+              href={packageUrl("@sovereign-matrix/annex-iv")}
               className="inline-flex items-center gap-2 px-5 py-3 border border-white/[0.12] text-neutral-300 font-mono text-[13px] rounded-[3px] hover:text-white hover:border-white/25 transition-colors"
             >
-              View on npm
+              View source
             </Link>
             <Link
               href="/compliance/iso-42001"
