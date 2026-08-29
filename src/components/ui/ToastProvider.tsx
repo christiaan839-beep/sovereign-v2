@@ -144,6 +144,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               className={`pointer-events-auto relative flex items-start gap-3 px-4 py-3 rounded-xl border backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden ${
                 borders[t.type]
               } ${t.href ? "cursor-pointer hover:border-white/[0.12]" : ""}`}
+              role="status"
+              aria-live="polite"
             >
               {icons[t.type]}
               <div className="flex-1 min-w-0">
@@ -166,9 +168,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   e.stopPropagation();
                   removeToast(t.id);
                 }}
-                className="text-neutral-500 hover:text-white transition-colors shrink-0 mt-0.5"
+                className="text-neutral-500 hover:text-white transition-colors shrink-0 mt-0.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
+                aria-label="Dismiss toast"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3 h-3" aria-hidden="true" />
               </button>
               <ProgressBar
                 duration={t.duration}
