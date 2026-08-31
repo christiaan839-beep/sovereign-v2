@@ -246,15 +246,16 @@ export function NotificationBell() {
         onClick={() => setOpen((v) => !v)}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
         aria-expanded={open}
-        className="relative p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
+        className="relative p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
       >
-        <Bell className="w-4.5 h-4.5" />
+        <Bell className="w-4.5 h-4.5" aria-hidden="true" />
         <AnimatePresence>
           {unreadCount > 0 && (
             <motion.span
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0 }}
+              aria-hidden="true"
               className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none"
             >
               {unreadCount > 99 ? "99+" : unreadCount}
@@ -281,7 +282,7 @@ export function NotificationBell() {
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllRead}
-                  className="text-[10px] text-emerald-400 hover:text-emerald-300 font-medium uppercase tracking-wider transition-colors"
+                  className="text-[10px] text-emerald-400 hover:text-emerald-300 font-medium uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF] rounded-sm px-1"
                 >
                   Mark all as read
                 </button>
@@ -315,7 +316,7 @@ export function NotificationBell() {
                       {/* Status dot + Icon */}
                       <div className="relative shrink-0 mt-0.5">
                         <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
-                          <Icon className="w-4 h-4 text-neutral-400" />
+                          <Icon className="w-4 h-4 text-neutral-400" aria-hidden="true" />
                         </div>
                         <span
                           className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ${config.dotColor} border-2 border-[#0A0A0A]`}
@@ -347,22 +348,22 @@ export function NotificationBell() {
                       </div>
 
                       {/* Hover Actions */}
-                      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0">
                         {!n.read && (
                           <button
                             onClick={() => handleMarkRead(n.id)}
                             aria-label="Mark as read"
-                            className="p-1 rounded text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                            className="p-1 rounded text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
                           >
-                            <Check className="w-3 h-3" />
+                            <Check className="w-3 h-3" aria-hidden="true" />
                           </button>
                         )}
                         <button
                           onClick={() => handleDismiss(n.id)}
                           aria-label="Dismiss notification"
-                          className="p-1 rounded text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          className="p-1 rounded text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-3 h-3" aria-hidden="true" />
                         </button>
                       </div>
                     </motion.div>
