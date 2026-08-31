@@ -1,0 +1,3 @@
+## 2025-02-23 - Screen Reader and Keyboard Accessibility on Canvas Nodes
+**Learning:** When interactive elements (like icon-only buttons for deleting or previewing nodes) are hidden behind hover states (`opacity-0 group-hover:opacity-100`), they become inaccessible to keyboard users unless the parent container also supports `focus-within:opacity-100` and each button explicitly sets `focus-visible:ring-2`. Also, icon-only buttons must include `aria-label` and have `aria-hidden="true"` on the SVG icon to reduce screen reader noise.
+**Action:** Always add `focus-within:opacity-100` to parent reveal containers, `focus-visible:ring-2` to interactive elements, and proper ARIA labels to icon-only buttons across all hover-reveal patterns.
