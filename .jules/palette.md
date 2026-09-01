@@ -1,3 +1,0 @@
-## 2023-10-24 - Interactive Elements Hidden Behind Hover States
-**Learning:** Across the application's components (like NotificationBell and NotificationCenter), secondary actions are frequently hidden using `opacity-0 group-hover:opacity-100`. This renders them completely invisible and inaccessible to keyboard users tabbing through the interface, as focus does not trigger hover states.
-**Action:** Always append `focus-within:opacity-100` to containers hiding elements via `group-hover:opacity-100`. Additionally, explicitly ensure inner buttons have robust `focus-visible` styles (e.g., `focus-visible:ring-2 focus-visible:outline-none`) and `aria-hidden="true"` on their SVG icons to prevent screen reader clutter.
