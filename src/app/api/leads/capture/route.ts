@@ -4,6 +4,9 @@ import { leads } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
 
+/** Owner of system-captured leads. Matches /api/_misc/email/capture. */
+const SYSTEM_LEAD_OWNER = "system@sovereignmatrix.agency";
+
 const log = createLogger("api/leads/capture");
 
 // Public endpoint — tight IP-keyed limit to prevent lead-table poisoning.
@@ -57,7 +60,14 @@ export async function POST(req: Request) {
 
     // Sanitize inputs
     const sanitized = {
-      userEmail: cleanEmail || "capture@sovereign.matrix",
+      // `userEmail` is the TENANT key for this table — every read path
+      // scopes on it (data-export, me/export, dashboard-stats, portal
+      // metrics). This endpoint is public and unauthenticated, so it must
+      // never take that value from the request body: doing so lets an
+      // anonymous caller file a row inside a paying customer's CRM and
+      // GDPR export. The platform owns system-captured leads; the
+      // visitor's own address lives in `email` below.
+      userEmail: SYSTEM_LEAD_OWNER,
       name: name.trim().slice(0, 200),
       phone: cleanPhone.slice(0, 30) || null,
       email: cleanEmail.slice(0, 200) || null,

@@ -9,8 +9,8 @@
  * that gap: after a Calendly call and a manual Stripe invoice, an admin
  * stamps the tier here and plan-enforcement resolves it like any other.
  *
- * Admin-only — guarded by `requireAuth()` + `isAdmin()`, same shape as
- * /api/_admin/grant.
+ * Admin-only — guarded by `requireAdmin()`, which enforces the allowlist
+ * and the step-up WebAuthn assertion when WEBAUTHN_REQUIRED is set.
  *
  * POST { userId, planId, currentPeriodEnd, invoiceRef? }
  *   → 200 { ok: true, userId, plan, currentPeriodEnd }
@@ -24,8 +24,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth-guard";
-import { isAdmin } from "@/lib/admin-auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import { auditLog } from "@/lib/audit-log";
 import { createLogger } from "@/lib/logger";
 import { db } from "@/db";
@@ -46,12 +45,13 @@ const SCHEMA = z.object({
 });
 
 export async function POST(req: Request) {
-  const auth = await requireAuth();
-  if (auth.error) return auth.error;
-  if (!isAdmin(auth.userId)) {
-    log.warn("Non-admin attempted /api/_admin/plan", { userId: auth.userId });
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  // requireAdmin(), not requireAuth() + isAdmin(): it adds the step-up
+  // WebAuthn assertion the other admin routes enforce. Granting a contract
+  // tier is the highest-privilege write in the app, so a stolen session
+  // cookie must not be enough to reach it.
+  const gate = await requireAdmin();
+  if (gate instanceof Response) return gate;
+  const adminUserId = gate.userId;
   try {
     const body = await req.json();
     const parsed = SCHEMA.safeParse(body);
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
     }
 
     await auditLog({
-      userId: auth.userId,
+      userId: adminUserId,
       action: "admin.provision",
       resource: `subscriptions:${userId}`,
       details: {
@@ -103,7 +103,7 @@ export async function POST(req: Request) {
         plan: planId,
         currentPeriodEnd: periodEnd?.toISOString() ?? null,
         invoiceRef: invoiceRef ?? null,
-        by: auth.userId,
+        by: adminUserId,
       },
     });
 

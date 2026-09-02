@@ -67,7 +67,7 @@ const TIERS = [
       { name: "5-layer safety pipeline (default-on)", included: true },
       { name: "50 verified agent runs / month", included: true },
       { name: "HMAC-signed receipts (VAOS 1.0)", included: true },
-      { name: "BYOK (Bring Your Own Key)", included: true },
+      { name: "Bring your own model API keys", included: true },
       { name: "Public verifier API", included: true },
       { name: "Priority support", included: false },
     ],
@@ -125,9 +125,10 @@ const TIERS = [
  * Enterprise is the highest self-serve tier: `purchasable: true` in
  * plans.ts against STRIPE_PRICE_ENTERPRISE, so it takes a card through
  * the same checkout() path as Pro and Team. It renders as a full-width
- * strip instead of a fourth card — a 4-up grid squashes the feature
- * lists at the lg breakpoint, and Enterprise is a different kind of
- * purchase (a signed SLA, a DPA, procurement review) that needs the room.
+ * strip instead of a fourth card: Enterprise has to carry a price, a
+ * positioning line, a CTA and the Sovereign upsell footer, and a grid
+ * cell cannot hold four blocks without the card growing taller than the
+ * three beside it.
  *
  * Every number and entitlement below is read from the plan registry —
  * only the phrasing is copy, so a flag flipped in plans.ts flips the
@@ -161,7 +162,7 @@ const ENTERPRISE_FEATURES = [
     included: ENTERPRISE_PLAN.enterprise.dedicatedSupport,
   },
   {
-    name: "BYOK encryption keys (KMS / HSM)",
+    name: "Customer-managed encryption keys (KMS / HSM)",
     included: ENTERPRISE_PLAN.enterprise.byok,
   },
 ];
@@ -505,16 +506,16 @@ export default function PricingPage() {
                   {t.features.map((f, j) => (
                     <li
                       key={j}
-                      className={`flex items-center gap-2 text-sm ${f.included ? "text-neutral-300" : "text-neutral-500"}`}
+                      className={`flex items-start gap-2 text-sm leading-snug ${f.included ? "text-neutral-300" : "text-neutral-500"}`}
                     >
                       {f.included ? (
                         <CheckCircle2
-                          className="w-4 h-4 text-cyan-400/80 shrink-0"
+                          className="w-4 h-4 mt-0.5 text-cyan-400/80 shrink-0"
                           aria-hidden="true"
                         />
                       ) : (
                         <XIcon
-                          className="w-4 h-4 text-neutral-500 shrink-0"
+                          className="w-4 h-4 mt-0.5 text-neutral-500 shrink-0"
                           aria-hidden="true"
                         />
                       )}
@@ -567,7 +568,7 @@ export default function PricingPage() {
               className="absolute top-0 left-0 right-0 h-px bg-cyan-500/60"
             />
             <div className="flex flex-col lg:flex-row lg:items-start gap-8">
-              <div className="lg:w-[30%] shrink-0">
+              <div className="lg:w-[240px] shrink-0">
                 <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[10px] font-mono uppercase tracking-[0.15em] mb-3">
                   <Shield className="w-2.5 h-2.5" /> Procurement-ready
                 </span>
@@ -575,17 +576,20 @@ export default function PricingPage() {
                   {ENTERPRISE_PLAN.name}
                 </p>
                 <p className="text-4xl font-bold text-white mb-1">
-                  {ENTERPRISE_PLAN.priceDisplayUsd}
+                  {ENTERPRISE_PLAN.priceDisplayZar.replace("/mo", "")}
+                  <span className="text-base text-neutral-500 font-normal">
+                    /mo
+                  </span>
                 </p>
                 <p className="text-[11px] font-mono text-neutral-500 mb-3">
-                  billed in USD · invoicing on request
+                  ≈ {ENTERPRISE_PLAN.priceDisplayUsd} · invoicing on request
                 </p>
                 <p className="text-xs text-neutral-400">
                   For regulated teams whose security review comes before their
                   first run. Card checkout, no sales call required.
                 </p>
               </div>
-              <ul className="flex-1 grid sm:grid-cols-2 gap-x-6 gap-y-2">
+              <ul className="flex-1 grid sm:grid-cols-2 gap-x-5 gap-y-2.5">
                 {ENTERPRISE_FEATURES.map((f, j) => (
                   <li
                     key={j}
@@ -606,7 +610,7 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-              <div className="lg:w-[220px] shrink-0">
+              <div className="lg:w-[190px] shrink-0 lg:self-center">
                 <button
                   onClick={() => checkout("enterprise")}
                   className="w-full py-3 font-medium rounded-[3px] transition-colors flex items-center justify-center gap-2 bg-white/5 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10"

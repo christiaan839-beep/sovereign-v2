@@ -376,8 +376,10 @@ export default function TrustPage() {
                   </p>
                 </div>
                 {c.reading && (
-                  <span className="text-[11px] font-mono text-neutral-400">
-                    <span className="text-neutral-600">target </span>
+                  <span className="text-[11px] font-mono text-neutral-500">
+                    <span className="uppercase tracking-wider text-amber-400/80">
+                      target
+                    </span>{" "}
                     {(c.reading.value * 100).toFixed(1)}%
                   </span>
                 )}

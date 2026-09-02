@@ -257,9 +257,23 @@ describe("enterprise flag levers", () => {
   it("SLA uptime renders as percentage strings", async () => {
     const { slaUptimePercent } = await import("@/lib/plans");
     expect(slaUptimePercent("free")).toBeNull();
-    expect(slaUptimePercent("starter")).toBeNull();
     expect(slaUptimePercent("enterprise")).toBe("99.95%");
     expect(slaUptimePercent("sovereign")).toBe("99.99%");
+  });
+
+  /**
+   * /sla is rendered from this registry and has published "99.9% monthly
+   * uptime for all paid plans". Dropping a paid tier's commitment here
+   * silently withdraws a promise already made to people who are paying,
+   * so every purchasable tier must carry one.
+   */
+  it("every paid plan carries the uptime commitment /sla publishes", async () => {
+    const { PLANS, slaUptimePercent } = await import("@/lib/plans");
+    const uncommitted = (Object.keys(PLANS) as Array<keyof typeof PLANS>)
+      .filter((id) => PLANS[id].priceUsdCents > 0)
+      .filter((id) => slaUptimePercent(id) === null);
+    expect(uncommitted).toEqual([]);
+    expect(slaUptimePercent("free")).toBeNull();
   });
 
   it("sovereign is never purchasable via self-serve checkout", async () => {

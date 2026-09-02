@@ -271,14 +271,18 @@ export async function getUserEntitlements(
 ): Promise<PlanEnterpriseFlags> {
   try {
     const planId = await getUserPlan(userId);
-    return PLANS[planId].enterprise;
+    // Copy, never the registry's own object: free / starter / array all
+    // share the single DEFAULT_FLAGS instance, so handing the reference
+    // out would let one caller's mutation grant a flag to every user on
+    // this serverless instance.
+    return Object.freeze({ ...PLANS[planId].enterprise });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     log.error("entitlement resolution failed — denying", {
       error: msg,
       userId,
     });
-    return PLANS.free.enterprise;
+    return Object.freeze({ ...PLANS.free.enterprise });
   }
 }
 

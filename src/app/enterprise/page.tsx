@@ -74,16 +74,19 @@ export default function EnterprisePage() {
     e.preventDefault();
     setStatus("submitting");
     try {
-      const res = await fetch("/api/leads/capture", {
+      // /api/lead/capture emails the founder in real time; /api/leads/capture
+      // is the per-customer CRM table and would file this under the sender.
+      const res = await fetch("/api/lead/capture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
           company: formData.company,
-          companySize: formData.size,
-          useCase: formData.useCase,
-          source: "enterprise-page",
+          message: `Company size: ${formData.size}\n\nUse case: ${formData.useCase}`,
+          intent: "enterprise-demo",
+          source: "/enterprise",
+          website: "",
         }),
       });
       if (!res.ok) throw new Error("Failed to submit");
@@ -317,7 +320,7 @@ export default function EnterprisePage() {
                 </button>
 
                 {status === "error" && (
-                  <p className="text-sm text-red-400 text-center">
+                  <p role="alert" className="text-sm text-red-400 text-center">
                     We couldn&apos;t send that request. Try again, or book a
                     call directly with the link below.
                   </p>

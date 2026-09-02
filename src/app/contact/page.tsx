@@ -23,19 +23,24 @@ export default function ContactPage() {
     try {
       // Everything the visitor typed goes to the lead table — we promise a
       // 24-hour reply, so the message has to reach us, not the browser.
-      const res = await fetch("/api/leads/capture", {
+      // /api/lead/capture (not /api/leads/capture) — the former emails the
+      // founder in real time; the latter is the per-customer CRM table that
+      // nothing on the operator side reads.
+      const res = await fetch("/api/lead/capture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name.trim() || form.email.trim().split("@")[0],
           email: form.email.trim(),
           message: form.message.trim(),
-          source: `contact:${form.type}`,
+          intent: `contact:${form.type}`,
+          source: "/contact",
+          website: "",
         }),
       });
 
       if (!res.ok) {
-        setError("We couldn't send that message. Try again, or book a call below.");
+        setError("We couldn't send that message. Try again, or book a call instead.");
         return;
       }
 
@@ -94,7 +99,7 @@ export default function ContactPage() {
               href={BOOKING_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold transition-colors"
+              className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15 text-sm font-semibold transition-colors"
             >
               <CalendarDays className="w-4 h-4" /> Book a Call
             </a>
@@ -178,7 +183,7 @@ export default function ContactPage() {
               </button>
 
               {error && (
-                <p className="text-xs text-red-400 text-center">{error}</p>
+                <p role="alert" className="text-xs text-red-400 text-center">{error}</p>
               )}
 
               <p className="text-[10px] text-neutral-700 text-center">

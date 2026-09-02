@@ -146,6 +146,77 @@ captures. Typecheck + the new entitlement suite green.
 - **Trade-libel exposure in unpublished launch copy** — `VIRAL-CONTENT.md`
   characterises a named competitor's pricing model. Unpublished, so L6.
 
+
+### Wave 122 review findings — carried forward
+
+Two specialist agents audited the wave's own diff. What was fixed in-wave is
+above; these were confirmed, judged out of scope for a claim-truthfulness
+wave, and are written down so they are not rediscovered.
+
+**HIGH — `getClientId()` rate-limit bucket is chosen by the caller.**
+`src/lib/rate-limit.ts:30-40` prefers `x-api-key` and buckets on its SHA-256
+*without checking the key exists*. Rotating a random `x-api-key` yields a
+fresh bucket per request, so every limiter built on it is bypassable — and
+any key ≥16 chars also short-circuits the middleware CSRF check
+(`src/middleware.ts:101-107`). Fix is to validate against `apiKeys` before
+bucketing and otherwise fall through to the IP path. Not done here because
+the helper is on the hot path of every public route and deserves a wave with
+its own tests. (The related left-most-XFF spoof in
+`/api/_misc/email/capture` WAS fixed in this wave.)
+
+**MEDIUM — a tier can be granted with no audit record.** `auditLog()`
+swallows all errors by design (`src/lib/audit-log.ts:63-66`) and the
+subscription write in `/api/_admin/plan` has already committed by then, so a
+missing `audit_logs` table means a silent grant returning 200. Needs an
+`auditLogStrict()` for privilege writes: record first, abort on failure.
+
+**MEDIUM — an admin grant is silently reverted by the next Stripe event.**
+`/api/_admin/plan` sets `plan`/`status`/`currentPeriodEnd` but leaves
+`stripeCustomerId` in place, and the webhook updates *by* that id —
+`customer.subscription.updated` overwrites `plan` from the price ID and
+`.deleted` forces `free`. Granting `sovereign` to someone who also holds a
+self-serve subscription produces a tier that vanishes with no alert. Either
+clear the Stripe linkage when stamping a contract tier, or add a
+`contractLocked` column the webhook honours.
+
+**MEDIUM — `/api/_settings/whitelabel` is entitlement-gated but unvalidated.**
+No type, length or format checks on `agencyName`/`logoUrl`/`primaryColor`/
+`supportEmail`/`domain`, and no ownership proof for `domain` — which is
+`UNIQUE`, so an entitled tenant can squat any unclaimed domain and serve
+branding from the public `/api/portal/[domain]`. Needs a zod schema plus DNS
+TXT verification. Bounded by costing $499/mo to attempt.
+
+**MEDIUM — the Stripe webhook still writes an unvalidated plan string.**
+`session.metadata?.plan || "node"` goes straight into `subscriptions.plan`.
+`normalizePurchasablePlanId()` was added to `plans.ts` in this wave for
+exactly this call site; wiring it belongs in a webhook change with its own
+signature tests.
+
+**LOW — the founder fallback in `plan-enforcement.ts:94-103` is dead code.**
+`/api/_misc/founders` exports no `founders` symbol, so the branch never
+fires. Fails closed (founders resolve via their `plan='founder'` row), but
+the comment describes a path that does not run.
+
+**LOW — doc drift on the subscriptions unique constraint.** `schema.ts:406`
+credits migration 0017; 0017 is `semantic_memory`. It ships in
+`drizzle/0025_subscriptions_userid_unique.sql`.
+
+**UI debt on the funnel surfaces this wave made load-bearing.**
+`focus:outline-none` with no `focus-visible:` follow-up on the contact,
+enterprise and three `/free` forms (`globals.css:141-147` suppresses the
+global ring for inputs, so these have no keyboard focus indicator at all —
+a live WCAG 2.4.7 failure, and CLAUDE.md names the rule). Also: emerald is
+in use as a third accent against the two-accent rule in
+`docs/design-system/brand-colors.md`, and `captureEmail` is triplicated
+across the three `/free` pages, so every future fix must be applied three
+times.
+
+**INVARIANT for future waves.** No plan flag may be advertised on a
+marketing surface unless a code path enforces it, and every flag ships with
+a test that asserts enforcement rather than asserting the constant. Two
+such guards now exist in `plans.test.ts`: no plan may claim SAML, and no
+lever may return without a substrate.
+
 ---
 
 ## Wave 121 — deferred-flaw closeout + PayPal-only enablement (2026-07-08)

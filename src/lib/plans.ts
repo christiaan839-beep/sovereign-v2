@@ -59,6 +59,12 @@ export interface PlanEnterpriseFlags {
   whiteLabel: boolean;
 }
 
+/**
+ * All levers off. Paid self-serve tiers spread this and re-declare the
+ * one commitment /sla already publishes to them (99.9% uptime, credits on
+ * request) — the SLA is an operational promise on record, so the registry
+ * must carry it rather than the page quietly withdrawing it.
+ */
 const DEFAULT_FLAGS: PlanEnterpriseFlags = {
   samlEnabled: false,
   slaUptimeBps: 0,
@@ -134,7 +140,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     stripePriceEnvKey: "STRIPE_PRICE_STARTER",
     purchasable: true,
     description: "5 agents, 200 runs/month, email support",
-    enterprise: DEFAULT_FLAGS,
+    enterprise: { ...DEFAULT_FLAGS, slaUptimeBps: 9990 },
   },
   founder: {
     name: "Founder",
@@ -168,7 +174,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     stripePriceEnvKey: "STRIPE_PRICE_ARRAY",
     purchasable: true,
     description: "10 agents, 500 runs/month",
-    enterprise: DEFAULT_FLAGS,
+    enterprise: { ...DEFAULT_FLAGS, slaUptimeBps: 9990 },
   },
   node: {
     name: "Sovereign Node",

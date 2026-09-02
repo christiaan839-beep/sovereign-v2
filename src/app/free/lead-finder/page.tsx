@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Target, Loader2, ArrowRight, CheckCircle2, Lock, MapPin } from "lucide-react";
+import { Target, Loader2, ArrowRight, CheckCircle2, AlertTriangle, Lock, MapPin } from "lucide-react";
 import Link from "next/link";
 
 /**
@@ -209,12 +209,24 @@ export default function FreeLeadFinderPage() {
                     className="flex-1 px-4 py-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white text-sm placeholder-neutral-500 focus:outline-none focus:border-emerald-500/30"
                   />
                   <button onClick={captureEmail} disabled={emailSending} className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold rounded-lg text-sm transition-colors flex items-center gap-2">
-                    {emailSending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    <Loader2
+                      className={`w-3.5 h-3.5 animate-spin transition-opacity ${emailSending ? "opacity-100" : "opacity-0"}`}
+                      aria-hidden="true"
+                    />
                     Unlock
                   </button>
                 </div>
                 {emailError && (
-                  <p className="text-xs text-rose-400 mt-3">{emailError}</p>
+                  <div
+                    role="alert"
+                    className="mt-3 p-3 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 text-xs flex items-center gap-2"
+                  >
+                    <AlertTriangle
+                      className="w-3.5 h-3.5 shrink-0"
+                      aria-hidden="true"
+                    />
+                    {emailError}
+                  </div>
                 )}
               </div>
             ) : (

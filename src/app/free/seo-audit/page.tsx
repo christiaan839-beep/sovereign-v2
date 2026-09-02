@@ -230,12 +230,24 @@ export default function FreeSeoAuditPage() {
                     disabled={emailSending}
                     className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold rounded-lg text-sm transition-colors flex items-center gap-2"
                   >
-                    {emailSending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    <Loader2
+                      className={`w-3.5 h-3.5 animate-spin transition-opacity ${emailSending ? "opacity-100" : "opacity-0"}`}
+                      aria-hidden="true"
+                    />
                     Unlock
                   </button>
                 </div>
                 {emailError && (
-                  <p className="text-xs text-rose-400 mt-3">{emailError}</p>
+                  <div
+                    role="alert"
+                    className="mt-3 p-3 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 text-xs flex items-center gap-2"
+                  >
+                    <AlertTriangle
+                      className="w-3.5 h-3.5 shrink-0"
+                      aria-hidden="true"
+                    />
+                    {emailError}
+                  </div>
                 )}
               </div>
             ) : (
