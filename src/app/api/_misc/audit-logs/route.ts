@@ -3,10 +3,27 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { auditLogs } from "@/db/schema";
 import { desc, eq, and, gte, sql, count, countDistinct } from "drizzle-orm";
+import { requireEntitlement } from "@/lib/plan-enforcement";
 
 export async function GET(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Auth required" }, { status: 401 });
+
+  // Raw audit-log reading is the same commercial entitlement as the
+  // signed bundle at /api/me/audit-bundle — Node tier and above. The
+  // statutory right of access is served ungated by /api/data-export.
+  const gate = await requireEntitlement(userId, "auditLogExport");
+  if (!gate.allowed) {
+    return NextResponse.json(
+      {
+        error: gate.message,
+        requiredPlan: gate.requiredPlan,
+        upgradeUrl: gate.upgradeUrl,
+        dataSubjectAccess: "/api/data-export",
+      },
+      { status: 402 },
+    );
+  }
 
   const { searchParams } = new URL(req.url);
   const action = searchParams.get("action");

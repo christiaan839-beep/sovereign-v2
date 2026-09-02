@@ -32,7 +32,7 @@ const SECTIONS = [
     title: "Authentication",
     color: "text-blue-400",
     content:
-      "All authentication is handled by Clerk, providing enterprise-grade SSO with Google, Microsoft, and SAML providers. Two-factor authentication (2FA) is available for all accounts. Sessions are managed with short-lived JWTs and automatic rotation, with configurable session timeouts for enterprise customers.",
+      "All authentication is handled by Clerk, with social SSO through Google and Microsoft. SAML/OIDC federation is supported by Clerk but is not yet configured on this deployment — ask before assuming it in a rollout plan. Two-factor authentication (2FA) is available for all accounts. Sessions are managed with short-lived JWTs and automatic rotation, with configurable session timeouts for enterprise customers.",
   },
   {
     icon: Lock,
@@ -81,7 +81,7 @@ const SECTIONS = [
     title: "Compliance",
     color: "text-yellow-400",
     content:
-      "Sovereign Matrix is designed to be compliant with GDPR (EU), POPIA (South Africa), CAN-SPAM (US), and TCPA (US) regulations. Voice agents identify themselves as AI on all outbound calls. SOC 2 Type II certification is currently in progress with an expected completion date of Q3 2026.",
+      "Sovereign Matrix is designed to be compliant with GDPR (EU), POPIA (South Africa), CAN-SPAM (US), and TCPA (US) regulations. Voice agents identify themselves as AI on all outbound calls. SOC 2 Type II is a readiness programme, not a certification we hold: our Trust Services Criteria are mapped and self-assessed on the /trust page, no audit firm has been engaged yet, and we do not hold a SOC 2 report. We will publish the audit window once an auditor is engaged rather than commit to a date we cannot yet back.",
   },
   {
     icon: AlertCircle,

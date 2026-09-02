@@ -30,6 +30,8 @@ export default function FreeSeoAuditPage() {
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [emailCaptured, setEmailCaptured] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailError, setEmailError] = useState("");
 
   const runAudit = async () => {
     if (!url.trim()) return;
@@ -60,15 +62,31 @@ export default function FreeSeoAuditPage() {
     }
   };
 
-  const captureEmail = () => {
+  const captureEmail = async () => {
     if (!email.includes("@")) return;
-    setEmailCaptured(true);
-    // Fire to API for lead capture
-    fetch("/api/_misc/email/capture", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, source: "free-seo-audit", domain: url }),
-    }).catch(() => {});
+    setEmailSending(true);
+    setEmailError("");
+
+    try {
+      // Fire to API for lead capture
+      const res = await fetch("/api/email/capture", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "free-seo-audit", domain: url }),
+      });
+
+      if (!res.ok) {
+        setEmailError("We couldn't save that email. Check the address and try again.");
+        return;
+      }
+
+      // Only unlock once the capture actually landed.
+      setEmailCaptured(true);
+    } catch {
+      setEmailError("Connection error. Check your network and try again.");
+    } finally {
+      setEmailSending(false);
+    }
   };
 
   const intel = result?.seo_intelligence;
@@ -209,11 +227,16 @@ export default function FreeSeoAuditPage() {
                   />
                   <button
                     onClick={captureEmail}
-                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-lg text-sm transition-colors"
+                    disabled={emailSending}
+                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold rounded-lg text-sm transition-colors flex items-center gap-2"
                   >
+                    {emailSending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     Unlock
                   </button>
                 </div>
+                {emailError && (
+                  <p className="text-xs text-rose-400 mt-3">{emailError}</p>
+                )}
               </div>
             ) : (
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">

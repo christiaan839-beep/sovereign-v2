@@ -41,7 +41,7 @@ const WORKFLOWS = [
       "Scores by ICP fit (0\u2013100)",
       "Exports CSV with 50 qualified leads",
     ],
-    result: "50 enriched leads with verified emails, ready for outreach \u2014 in 45 seconds.",
+    result: "50 enriched leads with verified emails, scored by ICP fit and exported as CSV \u2014 ready for outreach.",
   },
   {
     trigger: "\"Write cold email sequences for the top 20 leads\"",
@@ -52,7 +52,7 @@ const WORKFLOWS = [
       "Runs through anti-slop filter and quality scorer",
       "Schedules send at optimal times per timezone",
     ],
-    result: "60 personalized emails queued. Average open rate: 34% (vs 18% industry average).",
+    result: "60 personalized emails queued \u2014 each researched per lead, quality-scored, and timed to the recipient\u2019s timezone.",
   },
   {
     trigger: "\"Call the 5 leads who opened all 3 emails\"",
@@ -63,7 +63,7 @@ const WORKFLOWS = [
       "Qualifies for budget, timeline, decision maker",
       "Books 2 meetings directly to calendar",
     ],
-    result: "5 calls completed in 4 minutes. 2 meetings booked. Pipeline value: $47,000.",
+    result: "5 calls completed, 2 meetings booked straight to the calendar with qualification notes attached.",
   },
 ];
 
@@ -166,6 +166,11 @@ export default function LeadGenPage() {
             <h2 className="text-2xl md:text-4xl font-bold text-white tracking-tight mb-3">
               Say what you need. Get qualified leads.
             </h2>
+            <p className="text-sm text-neutral-500 max-w-lg mx-auto">
+              Illustrative examples. The runs below show how the agents chain
+              &mdash; counts and outcomes are hypothetical, not measured
+              averages or promised results.
+            </p>
           </div>
 
           <div className="space-y-8">

@@ -13,7 +13,13 @@
  *   if (!access.allowed) return error(access.reason);
  */
 
-import { normalizePlanId, getPlan, type PlanId } from "@/lib/plans";
+import {
+  normalizePlanId,
+  getPlan,
+  cheapestPlanWith,
+  type PlanEnterpriseFlags,
+  type PlanId,
+} from "@/lib/plans";
 
 // ── Agent Tier Map ──
 // Which agents are available on which plan
@@ -43,8 +49,27 @@ const ARRAY_AGENTS = new Set([
 
 // ── Feature Gates ──
 
+/**
+ * Feature slugs whose tier is owned by the enterprise flags on each
+ * PlanDefinition (plans.ts). Deriving the gate from the flag means this
+ * module and plan-enforcement's requireEntitlement() answer from the same
+ * data — the two vocabularies ("white-label" the slug, `whiteLabel` the
+ * flag) can no longer disagree about which tier unlocks a feature.
+ *
+ * checkFeatureAccess() is the synchronous form for a plan string already
+ * in hand; requireEntitlement(userId, flag) is the async form that
+ * resolves the plan from the database. Both read PLANS[].enterprise.
+ */
+function gateFor(flag: keyof PlanEnterpriseFlags): PlanId {
+  // No purchasable plan carries the flag → contract tier only.
+  return cheapestPlanWith(flag) ?? "sovereign";
+}
+
 const FEATURE_GATES: Record<string, PlanId> = {
-  "white-label": "enterprise",
+  "white-label": gateFor("whiteLabel"),
+  "custom-domain": gateFor("whiteLabel"),
+  "audit-log-export": gateFor("auditLogExport"),
+  "priority-support": gateFor("dedicatedSupport"),
   "api-access": "array",
   "scheduled-runs": "starter",
   "workflow-builder": "array",
@@ -55,8 +80,6 @@ const FEATURE_GATES: Record<string, PlanId> = {
   "graph-memory": "starter",
   "export-results": "starter",
   "team-members": "enterprise",
-  "custom-domain": "enterprise",
-  "priority-support": "node",
 };
 
 // ── Plan Hierarchy (for >= comparison) ──

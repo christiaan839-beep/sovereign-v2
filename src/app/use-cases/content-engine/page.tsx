@@ -20,7 +20,7 @@ const CAPABILITIES = [
   {
     icon: Shield,
     title: "Anti-slop quality engine",
-    desc: "Every piece passes through the consensus engine. A Creator agent writes, a Critic agent reviews, a third model scores. AI detection rate stays below 5%. Reads like a human wrote it.",
+    desc: "Every piece passes through the consensus engine. A Creator agent writes, a Critic agent reviews, a third model scores. Each draft ships with its quality and AI-detection scores attached, so you see what you\u2019re publishing before it goes out.",
     color: "emerald",
   },
   {
@@ -167,6 +167,11 @@ export default function ContentEnginePage() {
             <h2 className="text-2xl md:text-4xl font-bold text-white tracking-tight mb-3">
               Ask anything. Get content.
             </h2>
+            <p className="text-sm text-neutral-500 max-w-lg mx-auto">
+              Illustrative examples. The runs below show how the agents chain
+              &mdash; word counts, scores, and timings are hypothetical, not
+              measured averages or promised results.
+            </p>
           </div>
 
           <div className="space-y-8">

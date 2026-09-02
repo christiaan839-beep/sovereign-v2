@@ -91,7 +91,7 @@ export const BUILT_LEDGER: MilestoneEntry[] = [
     slug: "wave-3-enterprise-levers",
     title: "Enterprise contract levers + Sovereign tier",
     description:
-      "PlanEnterpriseFlags (SAML, residency, BYOK, SLA, audit export) on every plan; new contract tier above Enterprise; /sales page.",
+      "PlanEnterpriseFlags on every plan, enforced by requireEntitlement() in plan-enforcement.ts: white-label writes and the signed audit-log bundle are gated on the paying tier. Contract tier above Enterprise, provisioned by /api/_admin/plan. SAML and BYOK are declared levers with no implementation yet; dataResidency and dedicatedRegion were removed for having no substrate.",
     shippedAt: "2026-05-16T07:05:00.000Z",
     wave: 3,
     commit: "67166cae",

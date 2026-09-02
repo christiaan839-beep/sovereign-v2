@@ -20,13 +20,29 @@ import { useUsage } from "@/hooks/useUsage";
 import { useSafeUser } from "@/lib/safe-clerk";
 import { Skeleton } from "@/components/ui/Skeleton";
 
+/** Shape returned by GET /api/billing/invoices (amount is in minor units). */
 interface Invoice {
   id: string;
   date: string;
-  amount: string;
-  status: "paid" | "pending" | "failed";
+  amount: number;
+  currency: string;
+  status: string;
+  pdfUrl: string | null;
   description: string;
 }
+
+const formatInvoiceDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+const formatInvoiceAmount = (amount: number, currency: string) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: (currency || "usd").toUpperCase(),
+  }).format(amount / 100);
 
 export default function BillingPage() {
   const { today, limit, total, plan, loaded, isPaid } = useUsage();
@@ -40,7 +56,7 @@ export default function BillingPage() {
   useEffect(() => {
     async function fetchInvoices() {
       try {
-        const res = await fetch("/api/_billing/portal", { method: "POST" });
+        const res = await fetch("/api/billing/invoices");
         if (res.ok) {
           const data = await res.json();
           if (data.invoices && Array.isArray(data.invoices)) {
@@ -103,7 +119,7 @@ export default function BillingPage() {
     setPortalLoading(true);
     setPortalError(null);
     try {
-      const res = await fetch("/api/_billing/portal", { method: "POST" });
+      const res = await fetch("/api/billing/portal", { method: "POST" });
       const data = await res.json();
       if (res.ok && data.url) {
         window.location.assign(data.url);
@@ -359,6 +375,9 @@ export default function BillingPage() {
                   <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">
                     Status
                   </th>
+                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">
+                    Receipt
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -368,20 +387,20 @@ export default function BillingPage() {
                     className="border-b border-white/[0.03] last:border-0"
                   >
                     <td className="px-5 py-4 text-sm text-neutral-300">
-                      {inv.date}
+                      {formatInvoiceDate(inv.date)}
                     </td>
                     <td className="px-5 py-4 text-sm text-neutral-300">
                       {inv.description}
                     </td>
                     <td className="px-5 py-4 text-sm font-mono text-white">
-                      {inv.amount}
+                      {formatInvoiceAmount(inv.amount, inv.currency)}
                     </td>
                     <td className="px-5 py-4">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                           inv.status === "paid"
                             ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                            : inv.status === "pending"
+                            : inv.status === "open" || inv.status === "draft"
                               ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                               : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
                         }`}
@@ -389,14 +408,33 @@ export default function BillingPage() {
                         {inv.status === "paid" && (
                           <CheckCircle2 className="w-3 h-3" />
                         )}
-                        {inv.status === "pending" && (
+                        {(inv.status === "open" || inv.status === "draft") && (
                           <Clock className="w-3 h-3" />
                         )}
-                        {inv.status === "failed" && (
-                          <AlertTriangle className="w-3 h-3" />
-                        )}
+                        {inv.status !== "paid" &&
+                          inv.status !== "open" &&
+                          inv.status !== "draft" && (
+                            <AlertTriangle className="w-3 h-3" />
+                          )}
                         {inv.status}
                       </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      {inv.pdfUrl ? (
+                        <a
+                          href={inv.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white transition-colors"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          PDF
+                        </a>
+                      ) : (
+                        <span className="text-xs text-neutral-600">
+                          &mdash;
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

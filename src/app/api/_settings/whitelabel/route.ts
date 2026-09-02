@@ -3,6 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { whitelabelConfig } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { requireEntitlement } from "@/lib/plan-enforcement";
 
 export async function GET() {
   const user = await currentUser();
@@ -27,6 +28,22 @@ export async function POST(req: Request) {
   const user = await currentUser();
   if (!user?.primaryEmailAddress?.emailAddress) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Writing agency name / logo / colour / custom domain is the
+  // white-label entitlement. GET stays open so an owner can always read
+  // back (and a downgraded tenant can see) their own config; only the
+  // write is gated. Fails closed — an unresolvable plan is "free".
+  const gate = await requireEntitlement(user.id, "whiteLabel");
+  if (!gate.allowed) {
+    return NextResponse.json(
+      {
+        error: gate.message,
+        requiredPlan: gate.requiredPlan,
+        upgradeUrl: gate.upgradeUrl,
+      },
+      { status: 402 }
+    );
   }
 
   const userEmail = user.primaryEmailAddress.emailAddress;

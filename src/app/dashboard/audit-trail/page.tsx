@@ -123,7 +123,7 @@ export default function AuditTrailPage() {
           Audit Trail
         </h1>
         <p className="text-neutral-400 text-sm">
-          SOC 2-compliant activity log. Every action across agents, settings, and data is recorded here.
+          Activity log built for SOC 2 CC7 evidence requests. Every action across agents, settings, and data is recorded here with its actor, timestamp, and IP.
         </p>
       </motion.div>
 

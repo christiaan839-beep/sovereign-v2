@@ -1,249 +1,371 @@
-# Sovereign Matrix — Domination Plan
+# Sovereign Matrix — Growth Plan
+
+Internal planning document. Not customer-facing copy.
+
+**Status as of 2 September 2026.** This plan was written as a day-numbered
+sequence starting at "Day 1". That start never happened. Phase 1 is a two-day
+activation checklist and not one of its boxes is ticked; `CLAUDE.md` still
+lists the same operator steps under "Pending Manual Steps" (migrations
+0002-0004, the Stripe webhook endpoint, the four Stripe price IDs, the Clerk
+webhook, `CLERK_WEBHOOK_SECRET`). Every phase below it is blocked on that
+same checklist, so every downstream day number is dead too.
+
+The original day ranges are kept in the headings on purpose. They are the
+record of what was promised, and deleting them would hide the miss. New dates
+are not being invented here — a phase gets a date when the phase before it
+actually closes.
+
+Numbers in this document match `LAUNCH.md`, `LAUNCH-CONTENT.md` and
+`VIRAL-CONTENT.md`. Derivations are in the verified-numbers table at the
+bottom of `VIRAL-CONTENT.md`.
+
+---
 
 ## The Thesis
 
-Every company will become an agentic company. Jensen Huang said it. Anthropic proved it by launching managed agents. The market is $7.8B growing to $52.6B by 2030.
+Businesses are handing agents real work: client lists, case files, contracts,
+patient records. The bottleneck is not model quality. It is that the operator
+cannot say where the data went, who approved the action, or what the model
+was asked.
 
-Sovereign Matrix isn't competing for a slice. We're building the infrastructure layer that every agentic company runs on.
+Sovereign Matrix is the execution layer for that problem. Local-first
+routing so the prompt can stay inside the operator's network. A 5-check
+pipeline on every output. Four trust levels so autonomy is a dial rather than
+a switch. An immutable execution audit so an action can be reconstructed
+after the fact.
+
+Market-size forecasts and third-party quotes have been removed from this
+section. They were not sourced and they were not load-bearing: the argument
+above stands without them.
 
 ---
 
-## Phase 1: ACTIVATE (Days 1-2)
+## Phase 1: ACTIVATE (was Days 1-2 — not started)
 
-**Goal: Platform goes live with real AI output**
+**Goal: platform goes live with real AI output**
 
-### Day 1 (Today)
-- [ ] Set NVIDIA_NIM_API_KEY in Vercel (91 free models activate)
-- [ ] Set GEMINI_API_KEY in Vercel (Gemini 3.1 Pro activates)
+Blocking everything else. Until this closes, no phase below can begin.
+
+### Environment
+
+- [ ] Set NVIDIA_NIM_API_KEY in Vercel (open-model routing activates)
+- [ ] Set GEMINI_API_KEY in Vercel (default hosted path activates)
 - [ ] Set DATABASE_URL in Vercel (persistence activates)
-- [ ] Run 4 SQL migrations in Neon console
+- [ ] Run pending migrations in the Neon console (`drizzle/` is canonical;
+      CLAUDE.md lists 0002-0004 as outstanding)
 - [ ] Set ENCRYPTION_KEY + NEXT_PUBLIC_APP_URL
-- [ ] Verify: free competitor scan returns real intelligence
-- [ ] Verify: voice assistant speaks with real AI voice
-- [ ] Verify: smart router picks best model per task
+- [ ] Set STRIPE keys and the four price IDs (STRIPE_PRICE_STARTER,
+      STRIPE_PRICE_ARRAY, STRIPE_PRICE_NODE, STRIPE_PRICE_ENTERPRISE)
+- [ ] Register the Stripe webhook endpoint → `/api/payments/stripe/webhook`
+- [ ] Register the Clerk webhook endpoint → `/api/webhooks/clerk`, and set
+      CLERK_WEBHOOK_SECRET
+- [ ] Set RESEND key (transactional email activates)
+- [ ] Set GROQ + CEREBRAS keys
 
-### Day 2
-- [ ] Set STRIPE keys (payments activate)
-- [ ] Set RESEND key (emails activate)
-- [ ] Set GROQ + CEREBRAS keys (ultra-fast inference)
-- [ ] Test full flow: signup → onboarding → first playbook → real output
-- [ ] Test Stripe checkout: click → pay → access granted
-- [ ] Fix any runtime bugs that surface with real API calls
+### Verification
 
-**Success metric:** One person can sign up, run a playbook, and get real AI output.
+- [ ] Free competitor scan returns a real brief
+- [ ] Voice assistant speaks with a real voice
+- [ ] Smart router picks a model per task and the choice is visible in the
+      transparency payload
+- [ ] Full flow: signup → onboarding → first playbook → real output
+- [ ] Stripe checkout: click → pay → entitlement granted via the webhook
+- [ ] Fix runtime bugs that only surface against live provider APIs
+
+**Success metric:** one person can sign up, run a playbook, and get real
+output.
 
 ---
 
-## Phase 2: FIRST 10 USERS (Days 3-7)
+## Phase 2: FIRST 10 USERS (was Days 3-7 — not started)
 
-**Goal: 10 real users generating real value**
+**Goal: 10 users generating real output**
 
-### User Acquisition
-- [ ] Post on LinkedIn (launch copy ready in LAUNCH.md)
-- [ ] Post Twitter thread (7-tweet thread ready)
+### Acquisition
+
+- [ ] Post on LinkedIn (copy in LAUNCH.md)
+- [ ] Post the Twitter thread (copy in LAUNCH.md)
 - [ ] Share /free/competitor-scan in 5 relevant communities
-- [ ] DM 10 agency owners you know personally
-- [ ] Offer free Node access (30 days) to first 10 signups
+- [ ] DM 10 agency owners you know personally (template in LAUNCH-CONTENT.md)
+- [ ] Grant the Founder plan to the first 10 signups: 10,000 runs a month,
+      every playbook, no card
 
-### What They'll Experience
-1. Land on sovereignmatrix.agency → see the hero + live terminal demo
-2. Try free competitor scan → get real intelligence in 15 seconds
-3. Sign up → 5-step onboarding → first playbook suggested
-4. Run Lead Blitz → get 50 enriched leads
-5. Voice assistant answers questions in real AI voice
+### What they experience
+
+1. Land on sovereignmatrix.agency, see the hero and the live terminal demo
+2. Run the free competitor scan, get a real brief, no signup
+3. Sign up, 5-step onboarding, first playbook suggested from their goal
+4. Run Lead Blitz, get enriched leads
+5. Voice assistant answers questions in a real voice
 6. Dashboard shows real execution metrics
 
-### Feedback Loop
-- [ ] Set up a Slack channel for early users
-- [ ] Daily check-in: what worked, what broke, what's missing
-- [ ] Fix reported bugs within 24 hours
-- [ ] Ship requested features within 48 hours
+### Feedback loop
+
+- [ ] Slack channel for early users
+- [ ] Daily check-in: what worked, what broke, what is missing
+- [ ] Reported bugs fixed within 24 hours
+- [ ] Requested features shipped within 48 hours where they are small
 
 **Success metric:** 3 of 10 users run a second playbook unprompted.
 
 ---
 
-## Phase 3: FIRST REVENUE (Days 8-14)
+## Phase 3: FIRST REVENUE (was Days 8-14 — not started)
 
-**Goal: First paying customer**
+**Goal: first paying customer**
 
-### Conversion Strategy
-- Free tier → show value → upgrade prompt after 50 tasks
-- "Your free tier used 47/50 tasks. Upgrade to Starter ($19/mo) for 200 tasks."
-- Agency pitch: "White-label this for $499/mo. Resell to 10 clients at $99 = $990 revenue."
+### Conversion
 
-### Content Engine
-- [ ] Publish 5 blog posts (already written, just need AI generation via smart-router)
-- [ ] Share comparison pages on social (11 pages ready)
-- [ ] Post "Sovereign Matrix vs HubSpot" on r/SaaS, Indie Hackers
-- [ ] Share Glasswing security narrative on LinkedIn (CISOs read LinkedIn)
+- Free tier shows value, then prompts at the quota edge
+- "Your free tier used 47 of 50 runs. Starter is $19/mo for 200."
+- Agency pitch: Enterprise at $499/mo includes the white-label dashboard and
+  10,000 runs; resell under your own brand at your own price
+
+### Content
+
+- [ ] Publish the queued blog posts through the smart router
+- [ ] Share the 18 comparison pages on social
+- [ ] Post the architecture write-up on r/SaaS and Indie Hackers
+- [ ] Publish the local-execution write-up: what the Ollama path does, what
+      leaves the network on each route, and what the audit trail records
 
 ### Partnerships
-- [ ] Reach out to 3 agency owners for white-label pilot
-- [ ] Offer them 60-day free Enterprise trial
-- [ ] Their success story becomes our first real testimonial
 
-**Success metric:** $19+ in recurring revenue.
+- [ ] Reach out to 3 agency owners for a white-label pilot
+- [ ] Offer a 60-day Enterprise trial
+- [ ] Convert one into the first named testimonial
+
+**Success metric:** $19 or more in recurring revenue.
 
 ---
 
-## Phase 4: PRODUCT HUNT LAUNCH (Days 15-21)
+## Phase 4: PRODUCT HUNT LAUNCH (was Days 15-21 — not started)
 
-**Goal: #1 Product of the Day**
+**Goal: a strong launch day**
 
 ### Preparation
-- [ ] Product Hunt listing (copy ready in LAUNCH.md)
-- [ ] 5+ upvotes from early users on launch day
+
+- [ ] Product Hunt listing (copy in LAUNCH.md)
+- [ ] Early users lined up to comment on launch day
 - [ ] Respond to every comment within 30 minutes
-- [ ] Have 3 real user testimonials ready
-- [ ] Demo video showing: type goal → agents execute → real output
+- [ ] 3 real testimonials ready
+- [ ] Demo video: type a goal, agents execute, real output
 
-### Launch Day Checklist
-- [ ] Post at 12:01 AM PST (Product Hunt tradition)
-- [ ] Share on all social channels simultaneously
-- [ ] Email waitlist (welcome email already built)
-- [ ] Monitor /status page for any outages
-- [ ] Fix bugs in real-time during launch day
+### Launch day
 
-**Success metric:** Top 5 Product of the Day. 500+ upvotes.
+- [ ] Post at 12:01 AM PST
+- [ ] Share on all social channels at once
+- [ ] Email the waitlist
+- [ ] Watch /status for outages
+- [ ] Fix bugs in real time
+
+**Success metric:** top 5 Product of the Day. The previous "500+ upvotes"
+target was removed; it was a number with no basis and no lever attached
+to it.
 
 ---
 
-## Phase 5: SCALE TO 100 USERS (Days 22-60)
+## Phase 5: SCALE TO 100 USERS (was Days 22-60 — not started)
 
-**Goal: Prove product-market fit**
+**Goal: evidence of product-market fit**
 
-### Growth Channels
-1. **SEO:** 11 comparison pages + 9 sector pages + 15 blog articles already deployed
-2. **Social proof:** Early user testimonials on landing page
-3. **Referral program:** 10% affiliate / 25% reseller / 40% agency partner
-4. **Free tools:** Competitor scan + SEO audit + lead finder drive signups
-5. **Content:** Weekly blog post targeting buyer-intent keywords
+### Channels
 
-### Product Improvements Based on User Feedback
-- [ ] Top 3 requested features built within 2 weeks
-- [ ] Any bug reported → fixed within 24 hours
-- [ ] Dashboard UX refined based on session recordings
-- [ ] Agent quality improved via evolution engine learnings
+1. **SEO:** 18 comparison pages and 26 sector pages are deployed
+2. **Social proof:** early user testimonials on the landing page
+3. **Referral programme:** what is actually shipped is 30% recurring
+   commission with a 90-day attribution window on /affiliate, plus 50 bonus
+   runs per referral in `src/lib/referral-system.ts`. The old
+   10%/25%/40% tier ladder in this slot was never built and did not match
+   the live page; reseller and agency-partner rates are undecided.
+4. **Free tools:** competitor scan, SEO audit, lead finder
+5. **Content:** weekly post targeting buyer-intent keywords
 
-### Revenue Targets
+### Product work driven by feedback
+
+- [ ] Top 3 requested features within 2 weeks
+- [ ] Reported bugs fixed within 24 hours
+- [ ] Dashboard UX refined from session recordings
+- [ ] Agent quality improved from evolution-engine learnings
+
+### Revenue targets
+
+Targets, not forecasts. None has started, because Phase 1 has not.
+
 - Month 1: 10 users, $500 MRR
 - Month 2: 50 users, $3,000 MRR
 - Month 3: 100 users, $8,000 MRR
 
 ---
 
-## Phase 6: AGENCY ECOSYSTEM (Days 61-120)
+## Phase 6: AGENCY ECOSYSTEM (was Days 61-120 — not started)
 
-**Goal: 10 agencies white-labeling**
+**Goal: 10 agencies white-labelling**
 
-### Strategy
-- Each agency brings 10-50 clients
-- 10 agencies × 20 clients avg = 200 end users
-- Revenue: 10 × $499 = $4,990 MRR from agencies alone
-- Their clients pay them $99-299/mo (our platform, their brand)
+### Arithmetic
 
-### What Agencies Get
+10 agencies at the $499/mo Enterprise tier is $4,990 MRR from agencies alone,
+before their end users. Each agency bringing 20 clients puts 200 people on the
+platform.
+
+### What agencies get
+
 - White-label dashboard with their logo
-- Custom domain (agency.theirbrand.com)
+- Custom domain
 - Client portals with isolated data
-- 130 agents branded as their service
-- 80/20 marketplace revenue share
+- 140 agents branded as their service
+- A marketplace revenue share, split to be decided. The 80/20 figure
+  previously stated here is not set anywhere in the code or on any page.
 
-### Why They Can't Leave
-- Client data lives on our infrastructure
-- Agent performance compounds (evolution engine)
-- Switching costs increase monthly
-- Their revenue depends on our platform
+### Why they stay
+
+This section previously argued that agencies could not leave because their
+client data lived on our infrastructure. That is both a bad argument and a
+direct contradiction of the local-execution positioning in the launch copy,
+so it is gone. The honest version:
+
+- Agent performance compounds through the evolution engine, and that history
+  is per-tenant
+- Their client portals, branding and workflows are configured here
+- Data export at `/api/me/export` means leaving is possible, which is the
+  point — retention has to be earned each month
 
 ---
 
-## Phase 7: DEVELOPER MARKETPLACE (Days 121-180)
+## Phase 7: DEVELOPER MARKETPLACE (was Days 121-180 — not started)
 
 **Goal: 50 developers building agents**
 
 ### Strategy
-- Open the Agent SDK (documentation already at /developers/docs)
-- 80% revenue share (they keep most)
-- Featured agents on marketplace get homepage placement
-- First 50 developers get "Founding Developer" badge
 
-### What Gets Built
-- Sector-specific agents (legal, healthcare, finance)
-- Integration agents (Shopify, HubSpot deep, Salesforce)
+- Open the Agent SDK (docs at /developers/docs)
+- A majority revenue share to the developer; the exact split is undecided
+  and not set anywhere in the code
+- Featured agents get homepage placement
+- First 50 developers get a Founding Developer badge
+
+### What gets built
+
+- Sector agents (legal, healthcare, finance)
+- Integration agents (Shopify, HubSpot, Salesforce)
 - Niche agents (podcast transcription, patent search, code review)
-- Each developer adds value we don't have to build
 
-### Network Effect
-- More developers → more agents → more users → more developers
-- This flywheel is the #1 moat. It's why Shopify and Salesforce are worth $100B+.
+### Network effect
+
+More developers, more agents, more users, more developers. This is the
+strongest structural advantage in the plan and the furthest from being real.
 
 ---
 
-## Phase 8: ENTERPRISE (Days 181-365)
+## Phase 8: ENTERPRISE (was Days 181-365 — not started)
 
-**Goal: First enterprise deal ($499/mo+)**
+**Goal: first Enterprise deal at $499/mo**
 
-### Enterprise Requirements (already built)
-- [x] SOC 2 narrative (security page + Glasswing)
-- [x] GDPR data export (/api/user/export)
-- [x] HIPAA-ready (Ollama local execution)
-- [x] 5-layer safety pipeline
-- [x] 4-level trust controls
-- [x] Immutable execution audit
-- [x] Admin panel with user management
-- [x] Deep health check API
+### Built and verifiable
 
-### Enterprise Sales
-- Target: 5 enterprise prospects per month
-- Channel: LinkedIn outreach + Glasswing security narrative
-- Demo: live competitive scan of THEIR competitor
-- Close: 60-day pilot → annual contract
+- [x] 5-check output pipeline (`src/lib/output-verifier.ts`)
+- [x] 4 trust levels (`src/lib/trust-levels.ts`)
+- [x] Immutable execution audit (`src/lib/execution-audit.ts`)
+- [x] Data export endpoint (`/api/me/export`)
+- [x] Admin panel with user management (`/dashboard/admin`)
+- [x] Deep health check API (`/api/health/deep`)
+- [x] Local and air-gapped execution path (Ollama, routed ahead of every
+      hosted provider in `src/lib/ai.ts`)
+
+### Compliance — not built, do not claim
+
+The previous version of this list ticked "SOC 2 narrative" and "HIPAA-ready".
+Neither is a thing we can assert. Use the same language the live site uses:
+
+- [ ] **SOC 2 Type II** — a readiness programme, not a certification. Trust
+      Services Criteria are mapped and self-assessed on /trust. No audit firm
+      engaged, no report held. Publish the audit window when an auditor is
+      engaged; do not commit to a date before then.
+- [ ] **HIPAA** — we have HIPAA-aware controls and the Ollama local path
+      supports air-gapped processing where patient data stays on the
+      customer's infrastructure. A BAA is available for enterprise
+      deployments. Never "HIPAA-compliant" or "HIPAA-ready".
+- [ ] **GDPR / POPIA** — designed to be compliant: PII scanning and redaction
+      in the output pipeline, data export at `/api/me/export`. "Designed to be
+      compliant", not "compliant".
+- [ ] **ISO 27001, PCI DSS** — no claim of any kind. We hold neither and have
+      no programme in flight.
+
+### Enterprise sales
+
+- Target: 5 prospects per month
+- Channel: LinkedIn outreach, leading with local execution and the audit trail
+- Demo: a live competitor scan of the prospect's own competitor
+- Close: 60-day pilot into an annual contract
 
 ---
 
 ## The Numbers
 
-| Metric | Day 1 | Day 30 | Day 90 | Day 180 | Day 365 |
-|--------|-------|--------|--------|---------|---------|
-| Users | 0 | 30 | 100 | 500 | 2,000 |
-| MRR | $0 | $1,000 | $8,000 | $25,000 | $80,000 |
-| Agents | 130 | 130 | 150 | 200 | 500+ |
-| Models | 39 | 39 | 45 | 50 | 60+ |
-| Pages | 160 | 170 | 180 | 200 | 250+ |
-| Deploys | 60 | 100 | 200 | 400 | 800+ |
+The "Now" column is measured from this working tree. Every other column is a
+target that has not started, because Phase 1 has not started.
+
+| Metric             | Now (verified) | Target: 30 days in | 90     | 180     | 365     |
+| ------------------ | -------------- | ------------------ | ------ | ------- | ------- |
+| Users              | 0              | 30                 | 100    | 500     | 2,000   |
+| MRR                | $0             | $1,000             | $8,000 | $25,000 | $80,000 |
+| Agents             | 140            | 140                | 150    | 200     | 300     |
+| Models in registry | 20             | 20                 | 25     | 30      | 40      |
+| Pages              | 267            | 275                | 290    | 320     | 360     |
+
+Verification: `npm run check:registry` for agents; the `MODELS` record in
+`src/lib/model-registry.ts` for models; `find src/app -name page.tsx` for
+pages. The deploy-count row was removed — it measured effort, not progress.
 
 ---
 
-## The Moats (Why Competitors Can't Catch Up)
+## The Moats
 
-1. **14 infrastructure modules** — Trust levels, evolution engine, consensus, transparency. Takes 6+ months to replicate.
+1. **Local-first execution.** The router tries a customer-supplied Ollama
+   endpoint before any hosted provider. For regulated buyers this is the
+   difference between a policy question and a network question. It is also
+   the one claim in the whole plan that is simultaneously verifiable, hard to
+   copy without rearchitecting, and worth paying for.
 
-2. **130 pre-built agents** — Each tuned with anti-slop prompts and sector-specific knowledge. Takes 12+ months to build from scratch.
+2. **140 pre-built agents.** Each carries its own prompt and sector context.
+   The registry is generated and checked in CI, so the count is a fact rather
+   than a marketing number.
 
-3. **Evolution engine** — Platform gets smarter daily. A competitor who launches in 6 months starts with zero learning data.
+3. **The execution layer.** Trust levels, the 5-check output pipeline,
+   consensus across 2-3 models, output transparency and the immutable audit
+   trail. Individually replicable; together they are the product.
 
-4. **Developer marketplace** — Once 50+ developers build agents, switching costs are infinite.
+4. **Evolution engine.** Agent quality improves from run history, and that
+   history is per-tenant. A competitor starting later starts with none of it.
 
-5. **Agency white-label** — Each agency brings 20+ captive users. Multi-sided network effect.
+5. **Developer marketplace.** Once developers build on the SDK, switching
+   costs rise for everyone. Currently aspirational — see Phase 7.
 
-6. **Glasswing narrative** — Only platform positioned around frontier model safety. CISOs remember who was first.
+6. **Agency white-label.** Each agency brings its own client base onto the
+   platform under its own brand.
 
-7. **Flat pricing** — $199/mo vs $715+ in tools. The economic argument never expires.
+7. **Flat pricing.** Starter $19, Sovereign Node $199, Enterprise $499, all
+   monthly and all with a fixed run quota. Metered competitors have to charge
+   more as the product gets more useful. We do not. Named-competitor price
+   comparisons were removed from this section: we cannot substantiate another
+   company's pricing, and the structural argument does not need them.
 
 ---
 
-## What's Already Built (Day 0)
+## What Is Already Built
 
 ```
-160+ pages | 276 API routes | 130 agent endpoints | 39 models
-14 infrastructure modules | 15 blog articles | 11 comparison pages
-9 sector pages | 3 use case pages | 10 MCP integrations
-Voice assistant | Email builder | Reports | Analytics
-Evolution engine | Trust levels | Output transparency
-Error recovery with circuit breakers | Deep health monitoring
-Admin panel | Billing | Referrals | Integrations dashboard
-Launch copy (PH + LinkedIn + Twitter) | API key documentation
+267 pages | 418 API routes | 140 agents | 29 playbooks
+20 models across 8 providers | 4,510 tests across 295 files
+252,000 non-blank lines of TypeScript | 103 dashboard pages
+18 comparison pages | 26 sector pages
+5-check output pipeline | 4 trust levels | output transparency
+Execution audit | error recovery with circuit breakers | deep health checks
+Voice assistant | email builder | reports | analytics | evolution engine
+Admin panel | billing | referrals | integrations dashboard
+Launch copy (Product Hunt, LinkedIn, X) | API key documentation
 ```
 
-**The platform is built. The plan is written. The only step is activation.**
+The platform is built. Phase 1 is an afternoon of environment configuration
+that has not been done, and it is the only thing standing between this
+document and its first real data point.

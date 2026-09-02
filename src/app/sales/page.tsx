@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  hasSamlSso,
-  hasDataResidency,
   slaUptimePercent,
   getPlan,
 } from "@/lib/plans";
 
+const BOOKING_URL = "https://cal.com/sovereign-matrix/15min";
+
 export const metadata: Metadata = {
   title: "Talk to sales — Sovereign Matrix",
   description:
-    "Enterprise and Sovereign-tier contracts: SAML SSO, audit log export, data residency, 99.95–99.99% SLA, BYOK encryption, dedicated CSM, white-label. Talk to the founder.",
+    "Enterprise and Sovereign-tier contracts: audit log export, 99.95–99.99% SLA, dedicated CSM, white-label dashboard. Talk to the founder.",
   openGraph: {
     title: "Sovereign Matrix — Enterprise contracts",
     description:
-      "SAML SSO, audit log export, BYOK, dedicated region, 99.99% SLA. Book a call.",
+      "Audit log export, white-label, dedicated CSM, 99.99% SLA. Book a call.",
   },
 };
 
@@ -48,10 +48,10 @@ export default function SalesPage() {
             <span className="text-[#B5532C]">isn&apos;t enough.</span>
           </h1>
           <p className="text-[18px] text-neutral-400 leading-[1.6] max-w-2xl">
-            Self-serve plans run on the shared cluster, in our region, with our
-            keys. Some teams can&apos;t. If you need SAML SSO, an audit log
-            export, BYOK encryption, regional data pinning, or a 99.99% SLA —
-            talk to me.
+            Self-serve plans run on the shared cluster with a standard support
+            queue. Some teams can&apos;t. If you need a signed audit-log
+            export, a white-label deployment on your own domain, a named
+            contact, or a contractual SLA — talk to me.
           </p>
         </div>
 
@@ -69,14 +69,8 @@ export default function SalesPage() {
               {enterprise.priceDisplayZar} · self-serve via /pricing
             </p>
             <ul className="space-y-2.5 text-[14px] text-neutral-400">
-              <Feature on={hasSamlSso("enterprise")}>
-                SAML 2.0 / OIDC SSO
-              </Feature>
               <Feature on={enterprise.enterprise.auditLogExport}>
-                Audit log export (webhook + S3)
-              </Feature>
-              <Feature on={hasDataResidency("enterprise")}>
-                Tenant-level data residency
+                Signed audit-log evidence bundle
               </Feature>
               <Feature on={!!enterpriseSla}>
                 {enterpriseSla ?? "Best-effort"} uptime SLA
@@ -89,9 +83,6 @@ export default function SalesPage() {
               </Feature>
               <Feature on={enterprise.enterprise.byok}>
                 BYOK encryption keys
-              </Feature>
-              <Feature on={enterprise.enterprise.dedicatedRegion}>
-                Dedicated region / cluster
               </Feature>
             </ul>
             <div className="mt-8 pt-6 border-t border-white/[0.06]">
@@ -117,14 +108,8 @@ export default function SalesPage() {
               Price-on-application · invoice billing
             </p>
             <ul className="space-y-2.5 text-[14px] text-neutral-400">
-              <Feature on={hasSamlSso("sovereign")}>
-                SAML 2.0 / OIDC SSO
-              </Feature>
               <Feature on={sovereign.enterprise.auditLogExport}>
-                Audit log export + SIEM streaming
-              </Feature>
-              <Feature on={hasDataResidency("sovereign")}>
-                Tenant-level data residency
+                Signed audit-log evidence bundle
               </Feature>
               <Feature on={!!sovereignSla}>
                 {sovereignSla ?? "Best-effort"} uptime SLA
@@ -138,16 +123,15 @@ export default function SalesPage() {
               <Feature on={sovereign.enterprise.byok}>
                 BYOK encryption (KMS / HSM)
               </Feature>
-              <Feature on={sovereign.enterprise.dedicatedRegion}>
-                Dedicated region + isolated cluster
-              </Feature>
             </ul>
             <div className="mt-8 pt-6 border-t border-white/[0.06]">
               <a
-                href="mailto:christiaan@sovereignmatrix.agency?subject=Sovereign%20tier%20enquiry"
+                href={BOOKING_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#B5532C] text-white text-[13px] font-mono tracking-tight rounded-[3px] hover:bg-[#C96234] transition-colors"
               >
-                Talk to the founder
+                Book 15 minutes
                 <span aria-hidden="true">→</span>
               </a>
             </div>
@@ -178,25 +162,17 @@ export default function SalesPage() {
           <h2 className="font-mono text-[11px] text-neutral-500 tracking-[0.2em] mb-6">
             02 · COMPLIANCE EVIDENCE PROVIDED
           </h2>
-          <div className="grid sm:grid-cols-3 gap-3 text-[12px]">
-            {[
-              "SOC 2 Type 2 (in progress)",
-              "ISO 27001 mapping",
-              "GDPR + POPIA DPA",
-              "HIPAA technical safeguards",
-              "PCI-DSS scope (Stripe-handled)",
-              "DPIA template",
-              "Sub-processor list",
-              "Pen-test summary",
-              "SBOM (CycloneDX, every build)",
-            ].map((item) => (
-              <div
-                key={item}
-                className="px-4 py-3 border border-white/[0.08] rounded-[3px] text-neutral-400"
-              >
-                {item}
-              </div>
-            ))}
+          <div className="grid sm:grid-cols-2 gap-3 text-[12px]">
+            {["SBOM (CycloneDX, every build)", "Sub-processor list"].map(
+              (item) => (
+                <div
+                  key={item}
+                  className="px-4 py-3 border border-white/[0.08] rounded-[3px] text-neutral-400"
+                >
+                  {item}
+                </div>
+              ),
+            )}
           </div>
         </section>
 
@@ -252,10 +228,12 @@ export default function SalesPage() {
           </p>
           <div className="flex flex-wrap gap-3">
             <a
-              href="mailto:christiaan@sovereignmatrix.agency?subject=Sovereign%20Matrix%20-%20Enterprise%20enquiry"
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-6 py-3 bg-[#B5532C] text-white text-[13px] font-mono tracking-tight rounded-[3px] hover:bg-[#C96234] transition-colors"
             >
-              Email christiaan@sovereignmatrix.agency
+              Book 15 minutes with the founder
               <span aria-hidden="true">→</span>
             </a>
             <Link
@@ -283,6 +261,7 @@ function Feature({ on, children }: { on: boolean; children: React.ReactNode }) {
       />
       <span className={on ? "text-neutral-300" : "text-neutral-600"}>
         {children}
+        {!on && <span className="sr-only"> — not included</span>}
       </span>
     </li>
   );

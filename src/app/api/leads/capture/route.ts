@@ -20,26 +20,51 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { name, phone, email, planId, businessName, source } = body;
+    const {
+      name,
+      phone,
+      email,
+      planId,
+      businessName,
+      company,
+      companySize,
+      useCase,
+      message,
+      source,
+    } = body;
 
-    // Validate required fields
+    // Validate required fields — web forms collect an email, dialer forms a
+    // phone; either is enough to reply, both together is better.
     if (!name || typeof name !== "string" || name.trim().length === 0) {
       return NextResponse.json({ error: "name is required" }, { status: 400 });
     }
-    if (!phone || typeof phone !== "string" || phone.trim().length === 0) {
-      return NextResponse.json({ error: "phone is required" }, { status: 400 });
+    const cleanEmail = typeof email === "string" ? email.trim() : "";
+    const cleanPhone = typeof phone === "string" ? phone.trim() : "";
+    if (!cleanEmail && !cleanPhone) {
+      return NextResponse.json(
+        { error: "email or phone is required" },
+        { status: 400 },
+      );
     }
+
+    // Fields with no column of their own are kept verbatim in notes so
+    // nothing the visitor typed into the form is discarded.
+    const details: Record<string, string> = {};
+    if (planId) details.planId = String(planId).slice(0, 50);
+    if (companySize) details.companySize = String(companySize).slice(0, 50);
+    if (useCase) details.useCase = String(useCase).slice(0, 2000);
+    if (message) details.message = String(message).slice(0, 2000);
 
     // Sanitize inputs
     const sanitized = {
-      userEmail: email?.trim() || "capture@sovereign.matrix",
+      userEmail: cleanEmail || "capture@sovereign.matrix",
       name: name.trim().slice(0, 200),
-      phone: phone.trim().slice(0, 30),
-      email: email?.trim().slice(0, 200) || null,
-      businessName: businessName?.trim().slice(0, 200) || null,
+      phone: cleanPhone.slice(0, 30) || null,
+      email: cleanEmail.slice(0, 200) || null,
+      businessName: (businessName || company)?.trim().slice(0, 200) || null,
       source: source?.trim().slice(0, 50) || "capture",
       status: "new" as const,
-      notes: planId ? `Plan interest: ${String(planId).slice(0, 50)}` : null,
+      notes: Object.keys(details).length ? JSON.stringify(details) : null,
     };
 
     const [lead] = await db.insert(leads).values(sanitized).returning();

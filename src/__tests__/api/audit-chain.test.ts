@@ -11,6 +11,8 @@
  *   - audit-bundle bundleVersion + chainRoot present
  *   - audit-bundle ?since/?until clip the receipt set
  *   - audit-bundle audit-logs the call (per GDPR Art. 15)
+ *   - audit-bundle is gated on the auditLogExport entitlement, and points
+ *     a denied caller at the ungated data-subject access route
  *   - graceful empty result when DB blips
  */
 import { describe, it, expect, beforeEach, beforeAll, vi } from "vitest";
@@ -21,9 +23,14 @@ beforeAll(() => {
 
 const mockAuth = vi.fn();
 const mockAuditLog = vi.fn().mockResolvedValue(undefined);
+/** Entitled by default; the gate itself is asserted in its own cases below. */
+const mockRequireEntitlement = vi.fn();
 
 vi.mock("@clerk/nextjs/server", () => ({
   auth: () => mockAuth(),
+}));
+vi.mock("@/lib/plan-enforcement", () => ({
+  requireEntitlement: (...args: unknown[]) => mockRequireEntitlement(...args),
 }));
 vi.mock("@/lib/audit-log", () => ({
   auditLog: (...args: unknown[]) => mockAuditLog(...args),
@@ -209,6 +216,16 @@ describe("GET /api/me/audit-bundle", () => {
     mockAuditLog.mockResolvedValue(undefined);
   });
 
+  beforeEach(() => {
+    mockRequireEntitlement.mockResolvedValue({
+      allowed: true,
+      flag: "auditLogExport",
+      plan: "node",
+      planName: "Node",
+      requiredPlan: null,
+    });
+  });
+
   it("401 unauthenticated", async () => {
     mockAuth.mockResolvedValue({ userId: null });
     const { GET } = await loadBundle();
@@ -291,5 +308,49 @@ describe("GET /api/me/audit-bundle", () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as { receipts: unknown[] };
     expect(body.receipts).toEqual([]);
+  });
+
+  it("402s when the caller lacks the auditLogExport entitlement", async () => {
+    mockAuth.mockResolvedValue({ userId: "u_free" });
+    mockRequireEntitlement.mockResolvedValue({
+      allowed: false,
+      flag: "auditLogExport",
+      plan: "free",
+      planName: "Free",
+      requiredPlan: "node",
+      message: "This feature requires Node plan ($99/mo). You are on Free.",
+      upgradeUrl: "/pricing",
+    });
+    const { GET } = await loadBundle();
+    const res = await GET(new Request("http://localhost/api/me/audit-bundle"));
+    expect(res.status).toBe(402);
+    const body = (await res.json()) as {
+      requiredPlan: string;
+      upgradeUrl: string;
+      dataSubjectAccess: string;
+    };
+    expect(body.requiredPlan).toBe("node");
+    expect(body.upgradeUrl).toBe("/pricing");
+    // The paywall covers the signed evidence pack, never the right of access.
+    expect(body.dataSubjectAccess).toBe("/api/data-export");
+  });
+
+  it("checks entitlement for the authenticated caller", async () => {
+    mockAuth.mockResolvedValue({ userId: "u_test" });
+    mockBundleRows = [];
+    const { GET } = await loadBundle();
+    await GET(new Request("http://localhost/api/me/audit-bundle"));
+    expect(mockRequireEntitlement).toHaveBeenCalledWith(
+      "u_test",
+      "auditLogExport",
+    );
+  });
+
+  it("does not consult the entitlement gate before authentication", async () => {
+    mockAuth.mockResolvedValue({ userId: null });
+    const { GET } = await loadBundle();
+    const res = await GET(new Request("http://localhost/api/me/audit-bundle"));
+    expect(res.status).toBe(401);
+    expect(mockRequireEntitlement).not.toHaveBeenCalled();
   });
 });

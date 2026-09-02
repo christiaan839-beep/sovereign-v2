@@ -5,7 +5,146 @@
 > updates this. If something is shipped, move it to the bottom log; if
 > something new is discovered, add it under the right severity band.
 
-Last refreshed: **2026-07-08** after wave 121 (deferred-flaw closeout + dependency hardening).
+Last refreshed: **2026-09-02** after wave 122 (entitlement enforcement + funnel repair + claim truthfulness).
+
+---
+
+## Wave 122 — entitlement enforcement + funnel repair + claim truthfulness (2026-09-02)
+
+The first wave to audit the commercial surface instead of the agent layer.
+This file had tracked engineering almost exclusively, so three whole classes
+of defect had never been written down: plan flags that gate nothing, a tier
+no code path can provision, and a funnel that discards the demand it
+captures. Typecheck + the new entitlement suite green.
+
+**Enterprise flags became enforcement (the headline):**
+
+- **All 8 `PlanEnterpriseFlags` were read exactly once** — on `/sales`, to
+  paint a coloured dot. Not one gated a request. The 7 tests in
+  `plans.test.ts` asserted a constant equals itself
+  (`getEnterpriseFlag("sovereign", "byok") === true`), which is true by
+  construction and stays true after every gate is deleted.
+- **`whiteLabel` was INVERTED — FIXED.** `POST /api/_settings/whitelabel`
+  checked only `currentUser()`, so any free account could set agency name,
+  logo, colour and custom domain — the entitlement Enterprise charges
+  $499/mo for. Now `requireEntitlement(user.id, "whiteLabel")` → 402. GET
+  stays open so a downgraded tenant can still read its own config back.
+- **`auditLogExport` was INVERTED — FIXED.** The signed Merkle bundle at
+  `/api/me/audit-bundle` and the raw reader at `/api/_misc/audit-logs` were
+  auth-gated only, so free users got the full export. Both now require the
+  flag. **The statutory right of access is deliberately NOT gated** —
+  `/api/data-export` and `/api/dsar` stay open on every plan, and the 402
+  body points at them.
+- **New entitlement authority** — `getUserEntitlements()` /
+  `requireEntitlement()` in `plan-enforcement.ts` resolve through the same
+  subscriptions → founder → free path as the quota check (period-end expiry
+  included) and **fail CLOSED**: a DB outage yields free-tier flags, never
+  an enterprise feature. `paywall.ts` now derives its feature-slug tiers
+  from the same flags via `cheapestPlanWith()`, so `"white-label"` the slug
+  and `whiteLabel` the flag can no longer disagree about which tier unlocks.
+- **`dataResidency` + `dedicatedRegion` DELETED, not built.** No `region`
+  column across 49 tables, one `DATABASE_URL`, one Neon region, no
+  per-tenant deployment — neither flag could ever have gated anything. A
+  flag with no substrate is copy, not an entitlement; a regression test
+  pins their absence.
+- **`samlEnabled` has no implementation anywhere** — no Clerk Organizations
+  usage, WorkOS is not a dependency — while being advertised on six
+  surfaces including the root JSON-LD. Dropped from the Enterprise plan
+  description (a test now fails if it returns); the flag and its remaining
+  ad surfaces are C2 below.
+- **`byok` is not wired.** `src/lib/envelope-encryption.ts` is a real
+  library with zero production importers and no KMS/HSM behind it;
+  `/api/settings/byok` is an unrelated name collision that stores
+  third-party AI-provider keys. Still advertised on Sovereign — H4.
+- **Tests now assert enforcement, not identity** — new
+  `src/lib/__tests__/entitlements.test.ts` (10 cases): free denied,
+  enterprise allowed, expired subscription denied, resolution failure
+  denied (fail-closed), `/api/data-export` ungated on every plan.
+
+**Tier provisioning — `sovereign` had never executed:**
+
+- `purchasable: false` with no invoice path, no admin grant endpoint and no
+  checkout, so **no code path could write `plan='sovereign'`** — quota,
+  budget and rate-limit logic all handled correctly a value that could
+  never appear. New admin-only `POST /api/_admin/plan` (`requireAuth` +
+  `isAdmin` + audit log) is the writer: after a call and a manual invoice
+  an admin stamps the tier and enforcement resolves it like any other.
+  `currentPeriodEnd` is required-but-nullable, so a contract end date is
+  honoured by the wave-120 expiry check and an open-ended arrangement is
+  explicit rather than implied.
+- **Enterprise IS purchasable at $499/mo** with `STRIPE_PRICE_ENTERPRISE`
+  wired — and had no card on `/pricing`; the `if (plan === "enterprise")`
+  branch opened a `mailto:` instead of charging, so the highest self-serve
+  tier was unsellable. Added the Enterprise strip (every feature row read
+  from the registry, not retyped) and replaced the dead branch with a
+  `purchasable` check that routes contract-only tiers to `/sales`.
+- `normalizePurchasablePlanId()` — checkout metadata can no longer smuggle
+  `sovereign` or `founder` past a webhook.
+
+**Funnel — 100% of captured demand was being discarded:**
+
+- **All three `/free` tools posted to `/api/_misc/email/capture`** — an
+  unroutable Next.js private folder — and called `setEmailCaptured(true)`
+  _before_ the fetch resolved. Every captured email was dropped while the UI
+  reported success. Now they post to a public `/api/email/capture` alias and
+  only unlock on a 2xx, with a visible error state.
+- **`/enterprise` demo form 400'd on every submission** (it posts no
+  `phone`, which `/api/leads/capture` required) while the correct handler
+  had zero callers. Capture now takes email-or-phone and keeps `company`,
+  `companySize`, `useCase` and `message` verbatim in `notes`.
+- **`/contact` wrote the message body to the visitor's own `localStorage`**
+  under a printed 24-hour reply promise, and fired only the email at
+  `/api/waitlist`. Now posts the whole message to `/api/leads/capture` and
+  surfaces failure instead of faking success.
+- **The working Cal.com link** (signature-verified webhook) was reachable
+  only through a ⌘K easter egg. Now on `/contact` and `/enterprise` beside
+  the form.
+- **Dashboard billing** pointed both the portal button and the invoice list
+  at `/api/_billing/portal` (404 — private folder). Public
+  `/api/billing/portal` + `/api/billing/invoices` aliases; the table renders
+  real Stripe amounts, currency and receipt links.
+
+**Claims — what we say vs what we can show:**
+
+- **`/for-healthcare` shipped an unqualified "HIPAA-Compliant" in its
+  indexed page title** while the page body correctly said "HIPAA-aware, BAA
+  available" — wave 111.1's C1 pass corrected bodies and never opened the
+  layouts. Title, description, keywords and OG now match the body; same
+  pass on `/enterprise` metadata.
+- **`/trust` rendered a hardcoded nine-value array as a "Live posture" SOC 2
+  pass fraction.** Now a self-assessed control model over `TARGET_READINGS`,
+  with a non-dismissable amber banner directly above the numbers stating
+  they are design targets, not telemetry, not continuously monitored, and
+  not attested — we hold no SOC 2 report.
+- **`/security` promised "SOC 2 Type II expected Q3 2026"** — false on
+  2026-10-01, with no auditor engaged. Replaced with what is true: a
+  readiness programme, self-assessed, audit window published once an
+  auditor is engaged. No new date.
+- **`/sales` listed nine compliance artifacts of which two exist.** Now
+  lists the two we can hand over today (SBOM, sub-processor list).
+- **`/sla` published a flat 99.9% for "all paid plans"** while the registry
+  carried per-plan `slaUptimeBps`. The table is generated from the registry,
+  best-effort plans are marked as carrying no commitment, and the page now
+  says plainly that credits are claimed rather than automatic — because
+  availability is not metered per account.
+- **Three `/use-cases` pages asserted unsubstantiated performance figures**
+  ("AI detection rate stays below 5%", "34% open rate vs 18% industry
+  average", "$47,000 pipeline value", "in 45 seconds"). Rewritten to
+  describe mechanism; each demo block is labelled illustrative.
+- **`/sales` and the compliance exporters were missing from `sitemap.ts`** —
+  the only pages describing the $499+ offerings were unindexed.
+
+**Deferred (documented, not shipped):**
+
+- **SAML** is still advertised on `/pilot`, the root `layout.tsx` JSON-LD
+  and `/sales`, and `samlEnabled: true` still sits on two plans. Stripping
+  the copy is one wave; implementing Clerk Organizations SSO is another —
+  half-doing it across two waves is how the claim survived this long. C2.
+- **`dedicatedSupport` and `slaUptimeBps`** are now advertised accurately
+  but still unenforced — no Slack provisioning, no per-account availability
+  metering. H5 / M11.
+- **Trade-libel exposure in unpublished launch copy** — `VIRAL-CONTENT.md`
+  characterises a named competitor's pricing model. Unpublished, so L6.
 
 ---
 

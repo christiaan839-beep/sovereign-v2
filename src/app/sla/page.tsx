@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Clock, Shield, AlertTriangle, CreditCard, Ban, Mail } from "lucide-react";
 import { PrintButton } from "@/components/ui/PrintButton";
+import { slaUptimePercent, type PlanId } from "@/lib/plans";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -21,8 +22,21 @@ const RESPONSE_TIMES = [
   { severity: "Low", description: "Question / feature request", response: "< 48 hours", color: "text-blue-400" },
 ];
 
+/* Uptime commitments come from the plan registry (src/lib/plans.ts) so this
+   page can never publish a number the pricing model doesn't carry —
+   `slaUptimeBps: 0` means no contractual commitment. Labels are the /pricing
+   card names; only the percentages are read from the registry. */
+const SLA_TIERS: Array<{ plan: PlanId; label: string }> = [
+  { plan: "free", label: "Free" },
+  { plan: "starter", label: "Starter (legacy)" },
+  { plan: "array", label: "Pro" },
+  { plan: "node", label: "Team" },
+  { plan: "enterprise", label: "Enterprise" },
+  { plan: "sovereign", label: "Sovereign (contract)" },
+];
+
 const CREDITS = [
-  { uptime: "99.0% - 99.9%", credit: "10%", color: "text-yellow-400" },
+  { uptime: "Below commitment, at or above 99.0%", credit: "10%", color: "text-yellow-400" },
   { uptime: "95.0% - 99.0%", credit: "25%", color: "text-orange-400" },
   { uptime: "Below 95.0%", credit: "50%", color: "text-red-400" },
 ];
@@ -52,7 +66,7 @@ export default function SLAPage() {
           transition={{ delay: 0.15, duration: 0.5 }}
           className="text-sm text-neutral-500 mb-4"
         >
-          Last updated: March 31, 2026
+          Last updated: September 2, 2026
         </motion.p>
         <motion.div
           initial={{ opacity: 0 }}
@@ -70,12 +84,37 @@ export default function SLAPage() {
               <Shield className="w-5 h-5 text-emerald-400" />
               <h2 className="text-lg font-bold text-white">Uptime Commitment</h2>
             </div>
-            <p>
-              Sovereign Matrix commits to <strong className="text-emerald-400">99.9% monthly uptime</strong> for all
-              paid plans. Uptime is measured as the percentage of minutes in a calendar month during which the platform
-              is available, excluding scheduled maintenance windows. Free-tier accounts are provided on a best-effort
-              basis and are not covered by this SLA.
+            <p className="mb-4">
+              Uptime is committed per plan, at the level carried in the plan registry that also drives billing — the
+              table below is generated from it, so the commitment published here is the one your subscription actually
+              buys. Uptime is measured as the percentage of minutes in a calendar month during which the platform is
+              available, excluding scheduled maintenance windows. Plans shown as{" "}
+              <strong className="text-neutral-200">best effort</strong> carry no contractual uptime commitment and are
+              not eligible for service credits.
             </p>
+            <div className="overflow-x-auto rounded-lg border border-white/10">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-white/10 bg-white/[0.03]">
+                    <th className="px-4 py-3 text-xs font-semibold text-neutral-300 uppercase tracking-wider">Plan</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-neutral-300 uppercase tracking-wider">Monthly Uptime</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-neutral-300 uppercase tracking-wider">Service Credits</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SLA_TIERS.map((tier) => {
+                    const committed = slaUptimePercent(tier.plan);
+                    return (
+                      <tr key={tier.plan} className="border-b border-white/5 last:border-0">
+                        <td className="px-4 py-3 font-semibold text-neutral-300">{tier.label}</td>
+                        <td className="px-4 py-3 text-white font-mono">{committed ?? "Best effort"}</td>
+                        <td className="px-4 py-3 text-neutral-400">{committed ? "Eligible" : "Not covered"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </motion.section>
 
           {/* Response Times */}
@@ -131,8 +170,10 @@ export default function SLAPage() {
               <h2 className="text-lg font-bold text-white">Service Credits</h2>
             </div>
             <p className="mb-4">
-              If the platform fails to meet the 99.9% uptime commitment in any calendar month, affected customers on
-              paid plans are eligible for service credits applied to their next billing cycle.
+              If the platform fails to meet a plan&apos;s committed monthly uptime, accounts on that plan are eligible
+              for a service credit against their next invoice. The credit is sized by where the month&apos;s measured
+              uptime landed. Service credits are the sole remedy for missed uptime and are capped at the fee paid for
+              the affected month.
             </p>
             <div className="overflow-x-auto rounded-lg border border-white/10">
               <table className="w-full text-left">
@@ -176,14 +217,24 @@ export default function SLAPage() {
               <Mail className="w-5 h-5 text-cyan-400" />
               <h2 className="text-lg font-bold text-white">How to Claim</h2>
             </div>
+            <p className="mb-3">
+              Credits are <strong className="text-neutral-200">not automatic</strong>. We do not meter availability per
+              account: uptime is measured platform-wide from the synthetic probes published on our{" "}
+              <Link href="/status" className="text-cyan-400 hover:underline">
+                status page
+              </Link>{" "}
+              and from our infrastructure providers&apos; incident records. A missed month therefore only produces a
+              credit once a customer claims it.
+            </p>
             <p>
-              To request a service credit, email{" "}
+              To claim, email{" "}
               <a href="mailto:support@sovereignmatrix.agency" className="text-cyan-400 hover:underline">
                 support@sovereignmatrix.agency
               </a>{" "}
               within <strong className="text-neutral-200">30 days</strong> of the incident. Include your account ID,
-              the dates and times of the outage, and a description of the impact. Credits are issued at our sole
-              discretion after verification against our monitoring systems.
+              the dates and times of the outage, and a description of the impact. We reconcile the report against those
+              records and, where the month missed the commitment for your plan, apply the credit by hand to your next
+              invoice. Credits are not refunds and are not exchangeable for cash.
             </p>
           </motion.section>
         </div>
