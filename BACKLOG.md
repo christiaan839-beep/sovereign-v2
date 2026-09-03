@@ -147,6 +147,34 @@ captures. Typecheck + the new entitlement suite green.
   characterises a named competitor's pricing model. Unpublished, so L6.
 
 
+### Wave 122 addendum — invented GTM pack removed
+
+The `gtm/` directory added earlier in this wave proposed a "Commerce Agent
+Readiness Audit" at "$2,500 / R40,000, five working days". It was written
+without reading the storefront. Sovereign Matrix already sells, live and under
+South African consumer-law terms:
+
+- **AI Action Trace Review** — R2,500, written finding in 5 SA business days
+- **AI Readiness Audit** (Shopify storefront machine-readability) — R6,900,
+  an eight-dimension scorecard, "you send a URL, nothing else"
+- **AI Governance Evidence Sprint** — R24,900, implementation
+
+each crediting the smaller purchase in full against the larger within 60 days.
+
+The invented ladder duplicated and undercut the real one and was not even
+internally consistent with it (R40,000 vs the actual R2,500). Removed rather
+than salvaged: the live product pages are better written than a replacement
+would be.
+
+**Invariant:** no marketing or GTM artefact may be added to this repository
+that contradicts what is actually for sale on the storefront. Read the store
+before writing an offer.
+
+The eight-dimension audit is a strong candidate for automation — a scanner
+would make the R6,900 deliverable repeatable and enable a free preview as a
+first touch. That work belongs in the open-core repository (Sovereign-Matrix),
+not here, since the scanner is intended to be open source.
+
 ### Wave 122 review findings — carried forward
 
 Two specialist agents audited the wave's own diff. What was fixed in-wave is
