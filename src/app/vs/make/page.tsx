@@ -11,7 +11,7 @@ const COMPARISON = [
   { feature: "Lead generation + enrichment", sovereign: true, competitor: false, note: "Make can connect lead tools, but doesn&apos;t generate leads itself" },
   { feature: "Content creation", sovereign: true, competitor: false, note: "Sovereign agents write, optimize, and publish content end-to-end" },
   { feature: "Voice calling (AI)", sovereign: true, competitor: false, note: "Make doesn&apos;t make autonomous calls" },
-  { feature: "Multi-model routing (36+ models)", sovereign: true, competitor: false, note: "Make has no native AI model routing" },
+  { feature: "Multi-model routing (20 models)", sovereign: true, competitor: false, note: "Make has no native AI model routing" },
   { feature: "Consensus verification (4 models)", sovereign: true, competitor: false, note: "No multi-model quality checking" },
   { feature: "White-label for agencies", sovereign: true, competitor: false, note: "No white-label offering in Make" },
   { feature: "Self-hostable (local execution)", sovereign: true, competitor: "partial" as const, note: "Make has on-premise options for enterprise; Sovereign runs locally via Ollama" },
@@ -63,7 +63,7 @@ export default function VsMakePage() {
           <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] text-center">
             <p className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-2">Sovereign Node</p>
             <p className="text-3xl font-black text-emerald-400">$199<span className="text-sm text-emerald-500/50">/mo</span></p>
-            <p className="text-xs text-neutral-500 mt-1">130 agents + 36 models + everything below</p>
+            <p className="text-xs text-neutral-500 mt-1">140 agents + 20 models + everything below</p>
           </div>
         </div>
       </section>

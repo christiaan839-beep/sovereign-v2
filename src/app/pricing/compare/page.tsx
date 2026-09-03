@@ -265,7 +265,7 @@ export default function PricingComparePage() {
                 desc: "Not templates. Not prompts. Autonomous agents that plan multi-step workflows, self-correct, and deliver finished outputs.",
               },
               {
-                title: "39 models, 4-model consensus",
+                title: "20 models, 4-model consensus",
                 desc: "Every critical output is generated, critiqued, and revised by independent models before you see it. No other platform does this.",
               },
               {
@@ -318,7 +318,7 @@ export default function PricingComparePage() {
               },
               {
                 platform: "Clay",
-                edge: "Purpose-built for B2B data enrichment with waterfall lookups across 75+ providers.",
+                edge: "Purpose-built for B2B data enrichment with waterfall lookups across 8 providers.",
               },
               {
                 platform: "Sintra",

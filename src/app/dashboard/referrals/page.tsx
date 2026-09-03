@@ -60,7 +60,7 @@ export default function ReferralsPage() {
     }
   };
 
-  const shareTextRaw = "I'm using Sovereign Matrix -- 130+ AI agents that actually execute. Find leads, write content, make calls, all automated. Try it free:";
+  const shareTextRaw = "I'm using Sovereign Matrix -- 140 AI agents that actually execute. Find leads, write content, make calls, all automated. Try it free:";
 
   // Stats derived from referral data (honest zeros for now)
   const totalReferrals = referrals.length;

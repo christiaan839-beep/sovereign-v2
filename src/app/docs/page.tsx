@@ -72,7 +72,7 @@ const ENDPOINTS: EndpointDoc[] = [
   { method: "GET", path: "/api/agents/trigger", name: "Webhook Trigger — Docs", description: "Returns the trigger engine documentation including available playbooks, agents, and authentication details.", body: undefined, curl: "curl https://sovereignmatrix.agency/api/agents/trigger", response: '{"name":"Sovereign Matrix -- Webhook Trigger Engine","version":"1.0.0","endpoints":{...},"available_playbooks":[...],"available_agents":[...]}', category: "Automation" },
 
   // ── Founders Program ──
-  { method: "GET", path: "/api/founders", name: "Founders Program — Status", description: "Check the Founders Program status: total slots, claimed count, remaining slots, and whether the current authenticated user is a founder. Public endpoint.", body: undefined, curl: "curl https://sovereignmatrix.agency/api/founders", response: '{"program":"Sovereign Matrix Founders","totalSlots":10,"claimed":3,"remaining":7,"isFounder":false,"benefits":["10,000 agent runs/month","All 25 playbooks","All 35+ AI models","Priority support","Founding Member badge","Free forever while active"]}', category: "Platform" },
+  { method: "GET", path: "/api/founders", name: "Founders Program — Status", description: "Check the Founders Program status: total slots, claimed count, remaining slots, and whether the current authenticated user is a founder. Public endpoint.", body: undefined, curl: "curl https://sovereignmatrix.agency/api/founders", response: '{"program":"Sovereign Matrix Founders","totalSlots":10,"claimed":3,"remaining":7,"isFounder":false,"benefits":["10,000 agent runs/month","All 25 playbooks","All 20 AI models","Priority support","Founding Member badge","Free forever while active"]}', category: "Platform" },
   { method: "POST", path: "/api/founders", name: "Founders Program — Claim Slot", description: "Claim a founder slot (requires Clerk authentication). First 10 users get enterprise-level access for free: 10,000 runs/month, all playbooks, all models, priority support. Returns 410 Gone if all slots are claimed.", body: undefined, curl: 'curl -X POST https://sovereignmatrix.agency/api/founders -H "Cookie: __session=your_clerk_session"', response: '{"success":true,"message":"Welcome to the Founders Program! You\'re Founding Member #4.","plan":"founder","slotNumber":4,"remaining":6,"benefits":["10,000 agent runs/month","All playbooks unlocked","All AI models","Free forever while active"]}', category: "Platform" },
 
   // ── Health ──
@@ -86,7 +86,7 @@ const ENDPOINTS: EndpointDoc[] = [
   { method: "GET", path: "/api/mcp", name: "MCP Discovery", description: "Returns server info and available tools for MCP client discovery.", body: undefined, curl: "curl https://sovereignmatrix.agency/api/mcp", response: '{"name":"sovereign-matrix","version":"1.0.0","tools":[...]}', category: "Gateway" },
 
   // ── Agent Teams ──
-  { method: "POST", path: "/api/agents/war-room", name: "Agent Teams (War Room)", description: "Deploy a team of 4+ specialized agents that analyze in parallel, debate adversarially, and synthesize a unified battle plan. Teams: war-room, content-council, deal-room.", body: { objective: "string (required)", team: "war-room | content-council | deal-room", context: "string (optional)" }, curl: 'curl -X POST /api/agents/war-room -d \'{"objective":"Analyze competitor HubSpot","team":"war-room"}\'', response: '{"team":"War Room","synthesis":"...","perspectives":[...],"confidence":0.87,"duration":"12400ms"}', category: "Intelligence" },
+  { method: "POST", path: "/api/agents/war-room", name: "Agent Teams (War Room)", description: "Deploy a team of 140 specialized agents that analyze in parallel, debate adversarially, and synthesize a unified battle plan. Teams: war-room, content-council, deal-room.", body: { objective: "string (required)", team: "war-room | content-council | deal-room", context: "string (optional)" }, curl: 'curl -X POST /api/agents/war-room -d \'{"objective":"Analyze competitor HubSpot","team":"war-room"}\'', response: '{"team":"War Room","synthesis":"...","perspectives":[...],"confidence":0.87,"duration":"12400ms"}', category: "Intelligence" },
 
   // ── Dashboard Stats ──
   { method: "GET", path: "/api/agents/dashboard-stats", name: "Dashboard Stats", description: "Real-time platform metrics — agent executions, leads, content, bookings, and cross-agent signal activity.", body: undefined, curl: "curl /api/agents/dashboard-stats", response: '{"stats":{"agentExecutions":847,"leadsGenerated":234,"contentGenerated":567},"signals":{...}}', category: "Platform" },
@@ -149,7 +149,7 @@ export default function DocsPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-black uppercase tracking-[0.2em]">API Reference</h1>
-                <p className="text-neutral-400 text-xs uppercase tracking-widest">{ENDPOINTS.length} Endpoints · 129 Agents · 25 Playbooks · MCP + REST</p>
+                <p className="text-neutral-400 text-xs uppercase tracking-widest">{ENDPOINTS.length} Endpoints · 140 Agents · 25 Playbooks · MCP + REST</p>
               </div>
             </div>
             <Link href="/" className="text-xs text-neutral-500 hover:text-white transition-colors">← Back</Link>
@@ -394,7 +394,7 @@ export default function DocsPage() {
               <div>
                 <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-2">Benefits</p>
                 <ul className="space-y-1">
-                  {["10,000 agent runs/month (enterprise-level)", "All 25 playbooks + industry packs", "All 35+ AI models", "Priority support", "Founding Member badge", "Free forever while active"].map(b => (
+                  {["10,000 agent runs/month (enterprise-level)", "All 25 playbooks + industry packs", "All 20 AI models", "Priority support", "Founding Member badge", "Free forever while active"].map(b => (
                     <li key={b} className="text-[10px] text-neutral-400 flex items-start gap-2">
                       <Heart className="w-3 h-3 text-pink-400 mt-0.5 flex-shrink-0" />
                       {b}

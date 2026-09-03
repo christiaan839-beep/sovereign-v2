@@ -6,7 +6,7 @@ import Link from "next/link";
 
 const COMPARISON = [
   { feature: "Pre-built agents", sovereign: true, competitor: "partial", note: "Sovereign ships 130 ready-to-run agents; Relevance AI has ~10 templates — most are build-your-own" },
-  { feature: "Multi-model routing (39+ models)", sovereign: true, competitor: false, note: "Sovereign routes across 39+ models dynamically; Relevance AI uses fewer model options" },
+  { feature: "Multi-model routing (20 models)", sovereign: true, competitor: false, note: "Sovereign routes across 20 models dynamically; Relevance AI uses fewer model options" },
   { feature: "Consensus verification (4 models)", sovereign: true, competitor: false, note: "Every output checked by 4 independent models before delivery" },
   { feature: "SOC 2 Type II certified", sovereign: false, competitor: true, note: "Relevance AI is SOC 2 Type II certified; Sovereign is in progress" },
   { feature: "Content creation + SEO", sovereign: true, competitor: false, note: "End-to-end content pipeline with SEO intelligence; not a Relevance AI focus" },
@@ -63,7 +63,7 @@ export default function VsRelevanceAiPage() {
           <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] text-center">
             <p className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-2">Sovereign Node</p>
             <p className="text-3xl font-black text-emerald-400">$199<span className="text-sm text-emerald-500/50">/mo</span></p>
-            <p className="text-xs text-neutral-500 mt-1">130 agents + 36 models + transparent pricing</p>
+            <p className="text-xs text-neutral-500 mt-1">140 agents + 20 models + transparent pricing</p>
           </div>
         </div>
       </section>
@@ -134,7 +134,7 @@ export default function VsRelevanceAiPage() {
           <div className="grid md:grid-cols-2 gap-4">
             {[
               { title: "130 pre-built agents", desc: "Not build-your-own. 130 purpose-built agents for leads, content, SEO, voice, competitive intel, and more — ready to run immediately." },
-              { title: "Multi-model consensus", desc: "39+ models with consensus verification. Every output is checked by 4 independent models. Relevance AI doesn't offer multi-model routing." },
+              { title: "Multi-model consensus", desc: "20 models with consensus verification. Every output is checked by 4 independent models. Relevance AI doesn't offer multi-model routing." },
               { title: "Transparent pricing", desc: "Published $199/mo. No sales calls, no custom quotes, no surprises. You see exactly what you pay before you sign up." },
               { title: "Local execution + white-label", desc: "Run locally via Ollama for full data control. White-label the entire platform for your agency clients." },
             ].map((item) => (

@@ -58,7 +58,7 @@ export default function NimArsenalPage() {
             <Zap className="w-7 h-7 text-[#00ff66]" />
             <h1 className="text-2xl font-bold tracking-tight">Model Registry</h1>
           </div>
-          <p className="text-sm text-neutral-500">View all 39+ AI models available on the platform. See routing rules, failover chains, and model capabilities.</p>
+          <p className="text-sm text-neutral-500">View all 20 AI models available on the platform. See routing rules, failover chains, and model capabilities.</p>
         </motion.header>
 
         {/* Stats */}

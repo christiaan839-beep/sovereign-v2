@@ -601,7 +601,7 @@ export default function SovereignAIPage() {
         body: JSON.stringify({
           prompt: `You are Sovereign AI, the intelligent assistant for the Sovereign Matrix platform. You help users manage their AI agents, find leads, create content, analyze competitors, and optimize their business.
 
-The platform has 130+ AI agents, 39+ models, and costs $0 per token via NVIDIA NIM.
+The platform has 140 AI agents, 20 models, and costs $0 per token via NVIDIA NIM.
 
 User's request: ${userInput}
 

@@ -158,8 +158,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // /investors and /pitch are noindex via the page metadata; intentionally
     // excluded from sitemap so search engines don't surface them publicly.
     { path: "/savings", priority: 0.92, changeFreq: "monthly" }, // Audit-prep ROI calculator — high-intent compliance-buyer conversion
-    { path: "/vs/compare", priority: 0.9, changeFreq: "weekly" }, // 23-feature × 7-competitor matrix — comparison-shop SEO
-    { path: "/readiness", priority: 0.88, changeFreq: "weekly" }, // Programmatic vertical readiness scoreboard
+    { path: "/vs/compare", priority: 0.9, changeFreq: "weekly" }, // 23-feature × 7-competitor matrix — comparison-shop SEO // Programmatic vertical readiness scoreboard
     { path: "/grants", priority: 0.85, changeFreq: "monthly" }, // Non-dilutive funding directory
     { path: "/starter-packs", priority: 0.9, changeFreq: "weekly" }, // Self-serve SKUs ($99-$999) — direct revenue surface
     { path: "/demo/verify-receipt", priority: 0.95, changeFreq: "monthly" }, // Live cryptographic demo — top of every funnel

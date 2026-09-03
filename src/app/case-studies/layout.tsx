@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://sovereignmatrix.agency/case-studies" },
   openGraph: {
     title: "Case Studies — Sovereign Matrix",
-    description: "Real agency scaling results with 130+ autonomous AI agents.",
+    description: "Real agency scaling results with 140 autonomous AI agents.",
     url: "https://sovereignmatrix.agency/case-studies",
     type: "website",
   },

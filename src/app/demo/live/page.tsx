@@ -181,7 +181,7 @@ export default function LiveDemoPage() {
         {triesLeft <= 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
             <h2 className="text-xl font-bold text-white mb-3">Want unlimited access?</h2>
-            <p className="text-neutral-400 mb-6">Sign up free — no credit card required. Get 100 agent runs per month.</p>
+            <p className="text-neutral-400 mb-6">Sign up free — no credit card required. Get 140 agent runs per month.</p>
             <Link href="/onboarding" className="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:bg-neutral-200 transition-colors">
               Start Free <ArrowRight className="w-4 h-4" />
             </Link>
@@ -190,7 +190,7 @@ export default function LiveDemoPage() {
 
         {triesLeft > 0 && !result && (
           <p className="text-center text-xs text-neutral-500 mt-8">
-            Powered by 39+ AI models via NVIDIA NIM. Zero per-token cost.
+            Powered by 20 AI models via NVIDIA NIM. Zero per-token cost.
           </p>
         )}
       </div>

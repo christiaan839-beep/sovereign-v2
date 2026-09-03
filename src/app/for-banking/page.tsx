@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 const PRIMITIVES = [
   {
     icon: ShieldCheck,
-    title: "SR 11-7 + PRA SS1/23 model governance",
+    title: "SR 11-7 + PRA SS1/20 model governance",
     desc: "Every agent run produces a signed receipt the model risk team can replay. Drift detector compares each output against the baseline at validation; deviations trigger an MRMG review automatically.",
   },
   {

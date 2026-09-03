@@ -5,8 +5,8 @@ import { ArrowRight, Zap, Shield, Brain, Target, Mic, Code2, Globe, CheckCircle2
 import Link from "next/link";
 
 const LAUNCH_FEATURES = [
-  { icon: Brain, title: "130 AI Agents", desc: "Lead gen, content, SEO, voice, code, competitive intel — all pre-built and ready.", color: "emerald" },
-  { icon: Zap, title: "39+ Models", desc: "Nemotron, Gemini 3.1, DeepSeek, Llama 4 Maverick, Claude Mythos. Auto-routed per task.", color: "cyan" },
+  { icon: Brain, title: "140 AI Agents", desc: "Lead gen, content, SEO, voice, code, competitive intel — all pre-built and ready.", color: "emerald" },
+  { icon: Zap, title: "20 Models", desc: "Nemotron, Gemini 3.1, DeepSeek, Llama 4 Maverick, Claude Mythos. Auto-routed per task.", color: "cyan" },
   { icon: Shield, title: "5-Layer Safety", desc: "Jailbreak detection, PII scanning, content safety, quality scoring, critic review. Every request.", color: "violet" },
   { icon: Mic, title: "Voice Agents", desc: "AI that makes phone calls, qualifies leads, books meetings. Discloses AI on every call.", color: "amber" },
   { icon: Target, title: "$199/mo Flat", desc: "No credits. No per-token fees. No usage limits. One price for everything.", color: "emerald" },
@@ -44,7 +44,7 @@ export default function LaunchPage() {
           </h1>
 
           <p className="text-lg text-neutral-400 max-w-xl mx-auto leading-relaxed mb-4">
-            130 AI agents. 39 models. One flat price.
+            140 AI agents. 20 models. One flat price.
             They find leads, write content, scan competitors, make calls, and close deals.
             Autonomously.
           </p>
@@ -100,7 +100,7 @@ export default function LaunchPage() {
               { name: "HubSpot", them: "$890/mo", us: "$199/mo" },
               { name: "Clay", them: "$149/mo", us: "Included" },
               { name: "Zapier", them: "Task limits", us: "Unlimited" },
-              { name: "Sintra", them: "12 agents", us: "130 agents" },
+              { name: "Sintra", them: "12 agents", us: "140 agents" },
               { name: "CrewAI", them: "You build it", us: "Pre-built" },
             ].map((c) => (
               <div key={c.name} className="p-3 rounded-xl border border-white/[0.04] bg-white/[0.01]">
@@ -140,7 +140,7 @@ export default function LaunchPage() {
           <span className="text-emerald-400">You deploy agents.</span>
         </h2>
         <p className="text-neutral-400 max-w-md mx-auto mb-8">
-          130 agents. 39 models. $199/mo. Start in 60 seconds.
+          140 agents. 20 models. $199/mo. Start in 60 seconds.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-4 bg-emerald-500 text-black font-semibold rounded-full text-sm hover:bg-emerald-400 transition-all">

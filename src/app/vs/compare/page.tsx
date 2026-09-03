@@ -147,7 +147,7 @@ const ROWS: FeatureRow[] = [
   },
   {
     category: "Regulatory packs",
-    feature: "Fed SR 11-7 / PRA SS1/23 model risk",
+    feature: "Fed SR 11-7 / PRA SS1/20 model risk",
     detail: "Drift detector + bias audit + MRMG bundles",
     values: {
       sovereign: "yes",

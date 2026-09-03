@@ -94,7 +94,7 @@ export default function AnthropicPage() {
           .
         </h1>
         <p className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.6] max-w-2xl">
-          Sovereign Matrix is a multi-tenant AI workforce platform with 137
+          Sovereign Matrix is a multi-tenant AI workforce platform with 140
           specialised agents. Claude is the premium-quality lane in our unified
           8-provider router — and the model whose safety research shaped how we
           built the platform itself.

@@ -269,7 +269,7 @@ export default function FreeSeoAuditPage() {
         {/* Social proof footer */}
         <div className="mt-16 text-center">
           <p className="text-xs text-neutral-600">
-            Powered by 35+ AI models. Used by 130+ agents. Zero per-token cost.
+            Powered by 20 AI models. Used by 140 agents. Zero per-token cost.
           </p>
           <Link href="/pricing" className="text-xs text-emerald-500/60 hover:text-emerald-400 transition-colors mt-2 inline-block">
             See pricing →

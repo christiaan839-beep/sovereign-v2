@@ -327,7 +327,7 @@ const SECTIONS: Section[] = [
     title: "Models",
     icon: BarChart3,
     description:
-      "The platform routes requests through 35+ models across 6 providers (NVIDIA NIM, Google Gemini, Anthropic Claude, Groq, Ollama, Tavily). The smart router selects the optimal model per task, with an 11-model failover chain.",
+      "The platform routes requests through 20 models across 8 providers (NVIDIA NIM, Google Gemini, Anthropic Claude, Groq, Ollama, Tavily). The smart router selects the optimal model per task, with an 11-model failover chain.",
     endpoints: [
       {
         id: "model-list",
@@ -352,7 +352,7 @@ const SECTIONS: Section[] = [
   "usage": "POST /api/agents/{agent-name} with { prompt: '...' }"
 }`,
         notes:
-          "The smart router classifies tasks across 19 categories and picks from 22 models. Consensus verification uses 4 independent models: Nemotron Ultra, DeepSeek V3.2, Gemma 4, and Qwen 3.",
+          "The smart router classifies tasks across 19 categories and picks from 20 models. Consensus verification uses 4 independent models: Nemotron Ultra, DeepSeek V3.2, Gemma 4, and Qwen 3.",
       },
     ],
   },

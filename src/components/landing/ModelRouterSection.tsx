@@ -1,18 +1,47 @@
 "use client";
 
 import { motion } from "framer-motion";
-
-const PROVIDERS = [
-  { name: "NVIDIA NIM",       tag: "nim",       models: "22 models",  active: true  },
-  { name: "Anthropic Claude", tag: "anthropic",  models: "5 models",   active: true  },
-  { name: "Google Gemini",    tag: "google",     models: "4 models",   active: true  },
-  { name: "Groq",             tag: "groq",       models: "4 models",   active: true  },
-  { name: "Cerebras",         tag: "cerebras",   models: "2 models",   active: true  },
-  { name: "Ollama",           tag: "ollama",     models: "Local",      active: false },
-];
+import { MODELS } from "@/lib/model-registry";
+import { MODELS_LABEL } from "@/lib/published-counts";
 
 /**
- * ModelRouterSection — 39+ model routing infrastructure with sovereignty badge.
+ * Display names for the registry's provider ids. Anything not listed here is
+ * shown under its own id rather than hidden — a provider the site does not
+ * name is still a provider the router uses.
+ */
+const PROVIDER_LABELS: Record<string, string> = {
+  "nvidia-nim": "NVIDIA NIM",
+  anthropic: "Anthropic Claude",
+  google: "Google Gemini",
+  groq: "Groq",
+  cerebras: "Cerebras",
+  ollama: "Ollama",
+  deepseek: "DeepSeek",
+  together: "Together AI",
+};
+
+/**
+ * Derived from the registry, because the hand-written version was wrong in
+ * every row: it claimed NVIDIA NIM served twenty-two models where the registry
+ * holds one, omitted DeepSeek and Together entirely, and marked Ollama inactive
+ * while Ollama carries more models than any other provider.
+ */
+const PROVIDERS = Object.entries(
+  Object.values(MODELS).reduce<Record<string, number>>((acc, m) => {
+    acc[m.provider] = (acc[m.provider] ?? 0) + 1;
+    return acc;
+  }, {}),
+)
+  .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  .map(([tag, count]) => ({
+    name: PROVIDER_LABELS[tag] ?? tag,
+    tag,
+    models: `${count} model${count === 1 ? "" : "s"}`,
+    active: true,
+  }));
+
+/**
+ * ModelRouterSection — model routing infrastructure with sovereignty badge.
  */
 export function ModelRouterSection() {
   return (
@@ -40,8 +69,8 @@ export function ModelRouterSection() {
         </h2>
 
         <p className="text-[15px] md:text-[17px] text-neutral-400 leading-relaxed mb-12 max-w-2xl">
-          Smart routing across 39+ models. NVIDIA NIM, Anthropic, Google, Groq, Cerebras, Ollama.
-          11-model failover chain. Sub-100ms routing decisions.
+          Smart routing across {MODELS_LABEL} from{" "}
+          {PROVIDERS.map((p) => p.name).join(", ")}.
         </p>
 
         {/* Provider grid */}

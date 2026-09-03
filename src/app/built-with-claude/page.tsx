@@ -16,7 +16,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Built with Claude — Sovereign Matrix",
   description:
-    "How a solo founder built 137 AI agents, the VAOS verifiable-receipts standard, a multi-model consensus engine, and a live production platform using Claude as the reasoning core.",
+    "How a solo founder built 140 AI agents, the VAOS verifiable-receipts standard, a multi-model consensus engine, and a live production platform using Claude as the reasoning core.",
   openGraph: {
     title: "Built with Claude — Sovereign Matrix",
     description: "140 agents, one founder, Claude as the reasoning core.",
@@ -77,7 +77,7 @@ const HOW_BUILT = [
   {
     count: "04",
     title: "Shipped solo — at scale",
-    body: "131 agents, 39 model integrations, a playbook engine, a multi-tenant safety pipeline, a live metering layer. One person, one AI partner.",
+    body: "140 agents, 20 model integrations, a playbook engine, a multi-tenant safety pipeline, a live metering layer. One person, one AI partner.",
   },
 ];
 
