@@ -76,7 +76,6 @@ export default function HipaaDashboard() {
       framework="hipaa"
       frameworkLabel="HIPAA Security Rule"
       description="Generate the 45 CFR § 164.308-318 evidence binder from your tenant's signed receipts. Administrative + physical + technical safeguards per spec. REQUIRED specifications without evidence surface as open findings the OCR auditor will read first."
-      previewUrl="/compliance/hipaa"
       npmPackage="@sovereign-matrix/hipaa-security"
       fields={FIELDS}
       dataMode="sample"

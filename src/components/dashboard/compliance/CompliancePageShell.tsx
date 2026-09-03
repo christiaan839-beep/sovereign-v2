@@ -51,7 +51,6 @@ export interface ComplianceShellProps {
   /** One-paragraph description rendered under the title. */
   description: string;
   /** Public-preview URL for this framework. */
-  previewUrl: string;
   /** npm package name backing this exporter. */
   npmPackage: string;
   /** Operator-supplied scope fields. */
@@ -129,12 +128,6 @@ export function CompliancePageShell(props: ComplianceShellProps) {
           <h1 className="font-serif text-3xl md:text-4xl tracking-tight">
             {props.frameworkLabel}
           </h1>
-          <Link
-            href={props.previewUrl}
-            className="text-[12px] font-mono text-neutral-500 hover:text-neutral-300 transition-colors"
-          >
-            ← Public preview
-          </Link>
         </div>
         <p className="text-[14px] text-neutral-400 max-w-3xl leading-relaxed">
           {props.description}
@@ -298,13 +291,6 @@ export function CompliancePageShell(props: ComplianceShellProps) {
               </>
             )}
           </button>
-          <Link
-            href={props.previewUrl}
-            className="inline-flex items-center gap-2 px-5 py-2.5 border border-white/[0.12] text-neutral-300 font-mono text-[13px] rounded-[3px] hover:text-white hover:border-white/25 transition-colors"
-          >
-            <FileText className="w-3.5 h-3.5" />
-            See public sample
-          </Link>
         </div>
       </section>
 

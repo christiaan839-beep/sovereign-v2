@@ -59,7 +59,6 @@ export default function Soc2Dashboard() {
       framework="soc2"
       frameworkLabel="SOC 2 Evidence Binder"
       description="Generate the AICPA TSC 2017 evidence binder for your Type II audit from signed receipts. CC1-CC9 (security) + A1 (availability) + C1 (confidentiality) by default. Per-criterion days-of-coverage metric flags sparse evidence before the audit kickoff."
-      previewUrl="/compliance/soc2"
       npmPackage="@sovereign-matrix/soc2-evidence"
       fields={FIELDS}
       dataMode="sample"

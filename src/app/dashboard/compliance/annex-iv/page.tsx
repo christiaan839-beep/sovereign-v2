@@ -92,7 +92,6 @@ export default function AnnexIvDashboard() {
       framework="annex-iv"
       frameworkLabel="EU AI Act Annex IV"
       description="Generate Article 11 + Annex IV technical documentation from your tenant's signed receipts. §3 (monitoring), §4 (performance), §6 (lifecycle changes), §9 (post-market monitoring) are derived directly from receipts; §1/§2/§5/§7/§8 emit as structured operator-authored stubs with regulation-clause schema hints."
-      previewUrl="/compliance/annex-iv"
       npmPackage="@sovereign-matrix/annex-iv"
       fields={FIELDS}
       dataMode="sample"

@@ -356,12 +356,6 @@ console.log("Report shipped. Byte-deterministic — your auditor can re-derive t
               <span aria-hidden="true">→</span>
             </Link>
             <Link
-              href="/compliance"
-              className="inline-flex items-center gap-2 px-5 py-3 border border-white/[0.12] text-neutral-300 font-mono text-[13px] rounded-[3px] hover:text-white hover:border-white/25 transition-colors"
-            >
-              See all 6 exporters
-            </Link>
-            <Link
               href="/pricing"
               className="inline-flex items-center gap-2 px-5 py-3 text-neutral-500 hover:text-white font-mono text-[13px] transition-colors"
             >

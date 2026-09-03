@@ -138,21 +138,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/spec", priority: 0.95, changeFreq: "monthly" }, // VAOS 1.0 open standard — top SEO target for "verifiable AI receipts" / "AI agent audit standard"
 
     // Compliance exporters — each page previews a shipped Apache-2.0
-    // exporter package, the strongest framework-search SEO surface we have.
-    { path: "/compliance", priority: 0.92, changeFreq: "monthly" }, // exporter index
-    { path: "/compliance/annex-iv", priority: 0.9, changeFreq: "monthly" }, // EU AI Act Annex IV
-    { path: "/compliance/iso-42001", priority: 0.9, changeFreq: "monthly" }, // ISO/IEC 42001:2023
-    { path: "/compliance/nist-ai-rmf", priority: 0.9, changeFreq: "monthly" }, // NIST AI RMF 1.0
-    { path: "/compliance/soc2", priority: 0.9, changeFreq: "monthly" }, // SOC 2 evidence binder
-    { path: "/compliance/hipaa", priority: 0.9, changeFreq: "monthly" }, // HIPAA Security Rule
-    { path: "/compliance/gdpr-dpia", priority: 0.9, changeFreq: "monthly" }, // GDPR DPIA + RoPA
-    { path: "/compliance/iso-23894", priority: 0.9, changeFreq: "monthly" }, // ISO/IEC 23894 AI risk
-    { path: "/compliance/eu-cra", priority: 0.9, changeFreq: "monthly" }, // EU Cyber Resilience Act
-    {
-      path: "/compliance/ai-constitution",
-      priority: 0.9,
-      changeFreq: "monthly",
-    }, // Constitutional AI anchoring
+    // exporter package, the strongest framework-search SEO surface we have. // exporter index // EU AI Act Annex IV // ISO/IEC 42001:2023 // NIST AI RMF 1.0 // SOC 2 evidence binder // HIPAA Security Rule // GDPR DPIA + RoPA // ISO/IEC 23894 AI risk // EU Cyber Resilience Act // Constitutional AI anchoring
 
     // Investor + fundraise surfaces (Cook 144 + 147 + 157)
     // /investors and /pitch are noindex via the page metadata; intentionally
