@@ -1,0 +1,3 @@
+## 2024-05-24 - ScreenNode Icon Buttons Accessibility
+**Learning:** Icon-only buttons (copy, expand, delete) in node-based editors (like `ScreenNode`) often lack `aria-label`s because they are compact and icon-driven, reducing accessibility for screen reader users. Also, buttons that appear only on hover (opacity-0 to opacity-100) are invisible to keyboard-only users unless focus states (`focus-within`) are managed.
+**Action:** Add explicit `aria-label`s to all icon-only buttons. Ensure containers with hover-based visibility use `focus-within:opacity-100` so keyboard users can access the buttons, and add `focus-visible` styles to the buttons themselves for clear focus indication.
