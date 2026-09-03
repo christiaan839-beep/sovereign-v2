@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { getPlaybook } from "@/lib/playbooks";
 import { createLogger } from "@/lib/logger";
 import { getBaseUrl } from "@/lib/base-url";
@@ -62,19 +63,19 @@ function generateId(): string {
 function authenticateApiKey(apiKey: unknown): boolean {
   const expected = process.env.WEBHOOK_API_KEY;
   if (!expected) {
-    log.warn("WEBHOOK_API_KEY env var is not set — all webhook requests will be rejected");
+    log.warn(
+      "WEBHOOK_API_KEY env var is not set — all webhook requests will be rejected",
+    );
     return false;
   }
   if (typeof apiKey !== "string" || apiKey.length === 0) {
     return false;
   }
   // Constant-time comparison to prevent timing attacks
-  if (apiKey.length !== expected.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < apiKey.length; i++) {
-    mismatch |= apiKey.charCodeAt(i) ^ expected.charCodeAt(i);
-  }
-  return mismatch === 0;
+  const bufA = Buffer.from(apiKey, "utf-8");
+  const bufB = Buffer.from(expected, "utf-8");
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
 }
 
 // ─── POST Handler ───────────────────────────────────────────────────────────
@@ -82,7 +83,10 @@ function authenticateApiKey(apiKey: unknown): boolean {
 export async function POST(req: Request) {
   const startTime = Date.now();
   const trigId = generateId();
-  const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+  const ip =
+    req.headers.get("x-forwarded-for") ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
 
   let body: Record<string, unknown>;
   try {
@@ -90,7 +94,7 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json(
       { error: "Invalid JSON body", trigger_id: trigId },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -106,8 +110,11 @@ export async function POST(req: Request) {
       ip,
     });
     return NextResponse.json(
-      { error: "Unauthorized — invalid or missing api_key", trigger_id: trigId },
-      { status: 401 }
+      {
+        error: "Unauthorized — invalid or missing api_key",
+        trigger_id: trigId,
+      },
+      { status: 401 },
     );
   }
 
@@ -128,10 +135,11 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(
       {
-        error: "Request must include either 'playbook_id' (playbook mode) or 'agent' (direct agent mode)",
+        error:
+          "Request must include either 'playbook_id' (playbook mode) or 'agent' (direct agent mode)",
         trigger_id: trigId,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
@@ -142,7 +150,7 @@ async function handlePlaybookTrigger(
   body: Record<string, unknown>,
   trigId: string,
   startTime: number,
-  ip: string
+  ip: string,
 ): Promise<NextResponse> {
   const playbookId = body.playbook_id as string;
   const triggerType = (body.trigger_type as string) || "webhook";
@@ -165,7 +173,7 @@ async function handlePlaybookTrigger(
     });
     return NextResponse.json(
       { error: `Playbook "${playbookId}" not found`, trigger_id: trigId },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
@@ -192,14 +200,16 @@ async function handlePlaybookTrigger(
       {
         error: "Missing required playbook fields",
         missing_fields: missingFields,
-        required_fields: playbook.fields.filter((f) => f.required).map((f) => ({
-          key: f.key,
-          label: f.label,
-          type: f.type,
-        })),
+        required_fields: playbook.fields
+          .filter((f) => f.required)
+          .map((f) => ({
+            key: f.key,
+            label: f.label,
+            type: f.type,
+          })),
         trigger_id: trigId,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -230,7 +240,8 @@ async function handlePlaybookTrigger(
         playbook_id: playbookId,
         status: "failed",
         duration_ms,
-        error: data.error || `Coordinator returned HTTP ${coordinatorRes.status}`,
+        error:
+          data.error || `Coordinator returned HTTP ${coordinatorRes.status}`,
         ip,
       });
       return NextResponse.json(
@@ -241,7 +252,7 @@ async function handlePlaybookTrigger(
           playbook_id: playbookId,
           duration_ms,
         },
-        { status: coordinatorRes.status }
+        { status: coordinatorRes.status },
       );
     }
 
@@ -282,7 +293,11 @@ async function handlePlaybookTrigger(
       ip,
     });
 
-    log.error("Playbook trigger failed", { trigger_id: trigId, playbook_id: playbookId, error: errMsg });
+    log.error("Playbook trigger failed", {
+      trigger_id: trigId,
+      playbook_id: playbookId,
+      error: errMsg,
+    });
 
     return NextResponse.json(
       {
@@ -293,7 +308,7 @@ async function handlePlaybookTrigger(
         playbook_id: playbookId,
         duration_ms,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -304,7 +319,7 @@ async function handleAgentTrigger(
   body: Record<string, unknown>,
   trigId: string,
   startTime: number,
-  ip: string
+  ip: string,
 ): Promise<NextResponse> {
   const agent = body.agent as string;
   const prompt = body.prompt as string;
@@ -321,7 +336,7 @@ async function handleAgentTrigger(
     });
     return NextResponse.json(
       { error: "Missing 'agent' field", trigger_id: trigId },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -338,7 +353,7 @@ async function handleAgentTrigger(
     });
     return NextResponse.json(
       { error: "Missing 'prompt' field for agent mode", trigger_id: trigId },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -381,7 +396,7 @@ async function handleAgentTrigger(
           agent,
           duration_ms,
         },
-        { status: agentRes.status }
+        { status: agentRes.status },
       );
     }
 
@@ -417,7 +432,11 @@ async function handleAgentTrigger(
       ip,
     });
 
-    log.error("Agent trigger failed", { trigger_id: trigId, agent, error: errMsg });
+    log.error("Agent trigger failed", {
+      trigger_id: trigId,
+      agent,
+      error: errMsg,
+    });
 
     return NextResponse.json(
       {
@@ -427,7 +446,7 @@ async function handleAgentTrigger(
         agent,
         duration_ms,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -467,7 +486,8 @@ export async function GET() {
               inputs: {
                 type: "object",
                 required: true,
-                description: "Key-value pairs matching the playbook's required fields",
+                description:
+                  "Key-value pairs matching the playbook's required fields",
               },
               api_key: {
                 type: "string",
@@ -477,13 +497,18 @@ export async function GET() {
               auto_execute: {
                 type: "boolean",
                 default: true,
-                description: "Set to false to get a plan preview without executing",
+                description:
+                  "Set to false to get a plan preview without executing",
               },
             },
             example: {
               trigger_type: "webhook",
               playbook_id: "lead-blitz",
-              inputs: { niche: "fintech", location: "London", product: "AI CRM" },
+              inputs: {
+                niche: "fintech",
+                location: "London",
+                product: "AI CRM",
+              },
               api_key: "your-api-key",
               auto_execute: true,
             },
@@ -535,14 +560,33 @@ export async function GET() {
       "onboard-client",
     ],
     available_agents: [
-      "leads", "blog-gen", "seo-dominator", "site-assassin", "competitor-scan",
-      "email-sequence", "smart-router", "vision", "translate", "embed",
-      "omni-search", "deep-think", "proposal-generator", "case-study",
-      "brand-voice", "brand-audit", "ad-report", "funnel-xray",
-      "organic-content", "content", "doc-intel", "contract-analyzer", "client-report",
+      "leads",
+      "blog-gen",
+      "seo-dominator",
+      "site-assassin",
+      "competitor-scan",
+      "email-sequence",
+      "smart-router",
+      "vision",
+      "translate",
+      "embed",
+      "omni-search",
+      "deep-think",
+      "proposal-generator",
+      "case-study",
+      "brand-voice",
+      "brand-audit",
+      "ad-report",
+      "funnel-xray",
+      "organic-content",
+      "content",
+      "doc-intel",
+      "contract-analyzer",
+      "client-report",
     ],
     audit: {
-      description: "Every trigger execution is logged with ID, timestamp, mode, status, duration, and source IP.",
+      description:
+        "Every trigger execution is logged with ID, timestamp, mode, status, duration, and source IP.",
       retention: `Last ${MAX_AUDIT_ENTRIES} entries kept in memory`,
     },
     integrations: {
