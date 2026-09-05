@@ -5,9 +5,60 @@
 > updates this. If something is shipped, move it to the bottom log; if
 > something new is discovered, add it under the right severity band.
 
-Last refreshed: **2026-09-02** after wave 122 (entitlement enforcement + funnel repair + claim truthfulness).
+Last refreshed: **2026-09-03** after wave 123 (compliance-binder truthfulness).
 
 ---
+
+## Wave 123 — the compliance binder was made of nothing (2026-09-03)
+
+`/api/_admin/compliance/[framework]/generate` renders a binder a signed-in user
+downloads. Three defects stacked, each hiding the next.
+
+**1. Synthetic receipts, unmarked.** The route always calls
+`buildSampleReceipts()` — reading the tenant's receipts is not wired up — and
+nothing in the response said so. The output was a document that reads as
+finished evidence.
+
+**2. The corpus' pack ids were invented.** `nist-ai-rmf-govern`,
+`iso42001-aims`, `euaiact-art-9`, `soc2-cc6-iam`, `hipaa-iam`, `fairness-eval`
+and three more. None exists in the 42-pack Guardian registry.
+
+**3. The exporters' evidence-prefix tables were invented to match.** 129 of the
+138 declared `evidencePackPrefixes` across the five framework exporters —
+`encryption`, `rbac`, `siem`, `waf`, `physical-security`, `vendor-management`,
+`ethics`, `code-of-conduct` — matched no pack `packs.ts` can produce. Every
+real mapping was unreachable, which is *why* the catch-all prefixes existed:
+only a blanket `soc2` / `hipaa` / `cra` made a binder look populated. Under
+them one receipt evidenced 33 of 33 SOC 2 criteria and 52 of 52 HIPAA
+implementation specifications, Board Oversight and Physical Access included.
+
+**Fixed.** The response carries `sampleData`; the Markdown opens with a
+blockquoted `SAMPLE DOCUMENT — NOT EVIDENCE` banner, prepended before the
+download path so it survives the save. The corpus uses real pack ids. The
+fabricated prefixes are gone. Real coverage is what it always was: SOC 2 2/33,
+HIPAA 1/52, EU CRA 3/29 — receipts are guardrail verdicts on the wording of
+model output, and do not observe firewalls, access reviews, facility access or
+vendor contracts. The docstrings and READMEs say that instead of claiming the
+binder replaces a $5-50K/yr vendor deliverable.
+
+**Also ported:** `redactKeyMaterial`, which this repo's exporter copies never
+had. A PEM in a receipt's `pack`, `agentSlug` or `verdictId` reached both the
+Markdown and the JSON of a published document. These copies are the ones that
+serve users, so the gap was live here while fixed upstream — a concrete cost of
+L7's duplication.
+
+**Gates, both mutation-verified:**
+
+- `packages/__tests__/exporter-prefixes.test.ts` — no exporter may declare a
+  prefix matching no pack id. Adding back `"siem", "waf"` fails it by name.
+- the generate route's suite — every corpus pack must exist, and all nine
+  frameworks must stamp the document. Reintroducing `nist-ai-rmf-govern` fails
+  the first; dropping the banner fails nine tests.
+
+**Method note.** The prefix tables and the sample corpus were written against
+each other, not against the registry. Neither half was checkable without the
+other, and no test compared either to `packs.ts`. The gates close that: both
+now compare against `ALL_PACKS`, which is the thing that actually exists.
 
 ## Wave 122 — entitlement enforcement + funnel repair + claim truthfulness (2026-09-02)
 
