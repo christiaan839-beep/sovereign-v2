@@ -15,9 +15,9 @@ obligations applying earlier (**11 September 2026**).
 
 Every product with digital elements placed on the EU market —
 including AI/ML software — must meet the Annex I essential
-cybersecurity requirements. Closed-source vendors will bundle CRA
-compliance into existing SBOM / vulnerability-management platforms
-at $30K-150K+/yr. This is the Apache 2.0 OSS implementation.
+cybersecurity requirements. This package projects VAOS receipts onto
+those requirements, and names a gap where the receipts do not support
+one rather than filling it in.
 
 ## Install
 

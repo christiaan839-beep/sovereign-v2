@@ -10,9 +10,8 @@ regulator-ready report (Markdown + JSON).
 
 Article 11 of the EU AI Act (Reg. 2024/1689) requires every provider
 of a high-risk AI system to maintain technical documentation in the
-format specified by Annex IV. **No public OSS tool ships this**
-— Credo AI / Holistic AI / IBM watsonx.governance all charge
-$50K-200K+/year for closed-source equivalents.
+format specified by Annex IV. Assembling that documentation by hand,
+per system and per revision, is the work this package removes.
 
 This package consumes VAOS receipts and assembles the §3 / §4 / §6 /
 §9 sections (the ones the receipt layer can mechanically populate);

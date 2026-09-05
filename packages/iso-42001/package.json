@@ -1,7 +1,7 @@
 {
   "name": "@sovereign-matrix/iso-42001",
   "version": "0.1.0",
-  "description": "ISO/IEC 42001:2023 AI management system (AIMS) control-matrix exporter. Takes a set of VAOS receipts and emits the auditor-ready Clause 4-10 + Annex A control report (Markdown + JSON). Apache-2.0; closed-source GRC vendors charge $50-200K+/yr.",
+  "description": "ISO/IEC 42001:2023 AI management system (AIMS) report generator. Renders a set of VAOS receipts into the Annex A reference-control table alongside operator-authored Clause 4-10 sections (Markdown + JSON). Apache-2.0.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -10,12 +10,20 @@ package mapped to AICPA TSC 2017 (CC1-CC9 + A1 + PI1 + C1 + P-series).
 
 A SOC 2 Type II audit verifies that controls operated effectively
 over a 6-12 month period. The auditor needs evidence of each
-control's operation throughout the audit window — and receipts are
-perfect evidence artifacts: cryptographically signed, timestamped,
-tamper-evident, auditor-reproducible.
+control's operation throughout the audit window.
 
-Vanta and Drata charge $5-50K/year for the equivalent. This is
-Apache 2.0.
+### What these receipts can evidence
+
+A receipt is a Guardian verdict on the wording of one model output. It is
+signed, timestamped and re-verifiable, so it is good evidence of what it
+records — and that is narrow. It does not observe a firewall rule, an access
+review, a background check, a data-centre door or a vendor contract, so it
+cannot evidence the criteria that are about those, which is most of the TSC.
+Two of the 33 security criteria map to a pack this system can produce; the
+rest render as gaps, for you to evidence from your own controls.
+
+Use this binder for the part it covers and for the structure. It is not a
+SOC 2 readiness assessment.
 
 ## Install
 

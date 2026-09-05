@@ -14,8 +14,18 @@ business associates. Every healthcare AI deployment that touches
 ePHI needs evidence of compliance with the implementation
 specifications in 45 CFR § 164.308 / .310 / .312 / .314 / .316.
 
-Closed-source vendors (HITRUST, Compliancy Group, Drata Healthcare)
-charge $20-100K/year for the equivalent. This is Apache 2.0 OSS.
+### What these receipts can evidence
+
+A receipt is a Guardian verdict on the wording of one model output. The
+Security Rule is mostly about other things: workforce clearance, facility
+access, workstation use, device disposal, business-associate contracts. One
+of the 52 implementation specifications — Risk Analysis, § 164.308(a)(1)(ii)(A)
+— maps to a pack this system can produce. The other 51 render as gaps, for
+you to evidence from your own controls.
+
+That is the honest reading, and it is the one an auditor reaches anyway. Use
+this binder for the part it covers and for the structure; it is not a
+substitute for a Security Rule assessment.
 
 ## Install
 

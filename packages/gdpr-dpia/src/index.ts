@@ -17,9 +17,10 @@
  * activity, its purpose, the categories of data, the recipients,
  * and the safeguards in place.
  *
- * Closed-source GRC vendors (OneTrust, TrustArc, BigID) charge
- * $10-100K/year for the equivalent of this exporter. This is the
- * Apache-2.0 OSS reference implementation.
+ * The operator supplies the processing activities and their evidence
+ * prefixes; this package renders them against the receipt set. A receipt
+ * is a Guardian verdict on the wording of one model output, so it
+ * evidences an activity's safeguards only as far as that goes.
  *
  * Output formats:
  *   - Markdown (DPO + supervisory authority readable)
@@ -31,6 +32,9 @@
  */
 
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+// Every receipt-derived string this module publishes goes through this.
+// SECURITY.md item 4: key material must not reach an exporter's output.
+import { redactKeyMaterial } from "@sovereign-matrix/verifiable-receipts";
 
 /**
  * Controller / processor identity per Article 30(1)(a) GDPR.
@@ -220,7 +224,7 @@ export function buildDpia(opts: BuildDpiaOptions): DpiaReport {
     // Count receipt evidence across all mitigations' pack prefixes.
     let evidenceCount = 0;
     for (const r of receipts) {
-      const pack = typeof r.pack === "string" ? r.pack.toLowerCase() : "";
+      const pack = typeof r.pack === "string" ? redactKeyMaterial(r.pack).toLowerCase() : "";
       if (!pack) continue;
       for (const m of userRisk.mitigations) {
         if (

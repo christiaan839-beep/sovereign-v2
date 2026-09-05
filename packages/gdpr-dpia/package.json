@@ -1,7 +1,7 @@
 {
   "name": "@sovereign-matrix/gdpr-dpia",
   "version": "0.1.0",
-  "description": "GDPR Article 35 Data Protection Impact Assessment (DPIA) + Article 30 Records of Processing Activities (RoPA) exporter. Takes a set of VAOS receipts and emits the regulator-ready report. Apache-2.0; OneTrust / TrustArc charge $10-100K/yr for the same.",
+  "description": "GDPR Article 35 Data Protection Impact Assessment (DPIA) + Article 30 Records of Processing Activities (RoPA) generator. Renders operator-supplied processing activities against a set of VAOS receipts (Markdown + JSON). Apache-2.0.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

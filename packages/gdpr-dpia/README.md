@@ -15,8 +15,10 @@ freedoms of natural persons". The EDPB has classified large-scale
 AI processing as falling under Article 35(3)(c). Article 30 RoPA
 is mandatory for almost every controller and processor.
 
-Closed-source vendors (OneTrust, TrustArc, BigID) charge $10-100K/year
-for the equivalent. This is the Apache-2.0 OSS implementation.
+You supply the processing activities and the evidence-pack prefixes for
+each mitigation; this package renders them against your receipt set. A
+receipt is a Guardian verdict on the wording of one model output, so it
+evidences a mitigation only as far as that goes — see `packs.ts`.
 
 ## Install
 

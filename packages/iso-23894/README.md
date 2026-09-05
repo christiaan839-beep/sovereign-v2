@@ -13,8 +13,8 @@ ISO/IEC 23894 is the AI-specific adaptation of ISO 31000 (the
 general risk management standard). It provides the _how_ that ISO/IEC
 42001 references in its "you must do AI risk management" clause.
 
-Closed-source GRC vendors bundle ISO 23894 mapping inside their AIMS
-modules at $30K-100K+/yr. This is the Apache 2.0 OSS implementation.
+This package maps VAOS receipts onto that guidance, and names a gap
+where the receipts do not support a clause rather than filling it in.
 
 ## Install
 

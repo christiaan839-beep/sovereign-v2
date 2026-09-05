@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { buildEuCra, toMarkdown, toJSON, type CraScope } from "../src/index.js";
-import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+import {
+  ALL_PACKS,
+  type ReceiptRecord,
+} from "@sovereign-matrix/verifiable-receipts";
+
+/** Every pack id a receipt can actually carry. */
+const ALL_REGISTRY_PACKS = ALL_PACKS.map((p) => p.id);
 
 const SCOPE: CraScope = {
   manufacturer: "Acme AI Inc.",
@@ -20,7 +26,9 @@ function rec(
     overall: "pass",
     issuedAt: "2026-06-15T12:00:00Z",
     agentSlug: "mint",
-    pack: "cra-secure-design",
+    // A pack id from packs.ts. "cra-secure-design" named nothing in the
+    // registry; it counted only under the catch-all prefix "cra".
+    pack: "owasp-agentic-top10-2026",
     ...overrides,
   } as ReceiptRecord;
 }
@@ -57,24 +65,32 @@ describe("buildEuCra — evidence counting", () => {
     const r = buildEuCra({
       scope: SCOPE,
       receipts: [
-        rec({ pack: "cra-secure-design" }),
-        rec({ pack: "cra-encryption-aes" }),
-        rec({ pack: "tls-1.3" }),
-        rec({ pack: "totally-unrelated" }),
+        rec({ pack: "owasp-agentic-top10-2026" }),
+        rec({ pack: "owasp-agentic-top10-2026" }),
+        rec({ pack: "hipaa-2026" }),
+        rec({ pack: "dscsa-2024" }),
       ],
     });
+    // AI.I.1 (secure by design) declares the "owasp" prefix — 2 of the 4.
     const designReq = r.requirements.find((rq) => rq.id === "AI.I.1");
-    // AI.I.1 prefixes: cra + soc2-cc6 + owasp + secure-design → at least 1 matches
-    expect(designReq?.evidenceCount).toBeGreaterThan(0);
+    expect(designReq?.evidenceCount).toBe(2);
   });
 
-  it("vaos prefix maps to integrity controls", () => {
+  it("Annex I is almost entirely out of reach of this evidence", () => {
     const r = buildEuCra({
       scope: SCOPE,
-      receipts: [rec({ pack: "vaos-receipt-signature" })],
+      // Every pack in the registry — the exporter's ceiling.
+      receipts: ALL_REGISTRY_PACKS.map((pack) => rec({ pack })),
     });
-    const integrityReq = r.requirements.find((rq) => rq.id === "AI.I.3.e");
-    expect(integrityReq?.evidenceCount).toBe(1);
+    const evidenced = r.requirements.filter((rq) => rq.evidenceCount > 0);
+    // Three requirements out of 29, all three reached through one pack.
+    // Annex I is about the security properties of a shipped product — SBOM,
+    // signed updates, vulnerability handling, attack-surface reduction. A
+    // guardrail verdict on a model's wording evidences none of that, and the
+    // report has to say so rather than counting every receipt through the
+    // catch-all prefix "cra", under which one receipt covered all 29.
+    expect(evidenced.length).toBe(3);
+    expect(r.requirements.length).toBeGreaterThan(20);
   });
 });
 
@@ -145,7 +161,7 @@ describe("toMarkdown / toJSON", () => {
   it("toMarkdown emits required sections", () => {
     const r = buildEuCra({
       scope: SCOPE,
-      receipts: [rec({ pack: "cra-encryption" })],
+      receipts: [rec({})],
     });
     const md = toMarkdown(r);
     expect(md).toContain("EU Cyber Resilience Act");

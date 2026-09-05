@@ -8,7 +8,13 @@ import {
   toJSON,
   type Soc2Scope,
 } from "../src/index.js";
-import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+import {
+  ALL_PACKS,
+  type ReceiptRecord,
+} from "@sovereign-matrix/verifiable-receipts";
+
+/** Every pack id a receipt can actually carry. */
+const ALL_REGISTRY_PACKS = ALL_PACKS.map((p) => p.id);
 
 const SCOPE: Soc2Scope = {
   organizationName: "Acme AI Operations Ltd",
@@ -28,7 +34,11 @@ function rec(
     overall: "pass",
     issuedAt: "2026-03-15T12:00:00Z",
     agentSlug: "underwriter",
-    pack: "soc2-cc6",
+    // A pack that exists in the registry (packs.ts) AND matches a criterion's
+    // declared prefixes. The old default, "soc2-cc6", was neither: it named no
+    // real pack, and it counted only because every criterion carried the
+    // catch-all prefix "soc2", under which one receipt evidenced all 33.
+    pack: "owasp-agentic-top10-2026",
     ...overrides,
   } as ReceiptRecord;
 }
@@ -74,29 +84,36 @@ describe("buildSoc2Report — evidence counting", () => {
     const report = buildSoc2Report({
       scope: SCOPE,
       receipts: [
-        rec({ pack: "soc2-cc6-iam" }),
-        rec({ pack: "soc2-cc6-rbac" }),
-        rec({ pack: "auth-mfa" }),
-        rec({ pack: "totally-unrelated" }),
+        rec({ pack: "owasp-agentic-top10-2026" }),
+        rec({ pack: "owasp-agentic-top10-2026" }),
+        rec({ pack: "owasp-agentic-top10-2026" }),
+        rec({ pack: "hipaa-2026" }),
       ],
     });
-    const cc61 = report.criteria.find((c) => c.id === "CC6.1");
-    // CC6.1 prefixes: soc2, auth, rbac, iam — 3 of the 4 receipts match.
-    expect(cc61?.evidenceCount).toBe(3);
+    // CC3.2 (risk identification) declares the "owasp" prefix — 3 of the 4
+    // receipts match. Every pack named here exists in packs.ts; a test that
+    // invents a pack id proves nothing about what this exporter can evidence.
+    const cc32 = report.criteria.find((c) => c.id === "CC3.2");
+    expect(cc32?.evidenceCount).toBe(3);
+    // The HIPAA receipt matches no SOC 2 criterion. That is the honest
+    // outcome, not a bug: SOC 2 is an infrastructure-control framework and a
+    // PHI-disclosure check on model output does not evidence one.
+    const evidenced = report.criteria.filter((c) => c.evidenceCount > 0);
+    expect(evidenced.map((c) => c.id).sort()).toEqual(["CC3.2", "CC7.1"]);
   });
 
   it("tracks earliest/latest issuedAt per criterion", () => {
     const report = buildSoc2Report({
       scope: SCOPE,
       receipts: [
-        rec({ pack: "soc2-cc6", issuedAt: "2026-03-15T12:00:00Z" }),
-        rec({ pack: "soc2-cc6", issuedAt: "2026-01-05T08:00:00Z" }),
-        rec({ pack: "soc2-cc6", issuedAt: "2026-06-20T20:00:00Z" }),
+        rec({ issuedAt: "2026-03-15T12:00:00Z" }),
+        rec({ issuedAt: "2026-01-05T08:00:00Z" }),
+        rec({ issuedAt: "2026-06-20T20:00:00Z" }),
       ],
     });
-    const cc61 = report.criteria.find((c) => c.id === "CC6.1");
-    expect(cc61?.evidencePeriod.earliest).toBe("2026-01-05T08:00:00Z");
-    expect(cc61?.evidencePeriod.latest).toBe("2026-06-20T20:00:00Z");
+    const cc32 = report.criteria.find((c) => c.id === "CC3.2");
+    expect(cc32?.evidencePeriod.earliest).toBe("2026-01-05T08:00:00Z");
+    expect(cc32?.evidencePeriod.latest).toBe("2026-06-20T20:00:00Z");
   });
 
   it("computes daysOfCoverage as distinct calendar days", () => {
@@ -104,14 +121,14 @@ describe("buildSoc2Report — evidence counting", () => {
       scope: SCOPE,
       receipts: [
         // 3 distinct days
-        rec({ pack: "soc2-cc6", issuedAt: "2026-01-01T08:00:00Z" }),
-        rec({ pack: "soc2-cc6", issuedAt: "2026-01-01T20:00:00Z" }), // same day
-        rec({ pack: "soc2-cc6", issuedAt: "2026-02-15T12:00:00Z" }),
-        rec({ pack: "soc2-cc6", issuedAt: "2026-03-20T12:00:00Z" }),
+        rec({ issuedAt: "2026-01-01T08:00:00Z" }),
+        rec({ issuedAt: "2026-01-01T20:00:00Z" }), // same day
+        rec({ issuedAt: "2026-02-15T12:00:00Z" }),
+        rec({ issuedAt: "2026-03-20T12:00:00Z" }),
       ],
     });
-    const cc61 = report.criteria.find((c) => c.id === "CC6.1");
-    expect(cc61?.daysOfCoverage).toBe(3);
+    const cc32 = report.criteria.find((c) => c.id === "CC3.2");
+    expect(cc32?.daysOfCoverage).toBe(3);
   });
 });
 
@@ -119,7 +136,7 @@ describe("buildSoc2Report — gap analysis", () => {
   it("flags criteria with zero evidence as gaps", () => {
     const report = buildSoc2Report({
       scope: SCOPE,
-      receipts: [rec({ pack: "soc2-cc6" })],
+      receipts: [rec({})],
     });
     // Many criteria with no evidence at all.
     expect(report.gaps.length).toBeGreaterThan(0);
@@ -132,15 +149,15 @@ describe("buildSoc2Report — gap analysis", () => {
     const report = buildSoc2Report({
       scope: SCOPE,
       receipts: [
-        rec({ pack: "soc2-cc6", issuedAt: "2026-01-01T00:00:00Z" }),
-        rec({ pack: "soc2-cc6", issuedAt: "2026-01-02T00:00:00Z" }),
+        rec({ issuedAt: "2026-01-01T00:00:00Z" }),
+        rec({ issuedAt: "2026-01-02T00:00:00Z" }),
       ],
       coverageThresholdDays: 1, // very low
     });
-    const cc61 = report.criteria.find((c) => c.id === "CC6.1");
-    expect(cc61?.daysOfCoverage).toBe(2);
-    // CC6.1 has 2 days coverage, threshold is 1 → not a gap.
-    expect(report.gaps.find((g) => g.id === "CC6.1")).toBeUndefined();
+    const cc32 = report.criteria.find((c) => c.id === "CC3.2");
+    expect(cc32?.daysOfCoverage).toBe(2);
+    // CC3.2 has 2 days coverage, threshold is 1 → not a gap.
+    expect(report.gaps.find((g) => g.id === "CC3.2")).toBeUndefined();
   });
 });
 
@@ -170,19 +187,22 @@ describe("buildSoc2Report — control owners", () => {
 });
 
 describe("buildSoc2Report — summary stats", () => {
-  it("byCategory tallies criteria with evidence", () => {
+  it("byCategory tallies only the categories receipts can evidence", () => {
     const report = buildSoc2Report({
       scope: SCOPE,
-      receipts: [
-        rec({ pack: "soc2-cc1" }),
-        rec({ pack: "soc2-availability" }),
-        rec({ pack: "soc2-confidentiality" }),
-      ],
+      // Every pack in the registry, so this is the exporter's ceiling.
+      receipts: ALL_REGISTRY_PACKS.map((pack) => rec({ pack })),
     });
-    expect(report.summary.byCategory.security).toBeGreaterThan(0);
-    expect(report.summary.byCategory.availability).toBeGreaterThan(0);
-    expect(report.summary.byCategory.confidentiality).toBeGreaterThan(0);
-    // Privacy not in scope — never counted
+    // Security is the only category any receipt can reach, via the two
+    // criteria that declare the "owasp" prefix. Availability, processing
+    // integrity, confidentiality and privacy stay at zero no matter what is
+    // fed in: no pack in packs.ts evidences uptime, capacity, data
+    // classification or a privacy notice. Asserting > 0 for those (the
+    // previous shape of this test) only passed under the catch-all prefix.
+    expect(report.summary.byCategory.security).toBe(2);
+    expect(report.summary.byCategory.availability).toBe(0);
+    expect(report.summary.byCategory["processing-integrity"]).toBe(0);
+    expect(report.summary.byCategory.confidentiality).toBe(0);
     expect(report.summary.byCategory.privacy).toBe(0);
   });
 
@@ -221,7 +241,7 @@ describe("toMarkdown", () => {
   it("emits binder structure", () => {
     const report = buildSoc2Report({
       scope: SCOPE,
-      receipts: [rec({ pack: "soc2-cc6" })],
+      receipts: [rec({})],
       controlOwners: { "CC6.1": "Director of Security" },
     });
     const md = toMarkdown(report);

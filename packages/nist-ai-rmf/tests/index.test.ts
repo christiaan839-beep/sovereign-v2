@@ -20,7 +20,13 @@ import {
   toJSON,
   type RmfProfileScope,
 } from "../src/index.js";
-import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+import {
+  ALL_PACKS,
+  type ReceiptRecord,
+} from "@sovereign-matrix/verifiable-receipts";
+
+/** Every pack id a receipt can actually carry. */
+const ALL_REGISTRY_PACKS = ALL_PACKS.map((p) => p.id);
 
 const SCOPE: RmfProfileScope = {
   systemName: "Acme Loan Underwriting AI",
@@ -40,7 +46,8 @@ function rec(
     overall: "pass",
     issuedAt: new Date().toISOString(),
     agentSlug: "loan-underwriter",
-    pack: "nist-ai-rmf-base",
+    // A pack id from packs.ts. "human-in-loop" named nothing in the registry.
+    pack: "us-nist-ai-rmf-600-1",
     ...overrides,
   } as ReceiptRecord;
 }
@@ -77,13 +84,16 @@ describe("buildNistAiRmf — evidence counting", () => {
     const report = buildNistAiRmf({
       scope: SCOPE,
       receipts: [
-        rec({ pack: "nist-ai-rmf-govern" }),
-        rec({ pack: "nist-ai-rmf-measure" }),
-        rec({ pack: "iso42001-aims" }), // matches GOVERN-1.1 (iso42001 prefix)
-        rec({ pack: "totally-unrelated" }),
+        rec({ pack: "eu-ai-act-2026" }),
+        rec({ pack: "iso-42001-2023" }),
+        rec({ pack: "us-nist-ai-rmf-600-1" }),
+        rec({ pack: "dscsa-2024" }),
       ],
     });
-    // GOVERN-1.1 matches nist-ai-rmf + iso42001 prefixes — 3 receipts.
+    // GOVERN-1.1 ("legal and regulatory requirements involving AI are
+    // understood, managed, and documented") declares eu-ai-act, iso-42001 and
+    // us-nist-ai-rmf — 3 of the 4. DSCSA is a drug-supply-chain pack and
+    // matches nothing here.
     const g11 = report.subcategories.find((s) => s.id === "GOVERN-1.1");
     expect(g11?.evidenceCount).toBe(3);
   });
@@ -91,9 +101,10 @@ describe("buildNistAiRmf — evidence counting", () => {
   it("cross-pack receipts evidence multiple subcategories", () => {
     const report = buildNistAiRmf({
       scope: SCOPE,
-      receipts: [rec({ pack: "iso42001-other" })],
+      receipts: [rec({ pack: "iso-42001-2023" })],
     });
-    // iso42001 prefix appears in GOVERN-1.1, GOVERN-1.2, GOVERN-1.3, etc.
+    // The iso-42001 prefix appears on GOVERN-1.1, GOVERN-1.2, GOVERN-1.3 and
+    // several MAP/MEASURE/MANAGE subcategories.
     const evidenced = report.subcategories.filter((s) => s.evidenceCount > 0);
     expect(evidenced.length).toBeGreaterThan(0);
   });
@@ -101,7 +112,7 @@ describe("buildNistAiRmf — evidence counting", () => {
   it("euAiAct prefix maps to compliance-adjacent subcategories", () => {
     const report = buildNistAiRmf({
       scope: SCOPE,
-      receipts: [rec({ pack: "euaiact-art-9" })],
+      receipts: [rec({ pack: "eu-ai-act-2026" })],
     });
     const g11 = report.subcategories.find((s) => s.id === "GOVERN-1.1");
     expect(g11?.evidenceCount).toBe(1);
@@ -118,23 +129,29 @@ describe("buildNistAiRmf — coverage statistics", () => {
     );
   });
 
-  it("by-function counts non-zero functions", () => {
+  it("by-function counts every function this evidence can reach", () => {
     const report = buildNistAiRmf({
       scope: SCOPE,
-      receipts: [rec({ pack: "nist-ai-rmf-x" })],
+      // Every pack in the registry — the exporter's ceiling.
+      receipts: ALL_REGISTRY_PACKS.map((pack) => rec({ pack })),
     });
+    // Unlike the SOC 2 and HIPAA binders, this framework is in the same
+    // domain as the receipts, so all four functions are reachable. The counts
+    // are still far short of the full subcategory catalog, and the report says
+    // so rather than rounding up.
     expect(report.coverage.byFunction.GOVERN).toBeGreaterThan(0);
     expect(report.coverage.byFunction.MAP).toBeGreaterThan(0);
     expect(report.coverage.byFunction.MEASURE).toBeGreaterThan(0);
     expect(report.coverage.byFunction.MANAGE).toBeGreaterThan(0);
+    expect(report.coverage.coverageRate).toBeLessThan(0.5);
   });
 
   it("by-characteristic tracks trustworthy-AI characteristics", () => {
     const report = buildNistAiRmf({
       scope: SCOPE,
       receipts: [
-        rec({ pack: "gdpr-2026" }), // privacy-enhanced subcategory MEASURE-2.10
-        rec({ pack: "owasp-agentic" }), // multiple safety-related subcategories
+        rec({ pack: "hipaa-2026" }), // privacy-enhanced subcategory MEASURE-2.10
+        rec({ pack: "owasp-agentic-top10-2026" }), // safety-related subcategories
       ],
     });
     expect(
@@ -246,7 +263,7 @@ describe("toMarkdown", () => {
   it("emits every required section", () => {
     const report = buildNistAiRmf({
       scope: SCOPE,
-      receipts: [rec({ pack: "nist-ai-rmf-x" })],
+      receipts: [rec({})],
       functionNarratives: { GOVERN: "Quarterly committee meetings." },
     });
     const md = toMarkdown(report);

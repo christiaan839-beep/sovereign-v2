@@ -19,13 +19,24 @@
  * REQUIRED (must implement) or ADDRESSABLE (must implement OR
  * document why an alternative is appropriate).
  *
- * This package consumes VAOS receipts and emits an evidence package
- * mapping each implementation specification to receipt-derived
- * evidence — the same package format an OCR auditor (HHS Office for
- * Civil Rights) would request in a Phase 2 audit.
+ * This package consumes VAOS receipts and renders the implementation-
+ * specification table in Markdown and JSON, marking each specification
+ * evidenced or unevidenced.
  *
- * Closed-source vendors (HITRUST, Compliancy Group) charge $20-100K/year
- * for the equivalent. This is Apache-2.0.
+ * ## What a receipt can evidence here
+ *
+ * A receipt is a Guardian verdict on the wording of one model output (see
+ * the module docstring of `packs.ts`). It is signed, timestamped and
+ * re-verifiable, so it is good evidence of what it actually records — and
+ * that is a narrow thing. The Security Rule governs workforce clearance, facility access,
+ * workstation use, device disposal and business-associate contracts. A
+ * verdict on a model's wording evidences none of those. One of the 52
+ * implementation specifications — Risk Analysis — declares a reachable pack.
+ *
+ * So this binder is a partial input to a HIPAA Security Rule assessment, not a coverage claim
+ * for it. Controls the receipts cannot reach carry no prefix mapping and
+ * report as unevidenced, which is the honest reading and the one an auditor
+ * would reach anyway.
  *
  * Output formats:
  *   - Markdown (auditor-readable, archive-friendly)
@@ -37,6 +48,9 @@
  */
 
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+// Every receipt-derived string this module publishes goes through this.
+// SECURITY.md item 4: key material must not reach an exporter's output.
+import { redactKeyMaterial } from "@sovereign-matrix/verifiable-receipts";
 
 /**
  * Covered entity / business associate scope per the Security Rule.
@@ -156,7 +170,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement policies and procedures to prevent, detect, contain, and correct security violations.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "soc2-cc1"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(1)(ii)(A)",
@@ -166,7 +180,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Conduct an accurate and thorough assessment of the potential risks and vulnerabilities to the confidentiality, integrity, and availability of ePHI.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "risk-assessment", "owasp"],
+    evidencePackPrefixes: ["owasp"],
   },
   {
     id: "164.308(a)(1)(ii)(B)",
@@ -176,7 +190,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement security measures sufficient to reduce risks and vulnerabilities to a reasonable and appropriate level.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(1)(ii)(C)",
@@ -186,7 +200,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Apply appropriate sanctions against workforce members who fail to comply with the security policies and procedures.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "policy"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(1)(ii)(D)",
@@ -196,7 +210,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement procedures to regularly review records of information system activity (audit logs, access reports, security incident tracking).",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "audit-log", "anomaly"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(2)",
@@ -206,7 +220,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Identify the security official who is responsible for the development and implementation of the policies and procedures.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(3)(i)",
@@ -216,7 +230,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Ensure all members of the workforce have appropriate access to ePHI and prevent unauthorized access.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "iam"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(3)(ii)(A)",
@@ -226,7 +240,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement procedures for the authorization and/or supervision of workforce members who work with ePHI.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "iam"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(3)(ii)(B)",
@@ -236,7 +250,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement procedures to determine that the access of a workforce member to ePHI is appropriate.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "iam"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(3)(ii)(C)",
@@ -246,7 +260,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement procedures for terminating access to ePHI when a workforce member's employment ends.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "iam"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(4)(i)",
@@ -256,7 +270,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement policies and procedures for authorizing access to ePHI.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "iam"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(4)(ii)(B)",
@@ -266,7 +280,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement policies and procedures for granting access to ePHI through access to a workstation, transaction, program, process, or other mechanism.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "iam"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(4)(ii)(C)",
@@ -276,7 +290,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement policies and procedures that establish, document, review, and modify a user's right of access.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "iam"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(5)(i)",
@@ -286,7 +300,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement a security awareness and training program for all members of the workforce.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "training"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(5)(ii)(A)",
@@ -295,7 +309,7 @@ const HIPAA_CATALOG: Array<{
     title: "Security Reminders",
     requirement: "Periodic security updates.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "training"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(5)(ii)(B)",
@@ -305,7 +319,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Procedures for guarding against, detecting, and reporting malicious software.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "antivirus", "supply-chain"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(5)(ii)(C)",
@@ -315,7 +329,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Procedures for monitoring log-in attempts and reporting discrepancies.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "auth", "anomaly"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(5)(ii)(D)",
@@ -325,7 +339,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Procedures for creating, changing, and safeguarding passwords.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "auth"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(6)(i)",
@@ -335,7 +349,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement policies and procedures to address security incidents.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "incident-response"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(6)(ii)",
@@ -345,7 +359,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Identify and respond to suspected or known security incidents; mitigate, to the extent practicable, harmful effects.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "incident-response"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(7)(i)",
@@ -355,7 +369,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Establish policies and procedures for responding to an emergency or other occurrence that damages systems containing ePHI.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "dr", "bcp"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(7)(ii)(A)",
@@ -365,7 +379,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Establish procedures to create and maintain retrievable exact copies of ePHI.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "backup"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(7)(ii)(B)",
@@ -374,7 +388,7 @@ const HIPAA_CATALOG: Array<{
     title: "Disaster Recovery Plan",
     requirement: "Establish procedures to restore any loss of data.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "dr"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(7)(ii)(C)",
@@ -384,7 +398,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Establish procedures to enable continuation of critical business processes during emergency mode.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "bcp"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(7)(ii)(D)",
@@ -394,7 +408,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement procedures for periodic testing and revision of contingency plans.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "dr"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.308(a)(8)",
@@ -404,7 +418,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Perform a periodic technical and nontechnical evaluation of the security safeguards.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa"],
+    evidencePackPrefixes: [],
   },
 
   // ── § 164.310 Physical safeguards ────────────────────────────────
@@ -416,7 +430,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement policies and procedures to limit physical access to electronic information systems.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "physical-security"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.310(a)(2)(ii)",
@@ -426,7 +440,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement policies to safeguard facility and equipment from unauthorized physical access.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "physical-security"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.310(b)",
@@ -436,7 +450,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement policies and procedures that specify the proper functions to be performed by workstations.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "endpoint"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.310(c)",
@@ -446,7 +460,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement physical safeguards for all workstations that access ePHI.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "endpoint"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.310(d)(1)",
@@ -456,7 +470,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement policies and procedures that govern the receipt and removal of hardware and electronic media that contain ePHI.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "asset-management"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.310(d)(2)(i)",
@@ -466,7 +480,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement policies and procedures to address the final disposition of ePHI.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "data-deletion"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.310(d)(2)(ii)",
@@ -476,7 +490,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement procedures for removal of ePHI before media is made available for re-use.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "data-deletion"],
+    evidencePackPrefixes: [],
   },
 
   // ── § 164.312 Technical safeguards ───────────────────────────────
@@ -488,7 +502,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement technical policies and procedures for electronic information systems that maintain ePHI to allow access only to those persons or software programs that have been granted access rights.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "iam", "rbac"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.312(a)(2)(i)",
@@ -498,7 +512,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Assign a unique name and/or number for identifying and tracking user identity.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "iam"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.312(a)(2)(ii)",
@@ -508,7 +522,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Establish procedures for obtaining necessary ePHI during an emergency.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "iam"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.312(a)(2)(iii)",
@@ -518,7 +532,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement electronic procedures that terminate an electronic session after a predetermined time of inactivity.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "auth"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.312(a)(2)(iv)",
@@ -527,7 +541,7 @@ const HIPAA_CATALOG: Array<{
     title: "Encryption and Decryption",
     requirement: "Implement a mechanism to encrypt and decrypt ePHI.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "encryption"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.312(b)",
@@ -537,7 +551,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement hardware, software, and/or procedural mechanisms that record and examine activity in information systems that contain or use ePHI.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "audit-log", "vaos"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.312(c)(1)",
@@ -547,7 +561,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement policies and procedures to protect ePHI from improper alteration or destruction.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "vaos", "integrity"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.312(c)(2)",
@@ -557,7 +571,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement electronic mechanisms to corroborate that ePHI has not been altered or destroyed in an unauthorized manner.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "vaos", "integrity"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.312(d)",
@@ -567,7 +581,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement procedures to verify that a person or entity seeking access to ePHI is the one claimed.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "auth"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.312(e)(1)",
@@ -577,7 +591,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement technical security measures to guard against unauthorized access to ePHI that is being transmitted over an electronic communications network.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "tls", "encryption"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.312(e)(2)(i)",
@@ -587,7 +601,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement security measures to ensure that electronically transmitted ePHI is not improperly modified without detection until disposed of.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "tls", "vaos"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.312(e)(2)(ii)",
@@ -597,7 +611,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement a mechanism to encrypt ePHI whenever deemed appropriate.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "tls", "encryption"],
+    evidencePackPrefixes: [],
   },
 
   // ── § 164.314 Organizational requirements ────────────────────────
@@ -609,7 +623,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Have a contract or other arrangement that meets the applicable requirements with each business associate.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "vendor-management"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.314(b)(1)",
@@ -619,7 +633,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Group health plans must ensure plan documents provide that the sponsor will reasonably and appropriately safeguard ePHI.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa"],
+    evidencePackPrefixes: [],
   },
 
   // ── § 164.316 Policies and procedures + documentation ────────────
@@ -631,7 +645,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Implement reasonable and appropriate policies and procedures to comply with the standards.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "policy"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.316(b)(1)",
@@ -641,7 +655,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Maintain the policies and procedures in written (which may be electronic) form, and document any action, activity, or assessment required to be documented.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "documentation"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.316(b)(2)(i)",
@@ -651,7 +665,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Retain the documentation for 6 years from the date of its creation or the date when it last was in effect, whichever is later.",
     classification: "required",
-    evidencePackPrefixes: ["hipaa", "retention"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.316(b)(2)(ii)",
@@ -661,7 +675,7 @@ const HIPAA_CATALOG: Array<{
     requirement:
       "Make documentation available to those persons responsible for implementing the procedures.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "documentation"],
+    evidencePackPrefixes: [],
   },
   {
     id: "164.316(b)(2)(iii)",
@@ -670,7 +684,7 @@ const HIPAA_CATALOG: Array<{
     title: "Updates",
     requirement: "Review documentation periodically and update as needed.",
     classification: "addressable",
-    evidencePackPrefixes: ["hipaa", "documentation"],
+    evidencePackPrefixes: [],
   },
 ];
 
@@ -705,7 +719,7 @@ export function buildHipaaSecurity(opts: BuildHipaaOptions): HipaaReport {
   const specifications: HipaaSpecification[] = HIPAA_CATALOG.map((cat) => {
     let evidenceCount = 0;
     for (const r of receipts) {
-      const pack = typeof r.pack === "string" ? r.pack.toLowerCase() : "";
+      const pack = typeof r.pack === "string" ? redactKeyMaterial(r.pack).toLowerCase() : "";
       if (!pack) continue;
       if (
         cat.evidencePackPrefixes.some((prefix) =>

@@ -13,9 +13,9 @@ federal AI risk management standard. Federal procurement clauses,
 state legislation, and enterprise risk programs increasingly require
 demonstrable RMF alignment.
 
-Closed-source GRC vendors (Credo AI / Holistic AI / IBM
-watsonx.governance) ship the equivalent of this for $50K-200K/year.
-This is the Apache-2.0 open-source reference implementation.
+This is an Apache-2.0 implementation: it projects VAOS receipts onto
+the RMF functions, and names a gap where the receipts do not support a
+subcategory rather than filling it in.
 
 ## Install
 

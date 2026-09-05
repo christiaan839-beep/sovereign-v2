@@ -1,7 +1,7 @@
 {
   "name": "@sovereign-matrix/nist-ai-rmf",
   "version": "0.1.0",
-  "description": "NIST AI Risk Management Framework 1.0 profile exporter. Takes a set of VAOS receipts and emits the auditor-ready GOVERN / MAP / MEASURE / MANAGE function report (Markdown + JSON). Apache-2.0; closed-source GRC vendors charge $50-200K+/yr.",
+  "description": "NIST AI Risk Management Framework 1.0 profile generator. Renders a set of VAOS receipts into the GOVERN / MAP / MEASURE / MANAGE subcategory table (Markdown + JSON), marking each subcategory evidenced or unevidenced. Apache-2.0.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
