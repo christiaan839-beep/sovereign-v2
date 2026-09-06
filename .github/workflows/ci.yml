@@ -58,19 +58,27 @@ jobs:
           done
           exit 1
 
-      - name: Run ESLint
-        run: npm run lint
+      # Every gate below is defined in scripts/verify.mjs and nowhere else,
+      # so CI and `npm run verify` on a laptop cannot drift apart. Steps stay
+      # separate for granular CI annotations; each runs one gate.
+      - name: Lint
+        run: node scripts/verify.mjs --only=lint
 
       # Strict type-check: next.config.ts has `ignoreBuildErrors: false`,
       # so type errors break the build. CI catches them earlier here.
       - name: Type check
-        run: npm run typecheck
+        run: node scripts/verify.mjs --only=typecheck
 
       # Wave-31: regenerator drift guard. Fails the build if the agent
       # registry on disk doesn't match the on-disk agent route folders.
       # Run `npm run gen:registry` locally to fix.
       - name: Agent registry drift check
-        run: npm run check:registry
+        run: node scripts/verify.mjs --only=registry
+
+      # Static gates lifted out of .claude/skills/deploy-check, where they
+      # only ran when someone remembered to invoke the skill.
+      - name: Static gates (ssr:false, Suspense, secrets)
+        run: node scripts/verify.mjs --only=ssr:false,suspense,secret
 
   build:
     name: Build
@@ -104,7 +112,7 @@ jobs:
           exit 1
 
       - name: Build application
-        run: npm run build
+        run: node scripts/verify.mjs --only=build
         env:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
@@ -142,7 +150,7 @@ jobs:
           exit 1
 
       - name: Run tests
-        run: npm test
+        run: node scripts/verify.mjs --only=tests
 
   security-audit:
     name: Security Audit
@@ -173,7 +181,7 @@ jobs:
       # weakening this gate. Soft-fail audits are the audit-process bug
       # the security-reviewer flagged in May-2026.
       - name: Audit dependencies (blocking on high+)
-        run: npm audit --audit-level=high
+        run: node scripts/verify.mjs --only=audit
 
       # Generate a CycloneDX SBOM on every build for SOC 2 / supply-chain
       # transparency. Stored as an artifact for 90 days so audit evidence
@@ -241,10 +249,13 @@ jobs:
           done
           exit 1
 
+      # Soft until the baseline is established. Drop VERIFY_MIGRATIONS_SOFT
+      # to make drift blocking here — that is the entire change.
       - name: Verify schema vs Neon (soft until baseline established)
-        run: npm run check:migrations:soft
+        run: node scripts/verify.mjs --only=migration
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL_READONLY }}
+          VERIFY_MIGRATIONS_SOFT: '1'
 
   smoke:
     name: Smoke Tests (informational)

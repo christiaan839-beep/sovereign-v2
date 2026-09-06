@@ -5,7 +5,55 @@
 > updates this. If something is shipped, move it to the bottom log; if
 > something new is discovered, add it under the right severity band.
 
-Last refreshed: **2026-07-08** after wave 121 (deferred-flaw closeout + dependency hardening).
+Last refreshed: **2026-09-06** after wave 122 (one definition of "verified").
+
+---
+
+## Wave 122 — one definition of "verified" (2026-09-06)
+
+`npm run verify` is now the single gate list for this repo. `scripts/verify.mjs`
+owns it; `.github/workflows/ci.yml` calls it per gate (`--only=`) so the parallel
+fan-out survives, and `scripts/git-hooks/pre-push` calls it as `--profile=quick`.
+Ported from the `Sovereign-Matrix` package, adapted for a repo where the build
+needs secrets and CI must stay parallel.
+
+**The drift it closes.** "Verified" meant four different things in four places,
+and they disagreed:
+
+| Gate | ci.yml (before) | pre-push (before) | deploy-check skill (before) |
+| --- | --- | --- | --- |
+| lint / typecheck / tests | blocking | blocking | typecheck "advisory only" |
+| registry drift | blocking | absent | absent |
+| build | blocking | skipped | step 1 |
+| `npm audit` high+ | blocking | skipped | absent |
+| migration parity | **soft** (exit 0) | **hard** (exit 1) | absent |
+| Suspense hook-trap | absent | warn | absent |
+| `ssr:false` placement | absent | absent | step 4 |
+| secret scan | absent | absent | step 6 |
+
+Same schema drift failed on a laptop and passed in CI. Three checks existed only
+inside a skill, so they ran only when someone remembered to invoke it.
+
+**Stale claims corrected in `.claude/skills/deploy-check`** — it asserted
+`ignoreBuildErrors: true` and told the reader type errors were advisory
+(`next.config.ts:16` says `false`; verified 0 errors), referenced the
+`ClientOnlyEffects` wrapper deleted in wave 121, and warned of a ClerkProvider
+prerender crash the current `SafeClerkProvider` SSR path doesn't have. The skill
+now runs `npm run verify` and interprets failures; it carries no check list.
+
+**Skips are not passes.** A gate that can't run here (`build` without Clerk/DB
+env, `migration parity` without `DATABASE_URL`) reports `∅ skipped` and the
+summary says `no blocking failures` rather than `all gates passed`.
+
+**Secret-scan patterns rewritten** — the skill's `_secret|_api_key|password`
+matched every identifier in a diff, which is why it was never automated. Now
+matches secret *values* (`sk_live_`, `sk-ant-`, `AKIA…`, `ghp_`, long inline
+assignments) with a placeholder exclusion.
+
+**Verified on this tree:** typecheck 0 errors (67s), eslint clean (78s), 4491
+tests passing across 294 files (42s), registry in sync, both `ssr:false` uses
+correctly inside client components. `audit` fails — see C2 below, found by this
+gate on its first run.
 
 ---
 
@@ -235,6 +283,7 @@ The platform is production-deployable RIGHT NOW for: agency operators automating
 | ID     | Item                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Effort | Notes                                    |
 | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------- |
 | ~~C1~~ | ~~Marketing-language audit pass~~ — **SHIPPED.** `HIPAA-compliant` → `HIPAA-aware controls. BAA available for enterprise deployments` on /for-healthcare. `FERPA-compliant` → `FERPA-aware controls` on /for-education. `SOC 2 Type 2 — continuous monitoring` → `SOC 2 readiness controls — continuous monitoring (audit-ready posture; formal Type 2 attestation in progress)` across 9 verticals (insurance, insurance-claims, prior-auth, tax-audit, utilities, esg, legal-services, banking, defense). | DONE   | Eliminates the only real legal exposure. |
+| C2     | **`npm audit --audit-level=high` is RED — the blocking Security Audit CI job is failing on main.** 11 high advisories (`next` direct; `undici`, `axios`, `postcss`, `sharp`, `nanoid`, `js-yaml`, `browserslist`, `brace-expansion`, `fast-uri`, `ip-address` transitive), 22 total. Every one reports a fix available. Wave 121 claimed 8 → 0 highs; advisories have landed since. Found by wave 122's `verify` gate on first run. Needs its own wave: `next` is a direct dependency and the bump wants a build + smoke pass, not a drive-by. | 1 session | Run `node scripts/verify.mjs --only=audit` to reproduce. |
 
 ### HIGH — security gaps the audit found that aren't fully closed yet
 
@@ -311,6 +360,7 @@ These are the load-bearing contracts. If any wave breaks one, the wave failed.
 8. **`pastContextAsPrompt()` auto-prepends `PAST_MEMORY_DIRECTIVE`** in front of wrapped content. Don't strip the directive in a future "cleanup" PR — it closes the 140x prompt-injection-via-memory blast radius.
 9. **`neutraliseInjectionPatterns()` runs before `storeMemory`** in the factory store hook. Layer-2 defense.
 10. **`runWithBudgetAndAudit` captures stats INSIDE the budget scope.** Outside the scope, AsyncLocalStorage has torn down and `getExecutionStats()` returns null.
+11. **`scripts/verify.mjs` is the only place a gate is defined.** CI, the pre-push hook, and `/deploy-check` all call it; none of them carries its own check list. Adding a check to a workflow file or a skill instead of this script re-creates the wave-122 drift. A gate that cannot run reports skipped, never passed.
 
 ---
 
@@ -321,6 +371,8 @@ These are the load-bearing contracts. If any wave breaks one, the wave failed.
 - **Wave 110 chose `competitor-scan` as the first multi-step conversion** over lead-blitz/closer because of clear tool boundaries, headline marketing position, and zero dependencies on voice infra.
 - **Wave 111 chose `leads` as the first memory opt-in** because the memory pattern (compound past lead signals on same niche) has obvious user value vs other agents.
 - **DNS-rebinding fix scope decision in wave 110.1**: per-caller defense in `fetch_page` only (the only NEW SSRF surface wave 110 added) rather than promoting to `outboundFetch` itself. The architectural fix is deferred to wave 107.2.
+- **Wave 122 kept CI's parallel fan-out** rather than copying the source repo's "CI runs `npm run verify` and nothing else". That repo builds in seconds; here a 15-minute `next build` behind lint would make CI strictly worse. Each job calls `--only=<gate>`, so there is still exactly one definition.
+- **Wave 122 did NOT flip migration parity from soft to hard in CI.** The split was the drift, but ci.yml's "soft until baseline established" is a deliberate call. It is now one env var (`VERIFY_MIGRATIONS_SOFT`) in one file instead of an accident across two; dropping it is the whole change when the baseline lands.
 - **Per-user memory write cap deferred twice** (wave 110 + wave 111 reviews). Real gap. Track as H2 above. Don't defer a third time.
 
 ---
