@@ -7,7 +7,7 @@ import Link from "next/link";
 const COMPARISON = [
   { feature: "Pre-built specialized agents (130)", sovereign: true, competitor: false, note: "CrewAI provides the framework — you build every agent yourself" },
   { feature: "No-code operation", sovereign: true, competitor: false, note: "CrewAI requires Python to define agents, tasks, and crews" },
-  { feature: "Multi-model routing (36+ models)", sovereign: true, competitor: "partial", note: "CrewAI supports multiple LLMs but requires manual configuration per agent" },
+  { feature: "Multi-model routing (20 models)", sovereign: true, competitor: "partial", note: "CrewAI supports multiple LLMs but requires manual configuration per agent" },
   { feature: "Agent collaboration", sovereign: true, competitor: true, note: "Both support multi-agent workflows and task delegation" },
   { feature: "Hosted platform (zero infra)", sovereign: true, competitor: "partial", note: "CrewAI Enterprise offers hosting; open-source requires self-hosting" },
   { feature: "Open-source", sovereign: false, competitor: true, note: "CrewAI is fully open-source under MIT license" },

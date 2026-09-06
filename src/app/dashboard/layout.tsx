@@ -108,7 +108,7 @@ const NAV_GROUPS: NavGroup[] = [
 
 // ── Ecosystem: Marketplace + Developer tools ──
 const ECOSYSTEM_NAV: NavItem[] = [
-  { href: "/marketplace", label: "Marketplace", icon: Store, tooltip: "Browse and install 130+ agents" },
+  { href: "/marketplace", label: "Marketplace", icon: Store, tooltip: "Browse and install 140 agents" },
   { href: "/developers", label: "Developer SDK", icon: Code2, tooltip: "Build agents, earn 80% revenue" },
 ];
 

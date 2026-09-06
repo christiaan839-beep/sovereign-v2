@@ -192,7 +192,7 @@ export default function PilotPage() {
             <PriceRow
               tier="Enterprise"
               monthly="custom"
-              detail="Multi-workflow, multi-region, BYOK encryption, dedicated CSM, 99.99% SLA, on-prem option, SAML SSO. White-label included."
+              detail="Multi-workflow, dedicated CSM, 99.99% SLA, on-prem option. White-label dashboard and signed audit-log export included."
               last
             />
           </div>

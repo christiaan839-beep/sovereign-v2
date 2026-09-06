@@ -16,7 +16,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "All Agents · Sovereign Matrix",
   description:
-    "Full public catalog of every agent on the Sovereign Matrix platform. Browse 135+ specialized AI agents organized by category.",
+    "Full public catalog of every agent on the Sovereign Matrix platform. Browse 140 specialized AI agents organized by category.",
   alternates: { canonical: "/agents" },
 };
 

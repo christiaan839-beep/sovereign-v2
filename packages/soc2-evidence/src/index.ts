@@ -17,18 +17,27 @@
  *                          use, retention, access, disclosure)
  *
  * A SOC 2 Type II audit verifies that controls operated effectively
- * over a period (typically 6-12 months). The auditor needs evidence
- * of each control's operation throughout the audit window — and
- * receipts are perfect evidence artifacts: they're cryptographically
- * signed, timestamped, tamper-evident, and auditor-reproducible.
+ * over a period (typically 6-12 months), and the auditor needs
+ * evidence of each control's operation throughout the window.
  *
- * This package consumes VAOS receipts and emits the evidence package
- * mapped to each TSC criterion. Audit firms accept the JSON output
- * via their PBC-list portal; the Markdown output is the human-
- * readable binder you walk into the audit kickoff with.
+ * This package consumes VAOS receipts and renders the criterion
+ * table in Markdown and JSON, marking each criterion evidenced or
+ * unevidenced.
  *
- * Vanta and Drata charge $5-50K/year for the equivalent. This is
- * Apache 2.0.
+ * ## What a receipt can evidence here
+ *
+ * A receipt is a Guardian verdict on the wording of one model output (see
+ * the module docstring of `packs.ts`). It is signed, timestamped and
+ * re-verifiable, so it is good evidence of what it actually records — and
+ * that is a narrow thing. It does not observe a firewall rule, an access review, a
+ * background check, a data-centre door or a vendor contract, so it cannot
+ * evidence the criteria that are about those — which is most of the TSC.
+ * Two of the 33 security criteria declare a reachable pack.
+ *
+ * So this binder is a partial input to a SOC 2 audit, not a coverage claim
+ * for it. Controls the receipts cannot reach carry no prefix mapping and
+ * report as unevidenced, which is the honest reading and the one an auditor
+ * would reach anyway.
  *
  * Output formats:
  *   - Markdown (binder-style, audit-archive friendly)
@@ -40,6 +49,9 @@
  */
 
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+// Every receipt-derived string this module publishes goes through this.
+// SECURITY.md item 4: key material must not reach an exporter's output.
+import { redactKeyMaterial } from "@sovereign-matrix/verifiable-receipts";
 
 /**
  * SOC 2 scope. The operator declares which TSC categories are in
@@ -170,7 +182,7 @@ const TSC_CATALOG: Array<{
     title: "Control Environment — Integrity and Ethical Values",
     objective:
       "The entity demonstrates a commitment to integrity and ethical values.",
-    evidencePackPrefixes: ["soc2", "ethics", "code-of-conduct"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC1.2",
@@ -178,7 +190,7 @@ const TSC_CATALOG: Array<{
     title: "Control Environment — Board Oversight",
     objective:
       "The board of directors demonstrates independence from management and exercises oversight of internal control.",
-    evidencePackPrefixes: ["soc2", "governance"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC1.3",
@@ -186,7 +198,7 @@ const TSC_CATALOG: Array<{
     title: "Control Environment — Organizational Structure",
     objective:
       "Management establishes structures, reporting lines, and appropriate authorities and responsibilities.",
-    evidencePackPrefixes: ["soc2"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC1.4",
@@ -194,7 +206,7 @@ const TSC_CATALOG: Array<{
     title: "Control Environment — Personnel Competence",
     objective:
       "The entity demonstrates a commitment to attract, develop, and retain competent individuals.",
-    evidencePackPrefixes: ["soc2", "hr"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC1.5",
@@ -202,7 +214,7 @@ const TSC_CATALOG: Array<{
     title: "Control Environment — Accountability",
     objective:
       "The entity holds individuals accountable for their internal control responsibilities.",
-    evidencePackPrefixes: ["soc2"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC2.1",
@@ -210,7 +222,7 @@ const TSC_CATALOG: Array<{
     title: "Communication and Information — Information Quality",
     objective:
       "The entity obtains or generates and uses relevant, quality information to support the functioning of internal control.",
-    evidencePackPrefixes: ["soc2"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC2.2",
@@ -218,7 +230,7 @@ const TSC_CATALOG: Array<{
     title: "Communication and Information — Internal Communication",
     objective:
       "The entity internally communicates information necessary to support the functioning of internal control.",
-    evidencePackPrefixes: ["soc2"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC2.3",
@@ -226,7 +238,7 @@ const TSC_CATALOG: Array<{
     title: "Communication and Information — External Communication",
     objective:
       "The entity communicates with external parties regarding matters affecting the functioning of internal control.",
-    evidencePackPrefixes: ["soc2"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC3.1",
@@ -234,7 +246,7 @@ const TSC_CATALOG: Array<{
     title: "Risk Assessment — Objectives",
     objective:
       "The entity specifies objectives with sufficient clarity to enable the identification and assessment of risks.",
-    evidencePackPrefixes: ["soc2", "risk-assessment"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC3.2",
@@ -242,7 +254,7 @@ const TSC_CATALOG: Array<{
     title: "Risk Assessment — Risk Identification",
     objective:
       "The entity identifies risks to the achievement of its objectives and analyzes risks as a basis for determining how the risks should be managed.",
-    evidencePackPrefixes: ["soc2", "risk-assessment", "owasp"],
+    evidencePackPrefixes: ["owasp"],
   },
   {
     id: "CC3.3",
@@ -250,7 +262,7 @@ const TSC_CATALOG: Array<{
     title: "Risk Assessment — Fraud Risk",
     objective:
       "The entity considers the potential for fraud in assessing risks to the achievement of objectives.",
-    evidencePackPrefixes: ["soc2", "fraud", "anomaly"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC3.4",
@@ -258,7 +270,7 @@ const TSC_CATALOG: Array<{
     title: "Risk Assessment — Change Identification",
     objective:
       "The entity identifies and assesses changes that could significantly impact the system of internal control.",
-    evidencePackPrefixes: ["soc2", "change-management"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC4.1",
@@ -266,7 +278,7 @@ const TSC_CATALOG: Array<{
     title: "Monitoring Activities — Ongoing Evaluations",
     objective:
       "The entity selects, develops, and performs ongoing and/or separate evaluations to ascertain whether the components of internal control are present and functioning.",
-    evidencePackPrefixes: ["soc2"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC4.2",
@@ -274,7 +286,7 @@ const TSC_CATALOG: Array<{
     title: "Monitoring Activities — Deficiency Evaluation",
     objective:
       "The entity evaluates and communicates internal control deficiencies in a timely manner.",
-    evidencePackPrefixes: ["soc2"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC5.1",
@@ -282,7 +294,7 @@ const TSC_CATALOG: Array<{
     title: "Control Activities — Selection and Development",
     objective:
       "The entity selects and develops control activities that contribute to the mitigation of risks.",
-    evidencePackPrefixes: ["soc2"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC5.2",
@@ -290,7 +302,7 @@ const TSC_CATALOG: Array<{
     title: "Control Activities — Technology Controls",
     objective:
       "The entity selects and develops general control activities over technology to support the achievement of objectives.",
-    evidencePackPrefixes: ["soc2", "technology-controls"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC5.3",
@@ -298,7 +310,7 @@ const TSC_CATALOG: Array<{
     title: "Control Activities — Policies and Procedures",
     objective:
       "The entity deploys control activities through policies that establish what is expected and procedures that put policies into action.",
-    evidencePackPrefixes: ["soc2"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC6.1",
@@ -306,7 +318,7 @@ const TSC_CATALOG: Array<{
     title: "Logical and Physical Access Controls — Logical Access",
     objective:
       "The entity implements logical access security software, infrastructure, and architectures over protected information assets.",
-    evidencePackPrefixes: ["soc2", "auth", "rbac", "iam"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC6.2",
@@ -314,7 +326,7 @@ const TSC_CATALOG: Array<{
     title: "Logical and Physical Access Controls — Access Authorization",
     objective:
       "Prior to issuing system credentials, the entity registers and authorizes new internal and external users.",
-    evidencePackPrefixes: ["soc2", "auth", "iam"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC6.3",
@@ -322,7 +334,7 @@ const TSC_CATALOG: Array<{
     title: "Logical and Physical Access Controls — Access Modification",
     objective:
       "The entity authorizes, modifies, or removes access to data, software, functions, and other protected information assets.",
-    evidencePackPrefixes: ["soc2", "iam"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC6.4",
@@ -330,7 +342,7 @@ const TSC_CATALOG: Array<{
     title: "Logical and Physical Access Controls — Physical Access",
     objective:
       "The entity restricts physical access to facilities and protected information assets.",
-    evidencePackPrefixes: ["soc2", "physical-security"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC6.5",
@@ -338,7 +350,7 @@ const TSC_CATALOG: Array<{
     title: "Logical and Physical Access Controls — Asset Disposal",
     objective:
       "The entity discontinues logical and physical protections over physical assets only after the ability to read or recover data and software from those assets has been diminished.",
-    evidencePackPrefixes: ["soc2", "asset-management"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC6.6",
@@ -346,7 +358,7 @@ const TSC_CATALOG: Array<{
     title: "Logical and Physical Access Controls — External Threats",
     objective:
       "The entity implements logical access security measures to protect against threats from sources outside its system boundaries.",
-    evidencePackPrefixes: ["soc2", "firewall", "waf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC6.7",
@@ -354,7 +366,7 @@ const TSC_CATALOG: Array<{
     title: "Logical and Physical Access Controls — Data Transmission",
     objective:
       "The entity restricts the transmission, movement, and removal of information.",
-    evidencePackPrefixes: ["soc2", "encryption", "tls"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC6.8",
@@ -363,7 +375,7 @@ const TSC_CATALOG: Array<{
       "Logical and Physical Access Controls — Malicious Software Prevention",
     objective:
       "The entity implements controls to prevent or detect and act upon the introduction of unauthorized or malicious software.",
-    evidencePackPrefixes: ["soc2", "antivirus", "supply-chain"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC7.1",
@@ -371,7 +383,7 @@ const TSC_CATALOG: Array<{
     title: "System Operations — Configuration Vulnerabilities",
     objective:
       "To meet its objectives, the entity uses detection and monitoring procedures to identify changes to configurations that result in the introduction of new vulnerabilities.",
-    evidencePackPrefixes: ["soc2", "vuln-scan", "owasp"],
+    evidencePackPrefixes: ["owasp"],
   },
   {
     id: "CC7.2",
@@ -379,7 +391,7 @@ const TSC_CATALOG: Array<{
     title: "System Operations — Anomaly Monitoring",
     objective:
       "The entity monitors system components and the operation of those components for anomalies that are indicative of malicious acts, natural disasters, and errors.",
-    evidencePackPrefixes: ["soc2", "anomaly"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC7.3",
@@ -387,7 +399,7 @@ const TSC_CATALOG: Array<{
     title: "System Operations — Security Event Evaluation",
     objective:
       "The entity evaluates security events to determine whether they could or have resulted in a failure of the entity to meet its objectives and, if so, takes actions to prevent or address such failures.",
-    evidencePackPrefixes: ["soc2", "siem"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC7.4",
@@ -395,7 +407,7 @@ const TSC_CATALOG: Array<{
     title: "System Operations — Incident Response",
     objective:
       "The entity responds to identified security incidents by executing a defined incident response program to understand, contain, remediate, and communicate security incidents, as appropriate.",
-    evidencePackPrefixes: ["soc2", "incident-response"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC7.5",
@@ -403,7 +415,7 @@ const TSC_CATALOG: Array<{
     title: "System Operations — Incident Recovery",
     objective:
       "The entity identifies, develops, and implements activities to recover from identified security incidents.",
-    evidencePackPrefixes: ["soc2", "incident-response", "dr"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC8.1",
@@ -411,7 +423,7 @@ const TSC_CATALOG: Array<{
     title: "Change Management",
     objective:
       "The entity authorizes, designs, develops or acquires, configures, documents, tests, approves, and implements changes to infrastructure, data, software, and procedures.",
-    evidencePackPrefixes: ["soc2", "change-management"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC9.1",
@@ -419,7 +431,7 @@ const TSC_CATALOG: Array<{
     title: "Risk Mitigation — Risk Mitigation Activities",
     objective:
       "The entity identifies, selects, and develops risk mitigation activities for risks arising from potential business disruptions.",
-    evidencePackPrefixes: ["soc2", "bcp", "dr"],
+    evidencePackPrefixes: [],
   },
   {
     id: "CC9.2",
@@ -427,7 +439,7 @@ const TSC_CATALOG: Array<{
     title: "Risk Mitigation — Vendor and Business Partner Management",
     objective:
       "The entity assesses and manages risks associated with vendors and business partners.",
-    evidencePackPrefixes: ["soc2", "vendor-management", "supply-chain"],
+    evidencePackPrefixes: [],
   },
 
   // ── Availability (A1) ────────────────────────────────────────────
@@ -437,7 +449,7 @@ const TSC_CATALOG: Array<{
     title: "Availability — Capacity",
     objective:
       "The entity maintains, monitors, and evaluates current processing capacity and use of system components to manage capacity demand.",
-    evidencePackPrefixes: ["soc2", "availability", "capacity"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A1.2",
@@ -445,7 +457,7 @@ const TSC_CATALOG: Array<{
     title: "Availability — Environmental Protection",
     objective:
       "The entity authorizes, designs, develops or acquires, implements, operates, approves, maintains, and monitors environmental protections, software, data backup processes, and recovery infrastructure to meet its objectives.",
-    evidencePackPrefixes: ["soc2", "availability", "backup"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A1.3",
@@ -453,7 +465,7 @@ const TSC_CATALOG: Array<{
     title: "Availability — Recovery Testing",
     objective:
       "The entity tests recovery plan procedures supporting system recovery to meet its objectives.",
-    evidencePackPrefixes: ["soc2", "dr"],
+    evidencePackPrefixes: [],
   },
 
   // ── Processing Integrity (PI1) ───────────────────────────────────
@@ -463,7 +475,7 @@ const TSC_CATALOG: Array<{
     title: "Processing Integrity — System Inputs",
     objective:
       "The entity obtains or generates, uses, and communicates relevant, quality information regarding the objectives related to processing.",
-    evidencePackPrefixes: ["soc2", "processing-integrity"],
+    evidencePackPrefixes: [],
   },
   {
     id: "PI1.2",
@@ -471,7 +483,7 @@ const TSC_CATALOG: Array<{
     title: "Processing Integrity — System Inputs Are Complete",
     objective:
       "The entity implements policies and procedures over system inputs, including controls over completeness and accuracy.",
-    evidencePackPrefixes: ["soc2", "processing-integrity", "validation"],
+    evidencePackPrefixes: [],
   },
   {
     id: "PI1.3",
@@ -479,7 +491,7 @@ const TSC_CATALOG: Array<{
     title: "Processing Integrity — System Processing",
     objective:
       "The entity implements policies and procedures over system processing to result in products, services, and reporting to meet the entity's objectives.",
-    evidencePackPrefixes: ["soc2", "processing-integrity"],
+    evidencePackPrefixes: [],
   },
   {
     id: "PI1.4",
@@ -487,7 +499,7 @@ const TSC_CATALOG: Array<{
     title: "Processing Integrity — System Outputs",
     objective:
       "The entity implements policies and procedures to make available or deliver output completely, accurately, and timely in accordance with specifications.",
-    evidencePackPrefixes: ["soc2", "processing-integrity"],
+    evidencePackPrefixes: [],
   },
   {
     id: "PI1.5",
@@ -495,7 +507,7 @@ const TSC_CATALOG: Array<{
     title: "Processing Integrity — Stored Items",
     objective:
       "The entity implements policies and procedures to store inputs, items in processing, and outputs completely, accurately, and timely in accordance with specifications.",
-    evidencePackPrefixes: ["soc2", "processing-integrity", "vaos"],
+    evidencePackPrefixes: [],
   },
 
   // ── Confidentiality (C1) ─────────────────────────────────────────
@@ -505,7 +517,7 @@ const TSC_CATALOG: Array<{
     title: "Confidentiality — Identification and Maintenance",
     objective:
       "The entity identifies and maintains confidential information to meet the entity's objectives related to confidentiality.",
-    evidencePackPrefixes: ["soc2", "confidentiality", "data-classification"],
+    evidencePackPrefixes: [],
   },
   {
     id: "C1.2",
@@ -513,7 +525,7 @@ const TSC_CATALOG: Array<{
     title: "Confidentiality — Disposal",
     objective:
       "The entity disposes of confidential information to meet the entity's objectives related to confidentiality.",
-    evidencePackPrefixes: ["soc2", "confidentiality", "data-deletion"],
+    evidencePackPrefixes: [],
   },
 
   // ── Privacy (P-series) ───────────────────────────────────────────
@@ -523,7 +535,7 @@ const TSC_CATALOG: Array<{
     title: "Privacy — Notice",
     objective:
       "The entity provides notice to data subjects about its privacy practices.",
-    evidencePackPrefixes: ["soc2", "privacy", "gdpr", "popia"],
+    evidencePackPrefixes: [],
   },
   {
     id: "P2.1",
@@ -531,7 +543,7 @@ const TSC_CATALOG: Array<{
     title: "Privacy — Choice and Consent",
     objective:
       "The entity communicates choices available regarding the collection, use, retention, disclosure, and disposal of personal information.",
-    evidencePackPrefixes: ["soc2", "privacy", "gdpr", "consent"],
+    evidencePackPrefixes: [],
   },
   {
     id: "P3.1",
@@ -539,7 +551,7 @@ const TSC_CATALOG: Array<{
     title: "Privacy — Collection",
     objective:
       "Personal information is collected consistent with the entity's objectives related to privacy.",
-    evidencePackPrefixes: ["soc2", "privacy", "gdpr"],
+    evidencePackPrefixes: [],
   },
   {
     id: "P4.1",
@@ -547,7 +559,7 @@ const TSC_CATALOG: Array<{
     title: "Privacy — Use",
     objective:
       "The entity limits the use of personal information to the purposes identified in the entity's objectives.",
-    evidencePackPrefixes: ["soc2", "privacy", "gdpr"],
+    evidencePackPrefixes: [],
   },
   {
     id: "P5.1",
@@ -555,7 +567,7 @@ const TSC_CATALOG: Array<{
     title: "Privacy — Access",
     objective:
       "The entity grants identified and authenticated data subjects the ability to access their personal information.",
-    evidencePackPrefixes: ["soc2", "privacy", "gdpr-art-15"],
+    evidencePackPrefixes: [],
   },
   {
     id: "P6.1",
@@ -563,7 +575,7 @@ const TSC_CATALOG: Array<{
     title: "Privacy — Disclosure and Notification",
     objective:
       "The entity discloses personal information to third parties consistent with the entity's objectives related to privacy.",
-    evidencePackPrefixes: ["soc2", "privacy"],
+    evidencePackPrefixes: [],
   },
   {
     id: "P7.1",
@@ -571,7 +583,7 @@ const TSC_CATALOG: Array<{
     title: "Privacy — Quality",
     objective:
       "The entity collects and maintains accurate, up-to-date, complete, and relevant personal information.",
-    evidencePackPrefixes: ["soc2", "privacy"],
+    evidencePackPrefixes: [],
   },
   {
     id: "P8.1",
@@ -579,7 +591,7 @@ const TSC_CATALOG: Array<{
     title: "Privacy — Monitoring and Enforcement",
     objective:
       "The entity implements a process for receiving, addressing, resolving, and communicating the resolution of inquiries, complaints, and disputes from data subjects.",
-    evidencePackPrefixes: ["soc2", "privacy"],
+    evidencePackPrefixes: [],
   },
 ];
 
@@ -627,7 +639,7 @@ export function buildSoc2Report(opts: BuildSoc2Options): Soc2Report {
     let latest: string | null = null;
     const evidenceDays = new Set<string>();
     for (const r of receipts) {
-      const pack = typeof r.pack === "string" ? r.pack.toLowerCase() : "";
+      const pack = typeof r.pack === "string" ? redactKeyMaterial(r.pack).toLowerCase() : "";
       if (!pack) continue;
       if (
         cat.evidencePackPrefixes.some((prefix) =>

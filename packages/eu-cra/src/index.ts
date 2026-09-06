@@ -17,6 +17,9 @@
  */
 
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+// Every receipt-derived string this module publishes goes through this.
+// SECURITY.md item 4: key material must not reach an exporter's output.
+import { redactKeyMaterial } from "@sovereign-matrix/verifiable-receipts";
 
 export interface CraScope {
   /** Manufacturer (Article 13). */
@@ -119,7 +122,7 @@ const CRA_CATALOG: Array<{
       "Designed/developed to provide an appropriate level of cybersecurity",
     requirement:
       "Products with digital elements shall be designed, developed and produced in such a way that they ensure an appropriate level of cybersecurity based on the risks.",
-    evidencePackPrefixes: ["cra", "soc2-cc6", "owasp", "secure-design"],
+    evidencePackPrefixes: ["owasp"],
   },
   {
     id: "AI.I.2",
@@ -128,7 +131,7 @@ const CRA_CATALOG: Array<{
     title: "No exploitable known vulnerabilities",
     requirement:
       "Products shall be made available on the market without known exploitable vulnerabilities.",
-    evidencePackPrefixes: ["cra", "vuln-scan", "owasp"],
+    evidencePackPrefixes: ["owasp"],
   },
   {
     id: "AI.I.3",
@@ -137,7 +140,7 @@ const CRA_CATALOG: Array<{
     title: "Secure-by-default configuration",
     requirement:
       "Products shall be delivered with a secure-by-default configuration.",
-    evidencePackPrefixes: ["cra", "secure-defaults", "hardening"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.I.3.b",
@@ -146,7 +149,7 @@ const CRA_CATALOG: Array<{
     title: "Security updates capability",
     requirement:
       "Products shall ensure that security updates can be installed, also automatically where applicable.",
-    evidencePackPrefixes: ["cra", "update-mechanism"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.I.3.c",
@@ -155,7 +158,7 @@ const CRA_CATALOG: Array<{
     title: "Protection from unauthorised access",
     requirement:
       "Ensure protection from unauthorised access by appropriate control mechanisms (authentication, identity, access management).",
-    evidencePackPrefixes: ["cra", "auth", "iam", "rbac", "mfa"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.I.3.d",
@@ -164,7 +167,7 @@ const CRA_CATALOG: Array<{
     title: "Confidentiality of stored, transmitted, or processed data",
     requirement:
       "Protect the confidentiality of stored, transmitted, or otherwise processed data (encryption at rest + in transit).",
-    evidencePackPrefixes: ["cra", "encryption", "tls", "aes"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.I.3.e",
@@ -173,7 +176,7 @@ const CRA_CATALOG: Array<{
     title: "Integrity of stored, transmitted, or processed data",
     requirement:
       "Protect the integrity of stored, transmitted, or otherwise processed data, commands, programs, configurations against any manipulation or modification not authorised by the user.",
-    evidencePackPrefixes: ["cra", "integrity", "vaos", "signing"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.I.3.f",
@@ -182,7 +185,7 @@ const CRA_CATALOG: Array<{
     title: "Data minimisation",
     requirement:
       "Process only data that is adequate, relevant, and limited to what is necessary in relation to the intended purpose (data minimisation).",
-    evidencePackPrefixes: ["cra", "gdpr", "data-minimization"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.I.3.g",
@@ -191,7 +194,7 @@ const CRA_CATALOG: Array<{
     title: "Availability of essential and basic functions",
     requirement:
       "Protect the availability of essential and basic functions, also after an incident (mitigation/resilience).",
-    evidencePackPrefixes: ["cra", "availability", "bcp", "dr"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.I.3.h",
@@ -201,7 +204,7 @@ const CRA_CATALOG: Array<{
       "Minimise negative impact on the availability of services provided by other devices",
     requirement:
       "Minimise the negative impact of products themselves or connected devices on the availability of services provided by other devices or networks.",
-    evidencePackPrefixes: ["cra", "rate-limit", "resource-isolation"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.I.3.i",
@@ -210,7 +213,7 @@ const CRA_CATALOG: Array<{
     title: "Minimal attack surface",
     requirement:
       "Be designed, developed and produced to limit attack surfaces, including external interfaces.",
-    evidencePackPrefixes: ["cra", "attack-surface", "hardening"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.I.3.j",
@@ -219,7 +222,7 @@ const CRA_CATALOG: Array<{
     title: "Reduce impact via mitigation techniques",
     requirement:
       "Be designed, developed and produced to reduce the impact of an incident using appropriate exploitation mitigation mechanisms and techniques.",
-    evidencePackPrefixes: ["cra", "exploit-mitigation"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.I.3.k",
@@ -228,7 +231,7 @@ const CRA_CATALOG: Array<{
     title: "Security-relevant information access + logging",
     requirement:
       "Provide security-related information by recording and monitoring relevant internal activity (logging mechanisms).",
-    evidencePackPrefixes: ["cra", "audit-log", "siem", "vaos"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.I.3.l",
@@ -237,7 +240,7 @@ const CRA_CATALOG: Array<{
     title: "Secure data deletion / portability",
     requirement:
       "Provide the possibility for users to securely and easily remove on a permanent basis all data and settings + transfer them in a structured machine-readable format.",
-    evidencePackPrefixes: ["cra", "data-deletion", "gdpr-art-20"],
+    evidencePackPrefixes: [],
   },
 
   // Annex I Part II — Vulnerability handling
@@ -248,7 +251,7 @@ const CRA_CATALOG: Array<{
     title: "Identify and document vulnerabilities",
     requirement:
       "Identify and document vulnerabilities and components contained in the product, including by drawing up a software bill of materials in a commonly used and machine-readable format.",
-    evidencePackPrefixes: ["cra", "sbom", "vuln-scan"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.II.2",
@@ -257,7 +260,7 @@ const CRA_CATALOG: Array<{
     title: "Address and remediate vulnerabilities without delay",
     requirement:
       "In relation to the risks posed, address and remediate vulnerabilities without delay, including by providing security updates.",
-    evidencePackPrefixes: ["cra", "patch-mgmt"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.II.3",
@@ -266,7 +269,7 @@ const CRA_CATALOG: Array<{
     title: "Apply effective and regular tests/reviews",
     requirement:
       "Apply effective and regular tests and reviews of the security of the product.",
-    evidencePackPrefixes: ["cra", "pen-test", "red-team", "owasp"],
+    evidencePackPrefixes: ["owasp"],
   },
   {
     id: "AI.II.4",
@@ -275,7 +278,7 @@ const CRA_CATALOG: Array<{
     title: "Public disclosure of fixed vulnerabilities",
     requirement:
       "Once a security update has been made available, share and publicly disclose information about fixed vulnerabilities (advisories).",
-    evidencePackPrefixes: ["cra", "advisory", "cve"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.II.5",
@@ -284,7 +287,7 @@ const CRA_CATALOG: Array<{
     title: "Coordinated vulnerability disclosure policy",
     requirement:
       "Put in place and enforce a policy on coordinated vulnerability disclosure.",
-    evidencePackPrefixes: ["cra", "cvd", "security-txt"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.II.6",
@@ -293,7 +296,7 @@ const CRA_CATALOG: Array<{
     title: "Sharing of information on potential vulnerabilities",
     requirement:
       "Facilitate the sharing of information about potential vulnerabilities, including by providing a contact address for the reporting of vulnerabilities.",
-    evidencePackPrefixes: ["cra", "security-txt"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.II.7",
@@ -302,7 +305,7 @@ const CRA_CATALOG: Array<{
     title: "Secure update distribution",
     requirement:
       "Provide for mechanisms to securely distribute updates for products with digital elements.",
-    evidencePackPrefixes: ["cra", "secure-update", "signed-artifact"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.II.8",
@@ -311,7 +314,7 @@ const CRA_CATALOG: Array<{
     title: "Dissemination of security patches without delay",
     requirement:
       "Ensure that, where security patches or updates are available, they are disseminated without delay and free of charge.",
-    evidencePackPrefixes: ["cra", "patch-mgmt", "auto-update"],
+    evidencePackPrefixes: [],
   },
 
   // Article 14 — Post-market obligations
@@ -322,7 +325,7 @@ const CRA_CATALOG: Array<{
     title: "Reporting actively exploited vulnerabilities to ENISA within 24h",
     requirement:
       "Manufacturer shall notify ENISA + CSIRT of any actively exploited vulnerability within 24 hours of becoming aware.",
-    evidencePackPrefixes: ["cra", "incident-response", "enisa"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.PM.2",
@@ -331,7 +334,7 @@ const CRA_CATALOG: Array<{
     title: "Reporting severe incidents",
     requirement:
       "Notify ENISA + CSIRT of any severe incident having an impact on the security of the product within 24 hours.",
-    evidencePackPrefixes: ["cra", "incident-response"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.PM.3",
@@ -340,7 +343,7 @@ const CRA_CATALOG: Array<{
     title: "User information for vulnerabilities/incidents",
     requirement:
       "Inform users of the affected product about any incident or actively exploited vulnerability + corrective measures.",
-    evidencePackPrefixes: ["cra", "user-comm"],
+    evidencePackPrefixes: [],
   },
 
   // Article 13 + Annex VII — Technical documentation
@@ -351,7 +354,7 @@ const CRA_CATALOG: Array<{
     title: "Technical documentation maintained",
     requirement:
       "Draw up technical documentation in accordance with Annex VII and keep it up to date.",
-    evidencePackPrefixes: ["cra", "tech-doc"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.TD.2",
@@ -360,7 +363,7 @@ const CRA_CATALOG: Array<{
     title: "Cybersecurity risk assessment performed",
     requirement:
       "Carry out a cybersecurity risk assessment + take its outcome into account during planning, design, development, production, delivery, and maintenance.",
-    evidencePackPrefixes: ["cra", "risk-assessment", "iso-23894"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.TD.3",
@@ -369,7 +372,7 @@ const CRA_CATALOG: Array<{
     title: "EU Declaration of Conformity",
     requirement:
       "Draw up an EU declaration of conformity per Annex V + ensure it accompanies the product.",
-    evidencePackPrefixes: ["cra", "doc"],
+    evidencePackPrefixes: [],
   },
   {
     id: "AI.TD.4",
@@ -378,7 +381,7 @@ const CRA_CATALOG: Array<{
     title: "CE marking applied",
     requirement:
       "Affix the CE marking on the product visibly, legibly, and indelibly per Articles 30(1)-(6).",
-    evidencePackPrefixes: ["cra"],
+    evidencePackPrefixes: [],
   },
 ];
 
@@ -414,7 +417,7 @@ export function buildEuCra(opts: BuildCraOptions): CraReport {
   const requirements: CraRequirement[] = CRA_CATALOG.map((cat) => {
     let evidenceCount = 0;
     for (const r of receipts) {
-      const pack = typeof r.pack === "string" ? r.pack.toLowerCase() : "";
+      const pack = typeof r.pack === "string" ? redactKeyMaterial(r.pack).toLowerCase() : "";
       if (!pack) continue;
       if (
         cat.evidencePackPrefixes.some((p) => pack.startsWith(p.toLowerCase()))

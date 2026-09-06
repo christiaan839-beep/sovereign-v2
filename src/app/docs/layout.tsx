@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://sovereignmatrix.agency/docs" },
   openGraph: {
     title: "Documentation — Sovereign Matrix",
-    description: "API reference, SDK guides, and 25+ agent playbooks.",
+    description: "API reference, SDK guides, and 140 agent playbooks.",
     url: "https://sovereignmatrix.agency/docs",
     type: "website",
   },

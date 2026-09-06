@@ -88,7 +88,6 @@ export default function GdprDpiaDashboard() {
       framework="gdpr-dpia"
       frameworkLabel="GDPR Article 35 DPIA + Article 30 RoPA"
       description="Generate the DPIA + RoPA report from operator-declared processing activities + your tenant's signed receipts. High-residual-risk activities automatically flag for Article 36 prior consultation. RoPA documented per Article 30(1)."
-      previewUrl="/compliance/gdpr-dpia"
       npmPackage="@sovereign-matrix/gdpr-dpia"
       fields={FIELDS}
       dataMode="sample"

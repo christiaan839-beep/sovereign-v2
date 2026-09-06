@@ -209,18 +209,32 @@ describe("enterprise flag levers", () => {
     expect(hasSamlSso("node")).toBe(false);
   });
 
-  it("enterprise + sovereign have SAML enabled", async () => {
-    const { hasSamlSso } = await import("@/lib/plans");
-    expect(hasSamlSso("enterprise")).toBe(true);
-    expect(hasSamlSso("sovereign")).toBe(true);
+  /**
+   * Enforcement guard, not an identity assertion. SAML has no implementation
+   * in this codebase — no Clerk Organizations usage, no WorkOS dependency —
+   * so no plan may advertise it. If you wire the auth path, flip the flag in
+   * the same change and this test is what tells you to.
+   */
+  it("no plan claims SAML while nothing implements it", async () => {
+    const { PLANS, hasSamlSso } = await import("@/lib/plans");
+    const claiming = (Object.keys(PLANS) as Array<keyof typeof PLANS>).filter(
+      (id) => hasSamlSso(id),
+    );
+    expect(claiming).toEqual([]);
   });
 
-  it("data residency is enterprise+ only", async () => {
-    const { hasDataResidency } = await import("@/lib/plans");
-    expect(hasDataResidency("free")).toBe(false);
-    expect(hasDataResidency("node")).toBe(false);
-    expect(hasDataResidency("enterprise")).toBe(true);
-    expect(hasDataResidency("sovereign")).toBe(true);
+  /**
+   * dataResidency and dedicatedRegion were removed in wave 122: there is no
+   * region column across the schema, one DATABASE_URL and one Neon region, so
+   * neither flag could ever have gated anything. Re-adding either without the
+   * substrate puts a claim back on the pricing surface that nothing enforces.
+   */
+  it("does not carry plan levers with no substrate", async () => {
+    const { PLANS } = await import("@/lib/plans");
+    for (const plan of Object.values(PLANS)) {
+      expect(plan.enterprise).not.toHaveProperty("dataResidency");
+      expect(plan.enterprise).not.toHaveProperty("dedicatedRegion");
+    }
   });
 
   it("BYOK is sovereign-only", async () => {
@@ -229,23 +243,103 @@ describe("enterprise flag levers", () => {
     expect(getEnterpriseFlag("sovereign", "byok")).toBe(true);
   });
 
-  it("dedicated region is sovereign-only", async () => {
-    const { getEnterpriseFlag } = await import("@/lib/plans");
-    expect(getEnterpriseFlag("enterprise", "dedicatedRegion")).toBe(false);
-    expect(getEnterpriseFlag("sovereign", "dedicatedRegion")).toBe(true);
+  // dataResidency / dedicatedRegion were removed: there is no region
+  // column across the schema, one DATABASE_URL, one Neon region and no
+  // per-tenant deployment, so neither flag could ever have gated
+  // anything. A flag with no substrate is copy, not an entitlement.
+  it("carries no flag the platform cannot honour", async () => {
+    const { PLANS } = await import("@/lib/plans");
+    const keys = Object.keys(PLANS.sovereign.enterprise);
+    expect(keys).not.toContain("dataResidency");
+    expect(keys).not.toContain("dedicatedRegion");
   });
 
   it("SLA uptime renders as percentage strings", async () => {
     const { slaUptimePercent } = await import("@/lib/plans");
     expect(slaUptimePercent("free")).toBeNull();
-    expect(slaUptimePercent("starter")).toBeNull();
     expect(slaUptimePercent("enterprise")).toBe("99.95%");
     expect(slaUptimePercent("sovereign")).toBe("99.99%");
+  });
+
+  /**
+   * /sla is rendered from this registry and has published "99.9% monthly
+   * uptime for all paid plans". Dropping a paid tier's commitment here
+   * silently withdraws a promise already made to people who are paying,
+   * so every purchasable tier must carry one.
+   */
+  it("every paid plan carries the uptime commitment /sla publishes", async () => {
+    const { PLANS, slaUptimePercent } = await import("@/lib/plans");
+    const uncommitted = (Object.keys(PLANS) as Array<keyof typeof PLANS>)
+      .filter((id) => PLANS[id].priceUsdCents > 0)
+      .filter((id) => slaUptimePercent(id) === null);
+    expect(uncommitted).toEqual([]);
+    expect(slaUptimePercent("free")).toBeNull();
   });
 
   it("sovereign is never purchasable via self-serve checkout", async () => {
     const { getPlan } = await import("@/lib/plans");
     expect(getPlan("sovereign").purchasable).toBe(false);
     expect(getPlan("sovereign").stripePriceEnvKey).toBeNull();
+  });
+});
+
+// ── Untrusted plan writes + entitlement lookup ──
+
+describe("normalizePurchasablePlanId", () => {
+  it("accepts the self-serve tiers", async () => {
+    const { normalizePurchasablePlanId } = await import("@/lib/plans");
+    expect(normalizePurchasablePlanId("starter")).toBe("starter");
+    expect(normalizePurchasablePlanId("array")).toBe("array");
+    expect(normalizePurchasablePlanId("node")).toBe("node");
+    expect(normalizePurchasablePlanId("enterprise")).toBe("enterprise");
+  });
+
+  it("rejects tiers checkout can never sell", async () => {
+    const { normalizePurchasablePlanId } = await import("@/lib/plans");
+    // "sovereign" is contract-only and "founder" comes from the
+    // allowlist — neither may arrive from Stripe session metadata.
+    expect(normalizePurchasablePlanId("sovereign")).toBeNull();
+    expect(normalizePurchasablePlanId("founder")).toBeNull();
+    expect(normalizePurchasablePlanId("free")).toBeNull();
+  });
+
+  it("rejects garbage and prototype keys instead of defaulting to a tier", async () => {
+    const { normalizePurchasablePlanId } = await import("@/lib/plans");
+    expect(normalizePurchasablePlanId("gold")).toBeNull();
+    expect(normalizePurchasablePlanId("__proto__")).toBeNull();
+    expect(normalizePurchasablePlanId(null)).toBeNull();
+    expect(normalizePurchasablePlanId(undefined)).toBeNull();
+  });
+});
+
+describe("cheapestPlanWith", () => {
+  it("resolves the cheapest purchasable tier carrying a flag", async () => {
+    const { cheapestPlanWith } = await import("@/lib/plans");
+    // node ($199) is the first purchasable tier with audit export;
+    // white-label starts at enterprise ($499).
+    expect(cheapestPlanWith("auditLogExport")).toBe("node");
+    expect(cheapestPlanWith("whiteLabel")).toBe("enterprise");
+  });
+
+  it("returns null for a flag no purchasable tier carries", async () => {
+    const { cheapestPlanWith } = await import("@/lib/plans");
+    expect(cheapestPlanWith("byok")).toBeNull();
+  });
+});
+
+describe("enterprise plan copy matches what is enforced", () => {
+  it("does not advertise SAML SSO", async () => {
+    const { PLANS } = await import("@/lib/plans");
+    // No Clerk Organizations, no WorkOS dependency — nothing in this
+    // codebase implements SAML, so the marketing string must not claim it.
+    expect(PLANS.enterprise.description).not.toMatch(/SAML/i);
+  });
+
+  it("advertises only enforced levers", async () => {
+    const { PLANS } = await import("@/lib/plans");
+    expect(PLANS.enterprise.description).toMatch(/Audit log export/i);
+    expect(PLANS.enterprise.description).toMatch(/white-label/i);
+    expect(PLANS.enterprise.description).not.toMatch(/SLA/i);
+    expect(PLANS.enterprise.description).not.toMatch(/CSM/i);
   });
 });

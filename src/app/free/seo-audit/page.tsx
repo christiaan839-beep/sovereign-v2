@@ -30,6 +30,8 @@ export default function FreeSeoAuditPage() {
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [emailCaptured, setEmailCaptured] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailError, setEmailError] = useState("");
 
   const runAudit = async () => {
     if (!url.trim()) return;
@@ -60,15 +62,31 @@ export default function FreeSeoAuditPage() {
     }
   };
 
-  const captureEmail = () => {
+  const captureEmail = async () => {
     if (!email.includes("@")) return;
-    setEmailCaptured(true);
-    // Fire to API for lead capture
-    fetch("/api/_misc/email/capture", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, source: "free-seo-audit", domain: url }),
-    }).catch(() => {});
+    setEmailSending(true);
+    setEmailError("");
+
+    try {
+      // Fire to API for lead capture
+      const res = await fetch("/api/email/capture", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "free-seo-audit", domain: url }),
+      });
+
+      if (!res.ok) {
+        setEmailError("We couldn't save that email. Check the address and try again.");
+        return;
+      }
+
+      // Only unlock once the capture actually landed.
+      setEmailCaptured(true);
+    } catch {
+      setEmailError("Connection error. Check your network and try again.");
+    } finally {
+      setEmailSending(false);
+    }
   };
 
   const intel = result?.seo_intelligence;
@@ -209,11 +227,28 @@ export default function FreeSeoAuditPage() {
                   />
                   <button
                     onClick={captureEmail}
-                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-lg text-sm transition-colors"
+                    disabled={emailSending}
+                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold rounded-lg text-sm transition-colors flex items-center gap-2"
                   >
+                    <Loader2
+                      className={`w-3.5 h-3.5 animate-spin transition-opacity ${emailSending ? "opacity-100" : "opacity-0"}`}
+                      aria-hidden="true"
+                    />
                     Unlock
                   </button>
                 </div>
+                {emailError && (
+                  <div
+                    role="alert"
+                    className="mt-3 p-3 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 text-xs flex items-center gap-2"
+                  >
+                    <AlertTriangle
+                      className="w-3.5 h-3.5 shrink-0"
+                      aria-hidden="true"
+                    />
+                    {emailError}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
@@ -234,7 +269,7 @@ export default function FreeSeoAuditPage() {
         {/* Social proof footer */}
         <div className="mt-16 text-center">
           <p className="text-xs text-neutral-600">
-            Powered by 35+ AI models. Used by 130+ agents. Zero per-token cost.
+            Powered by 20 AI models. Used by 140 agents. Zero per-token cost.
           </p>
           <Link href="/pricing" className="text-xs text-emerald-500/60 hover:text-emerald-400 transition-colors mt-2 inline-block">
             See pricing →

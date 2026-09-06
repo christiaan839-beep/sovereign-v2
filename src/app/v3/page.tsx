@@ -108,11 +108,6 @@ const RECEIPT: PageReceipt = {
           href: "/spec",
           label: "Protocol spec",
         },
-        {
-          id: "cite_007",
-          href: "/readiness",
-          label: "100/100 across 8 verticals",
-        },
       ],
     },
     {
@@ -157,7 +152,7 @@ const RECEIPT: PageReceipt = {
         {
           id: "cite_012",
           href: "/oss",
-          label: "18 models + 30 frameworks catalog",
+          label: "20 models + 30 frameworks catalog",
         },
         {
           id: "cite_013",
@@ -228,12 +223,6 @@ export default function LandingV3() {
             </span>
             <Link href="/oss" className="hover:text-cyan-300 transition-colors">
               OSS
-            </Link>
-            <Link
-              href="/readiness"
-              className="hover:text-cyan-300 transition-colors"
-            >
-              100/100
             </Link>
             <Link
               href="/investors"
@@ -458,9 +447,6 @@ curl -sSf https://sovereignmatrix.agency/api/verify \\
           </Link>
           <Link href="/security" className="hover:text-neutral-300">
             Security
-          </Link>
-          <Link href="/readiness" className="hover:text-neutral-300">
-            Readiness
           </Link>
           <Link href="/oss" className="hover:text-neutral-300">
             Open ecosystem

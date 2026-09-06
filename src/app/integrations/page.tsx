@@ -22,7 +22,7 @@ const CATEGORIES: Category[] = [
     label: "AI Models",
     color: "emerald",
     integrations: [
-      { name: "NVIDIA NIM", desc: "20+ models, free tier inference", letter: "N", status: "connected" },
+      { name: "NVIDIA NIM", desc: "20 models, free tier inference", letter: "N", status: "connected" },
       { name: "Google Gemini", desc: "2.5 Pro/Flash, 1M context", letter: "G", status: "connected" },
       { name: "Anthropic Claude", desc: "Sonnet 4.6, Mythos (coming)", letter: "A", status: "connected" },
       { name: "Groq", desc: "Ultra-low latency inference", letter: "G", status: "connected" },

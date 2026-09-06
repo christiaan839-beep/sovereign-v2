@@ -1,7 +1,7 @@
 {
   "name": "@sovereign-matrix/soc2-evidence",
   "version": "0.1.0",
-  "description": "SOC 2 Trust Service Criteria evidence-binder exporter. Takes a set of VAOS receipts and emits the auditor-ready evidence package mapped to the 2017 TSC (CC1-CC9 + A1 + C1 + PI1 + P-series) (Markdown + JSON). Apache-2.0; Vanta / Drata charge $5-50K/yr for the same deliverable.",
+  "description": "SOC 2 Trust Service Criteria (AICPA TSC 2017) binder generator. Renders a set of VAOS receipts into the CC1-CC9 + A1 + C1 + PI1 + P-series criterion table (Markdown + JSON), marking each criterion evidenced or unevidenced. A receipt is a guardrail verdict on model output, so most SOC 2 criteria are reported as gaps for the operator to evidence elsewhere. Apache-2.0.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -82,7 +82,6 @@ export default function NistAiRmfDashboard() {
       framework="nist-ai-rmf"
       frameworkLabel="NIST AI RMF 1.0 profile"
       description="Generate the NIST AI RMF 1.0 GOVERN / MAP / MEASURE / MANAGE profile from your tenant's signed receipts. Subcategory evidence counts derive directly from Guardian-pack tags; trustworthy-AI characteristic coverage is computed across the 7 dimensions of NIST AI RMF Appendix B."
-      previewUrl="/compliance/nist-ai-rmf"
       npmPackage="@sovereign-matrix/nist-ai-rmf"
       fields={FIELDS}
       dataMode="sample"

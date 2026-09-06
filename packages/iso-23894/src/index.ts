@@ -21,6 +21,9 @@
  */
 
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+// Every receipt-derived string this module publishes goes through this.
+// SECURITY.md item 4: key material must not reach an exporter's output.
+import { redactKeyMaterial } from "@sovereign-matrix/verifiable-receipts";
 
 /**
  * AI risk-management scope per ISO/IEC 23894 § 4 (context establishment).
@@ -192,7 +195,7 @@ export function buildIso23894(opts: BuildIso23894Options): Iso23894Report {
   const scored: ScoredScenario[] = scenarios.map((s) => {
     let evidenceCount = 0;
     for (const r of receipts) {
-      const pack = typeof r.pack === "string" ? r.pack.toLowerCase() : "";
+      const pack = typeof r.pack === "string" ? redactKeyMaterial(r.pack).toLowerCase() : "";
       if (!pack) continue;
       if (
         s.evidencePackPrefixes.some((p) => pack.startsWith(p.toLowerCase()))

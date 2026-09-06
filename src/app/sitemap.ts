@@ -15,6 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/onboarding", priority: 0.9, changeFreq: "monthly" },
     { path: "/docs", priority: 0.9, changeFreq: "weekly" },
     { path: "/enterprise", priority: 0.9, changeFreq: "weekly" },
+    { path: "/sales", priority: 0.9, changeFreq: "monthly" }, // Enterprise + Sovereign contract tiers — the only page describing $499+ offerings
     { path: "/for-agencies", priority: 0.9, changeFreq: "weekly" },
     { path: "/anthropic", priority: 0.9, changeFreq: "monthly" },
     { path: "/now", priority: 0.7, changeFreq: "weekly" },
@@ -136,12 +137,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/quickstart", priority: 0.9, changeFreq: "monthly" }, // 5-min walkthrough — conversion-funnel doc
     { path: "/spec", priority: 0.95, changeFreq: "monthly" }, // VAOS 1.0 open standard — top SEO target for "verifiable AI receipts" / "AI agent audit standard"
 
+    // Compliance exporters — each page previews a shipped Apache-2.0
+    // exporter package, the strongest framework-search SEO surface we have. // exporter index // EU AI Act Annex IV // ISO/IEC 42001:2023 // NIST AI RMF 1.0 // SOC 2 evidence binder // HIPAA Security Rule // GDPR DPIA + RoPA // ISO/IEC 23894 AI risk // EU Cyber Resilience Act // Constitutional AI anchoring
+
     // Investor + fundraise surfaces (Cook 144 + 147 + 157)
     // /investors and /pitch are noindex via the page metadata; intentionally
     // excluded from sitemap so search engines don't surface them publicly.
     { path: "/savings", priority: 0.92, changeFreq: "monthly" }, // Audit-prep ROI calculator — high-intent compliance-buyer conversion
-    { path: "/vs/compare", priority: 0.9, changeFreq: "weekly" }, // 23-feature × 7-competitor matrix — comparison-shop SEO
-    { path: "/readiness", priority: 0.88, changeFreq: "weekly" }, // Programmatic vertical readiness scoreboard
+    { path: "/vs/compare", priority: 0.9, changeFreq: "weekly" }, // 23-feature × 7-competitor matrix — comparison-shop SEO // Programmatic vertical readiness scoreboard
     { path: "/grants", priority: 0.85, changeFreq: "monthly" }, // Non-dilutive funding directory
     { path: "/starter-packs", priority: 0.9, changeFreq: "weekly" }, // Self-serve SKUs ($99-$999) — direct revenue surface
     { path: "/demo/verify-receipt", priority: 0.95, changeFreq: "monthly" }, // Live cryptographic demo — top of every funnel

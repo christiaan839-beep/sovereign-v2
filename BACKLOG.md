@@ -5,7 +5,295 @@
 > updates this. If something is shipped, move it to the bottom log; if
 > something new is discovered, add it under the right severity band.
 
-Last refreshed: **2026-07-08** after wave 121 (deferred-flaw closeout + dependency hardening).
+Last refreshed: **2026-09-03** after wave 123 (compliance-binder truthfulness).
+
+---
+
+## Wave 123 — the compliance binder was made of nothing (2026-09-03)
+
+`/api/_admin/compliance/[framework]/generate` renders a binder a signed-in user
+downloads. Three defects stacked, each hiding the next.
+
+**1. Synthetic receipts, unmarked.** The route always calls
+`buildSampleReceipts()` — reading the tenant's receipts is not wired up — and
+nothing in the response said so. The output was a document that reads as
+finished evidence.
+
+**2. The corpus' pack ids were invented.** `nist-ai-rmf-govern`,
+`iso42001-aims`, `euaiact-art-9`, `soc2-cc6-iam`, `hipaa-iam`, `fairness-eval`
+and three more. None exists in the 42-pack Guardian registry.
+
+**3. The exporters' evidence-prefix tables were invented to match.** 129 of the
+138 declared `evidencePackPrefixes` across the five framework exporters —
+`encryption`, `rbac`, `siem`, `waf`, `physical-security`, `vendor-management`,
+`ethics`, `code-of-conduct` — matched no pack `packs.ts` can produce. Every
+real mapping was unreachable, which is *why* the catch-all prefixes existed:
+only a blanket `soc2` / `hipaa` / `cra` made a binder look populated. Under
+them one receipt evidenced 33 of 33 SOC 2 criteria and 52 of 52 HIPAA
+implementation specifications, Board Oversight and Physical Access included.
+
+**Fixed.** The response carries `sampleData`; the Markdown opens with a
+blockquoted `SAMPLE DOCUMENT — NOT EVIDENCE` banner, prepended before the
+download path so it survives the save. The corpus uses real pack ids. The
+fabricated prefixes are gone. Real coverage is what it always was: SOC 2 2/33,
+HIPAA 1/52, EU CRA 3/29 — receipts are guardrail verdicts on the wording of
+model output, and do not observe firewalls, access reviews, facility access or
+vendor contracts. The docstrings and READMEs say that instead of claiming the
+binder replaces a $5-50K/yr vendor deliverable.
+
+**Also ported:** `redactKeyMaterial`, which this repo's exporter copies never
+had. A PEM in a receipt's `pack`, `agentSlug` or `verdictId` reached both the
+Markdown and the JSON of a published document. These copies are the ones that
+serve users, so the gap was live here while fixed upstream — a concrete cost of
+L7's duplication.
+
+**Gates, both mutation-verified:**
+
+- `packages/__tests__/exporter-prefixes.test.ts` — no exporter may declare a
+  prefix matching no pack id. Adding back `"siem", "waf"` fails it by name.
+- the generate route's suite — every corpus pack must exist, and all nine
+  frameworks must stamp the document. Reintroducing `nist-ai-rmf-govern` fails
+  the first; dropping the banner fails nine tests.
+
+**Method note.** The prefix tables and the sample corpus were written against
+each other, not against the registry. Neither half was checkable without the
+other, and no test compared either to `packs.ts`. The gates close that: both
+now compare against `ALL_PACKS`, which is the thing that actually exists.
+
+## Wave 122 — entitlement enforcement + funnel repair + claim truthfulness (2026-09-02)
+
+The first wave to audit the commercial surface instead of the agent layer.
+This file had tracked engineering almost exclusively, so three whole classes
+of defect had never been written down: plan flags that gate nothing, a tier
+no code path can provision, and a funnel that discards the demand it
+captures. Typecheck + the new entitlement suite green.
+
+**Enterprise flags became enforcement (the headline):**
+
+- **All 8 `PlanEnterpriseFlags` were read exactly once** — on `/sales`, to
+  paint a coloured dot. Not one gated a request. The 7 tests in
+  `plans.test.ts` asserted a constant equals itself
+  (`getEnterpriseFlag("sovereign", "byok") === true`), which is true by
+  construction and stays true after every gate is deleted.
+- **`whiteLabel` was INVERTED — FIXED.** `POST /api/_settings/whitelabel`
+  checked only `currentUser()`, so any free account could set agency name,
+  logo, colour and custom domain — the entitlement Enterprise charges
+  $499/mo for. Now `requireEntitlement(user.id, "whiteLabel")` → 402. GET
+  stays open so a downgraded tenant can still read its own config back.
+- **`auditLogExport` was INVERTED — FIXED.** The signed Merkle bundle at
+  `/api/me/audit-bundle` and the raw reader at `/api/_misc/audit-logs` were
+  auth-gated only, so free users got the full export. Both now require the
+  flag. **The statutory right of access is deliberately NOT gated** —
+  `/api/data-export` and `/api/dsar` stay open on every plan, and the 402
+  body points at them.
+- **New entitlement authority** — `getUserEntitlements()` /
+  `requireEntitlement()` in `plan-enforcement.ts` resolve through the same
+  subscriptions → founder → free path as the quota check (period-end expiry
+  included) and **fail CLOSED**: a DB outage yields free-tier flags, never
+  an enterprise feature. `paywall.ts` now derives its feature-slug tiers
+  from the same flags via `cheapestPlanWith()`, so `"white-label"` the slug
+  and `whiteLabel` the flag can no longer disagree about which tier unlocks.
+- **`dataResidency` + `dedicatedRegion` DELETED, not built.** No `region`
+  column across 49 tables, one `DATABASE_URL`, one Neon region, no
+  per-tenant deployment — neither flag could ever have gated anything. A
+  flag with no substrate is copy, not an entitlement; a regression test
+  pins their absence.
+- **`samlEnabled` has no implementation anywhere** — no Clerk Organizations
+  usage, WorkOS is not a dependency — while being advertised on six
+  surfaces including the root JSON-LD. Dropped from the Enterprise plan
+  description (a test now fails if it returns); the flag and its remaining
+  ad surfaces are C2 below.
+- **`byok` is not wired.** `src/lib/envelope-encryption.ts` is a real
+  library with zero production importers and no KMS/HSM behind it;
+  `/api/settings/byok` is an unrelated name collision that stores
+  third-party AI-provider keys. Still advertised on Sovereign — H4.
+- **Tests now assert enforcement, not identity** — new
+  `src/lib/__tests__/entitlements.test.ts` (10 cases): free denied,
+  enterprise allowed, expired subscription denied, resolution failure
+  denied (fail-closed), `/api/data-export` ungated on every plan.
+
+**Tier provisioning — `sovereign` had never executed:**
+
+- `purchasable: false` with no invoice path, no admin grant endpoint and no
+  checkout, so **no code path could write `plan='sovereign'`** — quota,
+  budget and rate-limit logic all handled correctly a value that could
+  never appear. New admin-only `POST /api/_admin/plan` (`requireAuth` +
+  `isAdmin` + audit log) is the writer: after a call and a manual invoice
+  an admin stamps the tier and enforcement resolves it like any other.
+  `currentPeriodEnd` is required-but-nullable, so a contract end date is
+  honoured by the wave-120 expiry check and an open-ended arrangement is
+  explicit rather than implied.
+- **Enterprise IS purchasable at $499/mo** with `STRIPE_PRICE_ENTERPRISE`
+  wired — and had no card on `/pricing`; the `if (plan === "enterprise")`
+  branch opened a `mailto:` instead of charging, so the highest self-serve
+  tier was unsellable. Added the Enterprise strip (every feature row read
+  from the registry, not retyped) and replaced the dead branch with a
+  `purchasable` check that routes contract-only tiers to `/sales`.
+- `normalizePurchasablePlanId()` — checkout metadata can no longer smuggle
+  `sovereign` or `founder` past a webhook.
+
+**Funnel — 100% of captured demand was being discarded:**
+
+- **All three `/free` tools posted to `/api/_misc/email/capture`** — an
+  unroutable Next.js private folder — and called `setEmailCaptured(true)`
+  _before_ the fetch resolved. Every captured email was dropped while the UI
+  reported success. Now they post to a public `/api/email/capture` alias and
+  only unlock on a 2xx, with a visible error state.
+- **`/enterprise` demo form 400'd on every submission** (it posts no
+  `phone`, which `/api/leads/capture` required) while the correct handler
+  had zero callers. Capture now takes email-or-phone and keeps `company`,
+  `companySize`, `useCase` and `message` verbatim in `notes`.
+- **`/contact` wrote the message body to the visitor's own `localStorage`**
+  under a printed 24-hour reply promise, and fired only the email at
+  `/api/waitlist`. Now posts the whole message to `/api/leads/capture` and
+  surfaces failure instead of faking success.
+- **The working Cal.com link** (signature-verified webhook) was reachable
+  only through a ⌘K easter egg. Now on `/contact` and `/enterprise` beside
+  the form.
+- **Dashboard billing** pointed both the portal button and the invoice list
+  at `/api/_billing/portal` (404 — private folder). Public
+  `/api/billing/portal` + `/api/billing/invoices` aliases; the table renders
+  real Stripe amounts, currency and receipt links.
+
+**Claims — what we say vs what we can show:**
+
+- **`/for-healthcare` shipped an unqualified "HIPAA-Compliant" in its
+  indexed page title** while the page body correctly said "HIPAA-aware, BAA
+  available" — wave 111.1's C1 pass corrected bodies and never opened the
+  layouts. Title, description, keywords and OG now match the body; same
+  pass on `/enterprise` metadata.
+- **`/trust` rendered a hardcoded nine-value array as a "Live posture" SOC 2
+  pass fraction.** Now a self-assessed control model over `TARGET_READINGS`,
+  with a non-dismissable amber banner directly above the numbers stating
+  they are design targets, not telemetry, not continuously monitored, and
+  not attested — we hold no SOC 2 report.
+- **`/security` promised "SOC 2 Type II expected Q3 2026"** — false on
+  2026-10-01, with no auditor engaged. Replaced with what is true: a
+  readiness programme, self-assessed, audit window published once an
+  auditor is engaged. No new date.
+- **`/sales` listed nine compliance artifacts of which two exist.** Now
+  lists the two we can hand over today (SBOM, sub-processor list).
+- **`/sla` published a flat 99.9% for "all paid plans"** while the registry
+  carried per-plan `slaUptimeBps`. The table is generated from the registry,
+  best-effort plans are marked as carrying no commitment, and the page now
+  says plainly that credits are claimed rather than automatic — because
+  availability is not metered per account.
+- **Three `/use-cases` pages asserted unsubstantiated performance figures**
+  ("AI detection rate stays below 5%", "34% open rate vs 18% industry
+  average", "$47,000 pipeline value", "in 45 seconds"). Rewritten to
+  describe mechanism; each demo block is labelled illustrative.
+- **`/sales` and the compliance exporters were missing from `sitemap.ts`** —
+  the only pages describing the $499+ offerings were unindexed.
+
+**Deferred (documented, not shipped):**
+
+- **SAML** is still advertised on `/pilot`, the root `layout.tsx` JSON-LD
+  and `/sales`, and `samlEnabled: true` still sits on two plans. Stripping
+  the copy is one wave; implementing Clerk Organizations SSO is another —
+  half-doing it across two waves is how the claim survived this long. C2.
+- **`dedicatedSupport` and `slaUptimeBps`** are now advertised accurately
+  but still unenforced — no Slack provisioning, no per-account availability
+  metering. H5 / M11.
+- **Trade-libel exposure in unpublished launch copy** — `VIRAL-CONTENT.md`
+  characterises a named competitor's pricing model. Unpublished, so L6.
+
+### Wave 122 addendum — invented GTM pack removed
+
+The `gtm/` directory added earlier in this wave proposed a "Commerce Agent
+Readiness Audit" at "$2,500 / R40,000, five working days". It was written
+without reading the storefront. Sovereign Matrix already sells, live and under
+South African consumer-law terms:
+
+- **AI Action Trace Review** — R2,500, written finding in 5 SA business days
+- **AI Readiness Audit** (Shopify storefront machine-readability) — R6,900,
+  an eight-dimension scorecard, "you send a URL, nothing else"
+- **AI Governance Evidence Sprint** — R24,900, implementation
+
+each crediting the smaller purchase in full against the larger within 60 days.
+
+The invented ladder duplicated and undercut the real one and was not even
+internally consistent with it (R40,000 vs the actual R2,500). Removed rather
+than salvaged: the live product pages are better written than a replacement
+would be.
+
+**Invariant:** no marketing or GTM artefact may be added to this repository
+that contradicts what is actually for sale on the storefront. Read the store
+before writing an offer.
+
+The eight-dimension audit is a strong candidate for automation — a scanner
+would make the R6,900 deliverable repeatable and enable a free preview as a
+first touch. That work belongs in the open-core repository (Sovereign-Matrix),
+not here, since the scanner is intended to be open source.
+
+### Wave 122 review findings — carried forward
+
+Two specialist agents audited the wave's own diff. What was fixed in-wave is
+above; these were confirmed, judged out of scope for a claim-truthfulness
+wave, and are written down so they are not rediscovered.
+
+**HIGH — `getClientId()` rate-limit bucket is chosen by the caller.**
+`src/lib/rate-limit.ts:30-40` prefers `x-api-key` and buckets on its SHA-256
+_without checking the key exists_. Rotating a random `x-api-key` yields a
+fresh bucket per request, so every limiter built on it is bypassable — and
+any key ≥16 chars also short-circuits the middleware CSRF check
+(`src/middleware.ts:101-107`). Fix is to validate against `apiKeys` before
+bucketing and otherwise fall through to the IP path. Not done here because
+the helper is on the hot path of every public route and deserves a wave with
+its own tests. (The related left-most-XFF spoof in
+`/api/_misc/email/capture` WAS fixed in this wave.)
+
+**MEDIUM — a tier can be granted with no audit record.** `auditLog()`
+swallows all errors by design (`src/lib/audit-log.ts:63-66`) and the
+subscription write in `/api/_admin/plan` has already committed by then, so a
+missing `audit_logs` table means a silent grant returning 200. Needs an
+`auditLogStrict()` for privilege writes: record first, abort on failure.
+
+**MEDIUM — an admin grant is silently reverted by the next Stripe event.**
+`/api/_admin/plan` sets `plan`/`status`/`currentPeriodEnd` but leaves
+`stripeCustomerId` in place, and the webhook updates _by_ that id —
+`customer.subscription.updated` overwrites `plan` from the price ID and
+`.deleted` forces `free`. Granting `sovereign` to someone who also holds a
+self-serve subscription produces a tier that vanishes with no alert. Either
+clear the Stripe linkage when stamping a contract tier, or add a
+`contractLocked` column the webhook honours.
+
+**MEDIUM — `/api/_settings/whitelabel` is entitlement-gated but unvalidated.**
+No type, length or format checks on `agencyName`/`logoUrl`/`primaryColor`/
+`supportEmail`/`domain`, and no ownership proof for `domain` — which is
+`UNIQUE`, so an entitled tenant can squat any unclaimed domain and serve
+branding from the public `/api/portal/[domain]`. Needs a zod schema plus DNS
+TXT verification. Bounded by costing $499/mo to attempt.
+
+**MEDIUM — the Stripe webhook still writes an unvalidated plan string.**
+`session.metadata?.plan || "node"` goes straight into `subscriptions.plan`.
+`normalizePurchasablePlanId()` was added to `plans.ts` in this wave for
+exactly this call site; wiring it belongs in a webhook change with its own
+signature tests.
+
+**LOW — the founder fallback in `plan-enforcement.ts:94-103` is dead code.**
+`/api/_misc/founders` exports no `founders` symbol, so the branch never
+fires. Fails closed (founders resolve via their `plan='founder'` row), but
+the comment describes a path that does not run.
+
+**LOW — doc drift on the subscriptions unique constraint.** `schema.ts:406`
+credits migration 0017; 0017 is `semantic_memory`. It ships in
+`drizzle/0025_subscriptions_userid_unique.sql`.
+
+**UI debt on the funnel surfaces this wave made load-bearing.**
+`focus:outline-none` with no `focus-visible:` follow-up on the contact,
+enterprise and three `/free` forms (`globals.css:141-147` suppresses the
+global ring for inputs, so these have no keyboard focus indicator at all —
+a live WCAG 2.4.7 failure, and CLAUDE.md names the rule). Also: emerald is
+in use as a third accent against the two-accent rule in
+`docs/design-system/brand-colors.md`, and `captureEmail` is triplicated
+across the three `/free` pages, so every future fix must be applied three
+times.
+
+**INVARIANT for future waves.** No plan flag may be advertised on a
+marketing surface unless a code path enforces it, and every flag ships with
+a test that asserts enforcement rather than asserting the constant. Two
+such guards now exist in `plans.test.ts`: no plan may claim SAML, and no
+lever may return without a substrate.
 
 ---
 
@@ -259,13 +547,15 @@ The platform is production-deployable RIGHT NOW for: agency operators automating
 
 ### LOW — cleanup and polish that doesn't change behavior
 
-| ID  | Item                                                                                                                                                                                                                                                                                    | Effort  | Notes                             |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --------------------------------- |
-| L1  | **6 transitive `next → postcss` vulns** from `npm audit`. No upstream patch yet. Watch for Next.js minor release.                                                                                                                                                                       | passive | Re-run `npm audit fix` quarterly. |
-| L2  | **`as NextRequest` cast** in `src/middleware.ts:271` — works in practice (Edge runtime always passes NextRequest) but worth an `instanceof` guard for clarity. Wave-107 review's Low.                                                                                                   | 15 min  | Cosmetic.                         |
-| L3  | **Hardcoded `User-Agent: SovereignBot/1.0`** in competitor-scan's fetch_page. Should be env-configurable. Wave-110 review's L2.                                                                                                                                                         | 15 min  | Cosmetic.                         |
-| L4  | **claudeToolUse `ctx.trace` not internally bounded** — only response sliced to 12. Long error-retry loops can grow the trace array. Wave-110 review's L1.                                                                                                                               | 15 min  | Cap push at e.g. 50 entries.      |
-| L5  | **Test coverage gaps in wave-111 memory hooks**: (a) extractor that throws synchronously, (b) extractor returning non-string/non-array (number/object), (c) verify pastContext threads to the retry handler invocation, (d) post-store doesn't run when verifier blocks. None critical. | 30 min  | Add 4 targeted test cases.        |
+| ID  | Item                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Effort              | Notes                                                                                  |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | -------------------------------------------------------------------------------------- |
+| L1  | **6 transitive `next → postcss` vulns** from `npm audit`. No upstream patch yet. Watch for Next.js minor release.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | passive             | Re-run `npm audit fix` quarterly.                                                      |
+| L2  | **`as NextRequest` cast** in `src/middleware.ts:271` — works in practice (Edge runtime always passes NextRequest) but worth an `instanceof` guard for clarity. Wave-107 review's Low.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 15 min              | Cosmetic.                                                                              |
+| L3  | **Hardcoded `User-Agent: SovereignBot/1.0`** in competitor-scan's fetch_page. Should be env-configurable. Wave-110 review's L2.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 15 min              | Cosmetic.                                                                              |
+| L4  | **claudeToolUse `ctx.trace` not internally bounded** — only response sliced to 12. Long error-retry loops can grow the trace array. Wave-110 review's L1.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | 15 min              | Cap push at e.g. 50 entries.                                                           |
+| L5  | **Test coverage gaps in wave-111 memory hooks**: (a) extractor that throws synchronously, (b) extractor returning non-string/non-array (number/object), (c) verify pastContext threads to the retry handler invocation, (d) post-store doesn't run when verifier blocks. None critical.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 30 min              | Add 4 targeted test cases.                                                             |
+| L6  | **Smoke Tests job can never pass: its placeholder Clerk key is structurally invalid.** `ci.yml:307,313` falls back to the literal `pk_test_smoke_dummy`. A Clerk publishable key is `pk_test_` + base64(`<frontend-api-host>$`); `@clerk/shared/keys` `isPublishableKey("pk_test_smoke_dummy")` returns **false** and `parsePublishableKey` returns **null**, which is the `Error: Publishable key not valid.` that floods the run. `pk_test_c21va2UuY2xlcmsuYWNjb3VudHMuZGV2JA==` (base64 of `smoke.clerk.accounts.dev$`) returns `true` and parses to a development instance — both verified against the installed SDK. The job is `continue-on-error: true`, so this is noise, not a blocker; the workflow's own comment guessed at "middleware may reject the placeholder keys" without pinning it. Fixing the key removes the parse error but is **not** proven to make the job green — the run would then attempt real Clerk network calls, which is the next thing to find out. | 10 min + one CI run | Not fixed in wave 122: `ci.yml` is untouched by that diff and the job is non-blocking. |
+| L7  | **The two repos' headline test counts overlap by ~961 and must not be added.** `vitest.config` here includes `packages/**/*.test.ts`, and `packages/` holds a byte-identical copy of the Sovereign-Matrix open core — 83 files, ~18,370 lines, verified by md5. So this repo's 4,188 splits into 3,227 from `src/` and 961 from those vendored copies, which Sovereign-Matrix already counts in its 1,125. Distinct across both repos is ~4,352, not 5,313. Quote one number or the split, never the sum. The duplication is **not** deletable today: 53 files under `src/` import `@sovereign-matrix/*` resolved through `workspaces: ['packages/*']`, so removing the copy breaks the build. Publishing the packages to npm (or a git dependency) is what would let this repo drop its copy — which is one more reason the npm decision matters beyond distribution.                                                                                                                 | reporting only      | Not a defect to fix by deleting; a number to stop overstating.                         |
 
 ### OPERATIONAL — manual steps the operator needs to take (not code)
 

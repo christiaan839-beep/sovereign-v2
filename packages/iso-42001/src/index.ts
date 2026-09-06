@@ -38,6 +38,9 @@
  */
 
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+// Every receipt-derived string this module publishes goes through this.
+// SECURITY.md item 4: key material must not reach an exporter's output.
+import { redactKeyMaterial } from "@sovereign-matrix/verifiable-receipts";
 
 /**
  * AIMS-level metadata that no receipt set can supply — the operator
@@ -210,237 +213,237 @@ const ANNEX_A_CATALOG: Array<
     id: "A.2.2",
     objective: "A.2 Policies related to AI",
     title: "AI policy",
-    evidencePackPrefixes: ["iso42001", "ai-policy"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.2.3",
     objective: "A.2 Policies related to AI",
     title: "Alignment with other organizational policies",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.2.4",
     objective: "A.2 Policies related to AI",
     title: "Review of the AI policy",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   // A.3 Internal organization
   {
     id: "A.3.2",
     objective: "A.3 Internal organization",
     title: "AI roles and responsibilities",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.3.3",
     objective: "A.3 Internal organization",
     title: "Reporting of concerns",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   // A.4 Resources for AI systems
   {
     id: "A.4.2",
     objective: "A.4 Resources for AI systems",
     title: "Resource documentation",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.4.3",
     objective: "A.4 Resources for AI systems",
     title: "Data resources",
-    evidencePackPrefixes: ["iso42001", "gdpr", "popia"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.4.4",
     objective: "A.4 Resources for AI systems",
     title: "Tooling resources",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.4.5",
     objective: "A.4 Resources for AI systems",
     title: "System and computing resources",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.4.6",
     objective: "A.4 Resources for AI systems",
     title: "Human resources",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   // A.5 Assessing impacts of AI systems
   {
     id: "A.5.2",
     objective: "A.5 Assessing impacts of AI systems",
     title: "AI system impact assessment process",
-    evidencePackPrefixes: ["iso42001", "euAiAct", "eu-ai-act"],
+    evidencePackPrefixes: ["eu-ai-act"],
   },
   {
     id: "A.5.3",
     objective: "A.5 Assessing impacts of AI systems",
     title: "Documentation of AI system impact assessments",
-    evidencePackPrefixes: ["iso42001", "euAiAct", "eu-ai-act"],
+    evidencePackPrefixes: ["eu-ai-act"],
   },
   {
     id: "A.5.4",
     objective: "A.5 Assessing impacts of AI systems",
     title: "Assessing AI system impact on individuals and groups",
-    evidencePackPrefixes: ["iso42001", "fairness"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.5.5",
     objective: "A.5 Assessing impacts of AI systems",
     title: "Assessing societal impacts",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   // A.6 AI system life cycle
   {
     id: "A.6.1.2",
     objective: "A.6 AI system life cycle",
     title: "Objectives for responsible development of AI system",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.6.1.3",
     objective: "A.6 AI system life cycle",
     title: "Processes for responsible AI development",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.6.2.2",
     objective: "A.6 AI system life cycle",
     title: "AI system requirements and specification",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.6.2.3",
     objective: "A.6 AI system life cycle",
     title: "Documentation of AI system design and development",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.6.2.4",
     objective: "A.6 AI system life cycle",
     title: "AI system verification and validation",
-    evidencePackPrefixes: ["iso42001", "owasp", "red-team"],
+    evidencePackPrefixes: ["owasp"],
   },
   {
     id: "A.6.2.5",
     objective: "A.6 AI system life cycle",
     title: "AI system deployment",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.6.2.6",
     objective: "A.6 AI system life cycle",
     title: "AI system operation and monitoring",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.6.2.7",
     objective: "A.6 AI system life cycle",
     title: "AI system technical documentation",
-    evidencePackPrefixes: ["iso42001", "euAiAct", "eu-ai-act"],
+    evidencePackPrefixes: ["eu-ai-act"],
   },
   {
     id: "A.6.2.8",
     objective: "A.6 AI system life cycle",
     title: "AI system event logs",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   // A.7 Data for AI systems
   {
     id: "A.7.2",
     objective: "A.7 Data for AI systems",
     title: "Data for development and enhancement of AI system",
-    evidencePackPrefixes: ["iso42001", "gdpr", "popia"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.7.3",
     objective: "A.7 Data for AI systems",
     title: "Acquisition of data",
-    evidencePackPrefixes: ["iso42001", "gdpr", "popia"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.7.4",
     objective: "A.7 Data for AI systems",
     title: "Quality of data for AI systems",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.7.5",
     objective: "A.7 Data for AI systems",
     title: "Data provenance",
-    evidencePackPrefixes: ["iso42001", "c2pa"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.7.6",
     objective: "A.7 Data for AI systems",
     title: "Data preparation",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   // A.8 Information for interested parties of AI systems
   {
     id: "A.8.2",
     objective: "A.8 Information for interested parties of AI systems",
     title: "System documentation and information for users",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.8.3",
     objective: "A.8 Information for interested parties of AI systems",
     title: "External reporting",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.8.4",
     objective: "A.8 Information for interested parties of AI systems",
     title: "Communication of incidents",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.8.5",
     objective: "A.8 Information for interested parties of AI systems",
     title: "Information for interested parties",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   // A.9 Use of AI systems
   {
     id: "A.9.2",
     objective: "A.9 Use of AI systems",
     title: "Processes for responsible use of AI systems",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.9.3",
     objective: "A.9 Use of AI systems",
     title: "Objectives for responsible use of AI systems",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.9.4",
     objective: "A.9 Use of AI systems",
     title: "Intended use of AI systems",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   // A.10 Third-party and customer relationships
   {
     id: "A.10.2",
     objective: "A.10 Third-party and customer relationships",
     title: "Allocation of responsibilities",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.10.3",
     objective: "A.10 Third-party and customer relationships",
     title: "Suppliers",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
   {
     id: "A.10.4",
     objective: "A.10 Third-party and customer relationships",
     title: "Customers",
-    evidencePackPrefixes: ["iso42001"],
+    evidencePackPrefixes: [],
   },
 ];
 
@@ -494,10 +497,10 @@ export function buildIso42001(opts: BuildIso42001Options): Iso42001Report {
     else if (r.overall === "warn") warnCount++;
     else if (r.overall === "block") blockCount++;
     if (typeof r.agentSlug === "string" && r.agentSlug) {
-      agentsObserved.add(r.agentSlug);
+      agentsObserved.add(redactKeyMaterial(r.agentSlug));
     }
     if (typeof r.pack === "string" && r.pack) {
-      packsExercised.add(r.pack);
+      packsExercised.add(redactKeyMaterial(r.pack));
     }
     const ms = (r as Record<string, unknown>).totalMs;
     if (typeof ms === "number" && Number.isFinite(ms)) {
@@ -533,7 +536,7 @@ export function buildIso42001(opts: BuildIso42001Options): Iso42001Report {
   const annexAControls: AnnexAControl[] = ANNEX_A_CATALOG.map((catalog) => {
     let evidenceCount = 0;
     for (const r of receipts) {
-      const pack = typeof r.pack === "string" ? r.pack.toLowerCase() : "";
+      const pack = typeof r.pack === "string" ? redactKeyMaterial(r.pack).toLowerCase() : "";
       if (!pack) continue;
       if (
         catalog.evidencePackPrefixes.some((prefix) =>

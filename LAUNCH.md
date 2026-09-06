@@ -1,72 +1,101 @@
 # Sovereign Matrix — Launch Copy
 
+Numbers in this file match `VIRAL-CONTENT.md`, `LAUNCH-CONTENT.md` and
+`DOMINATION_PLAN.md`. The derivation for each one is in the verified-numbers
+table at the bottom of `VIRAL-CONTENT.md`. If a number changes in the code,
+change it in all four files in the same commit.
+
+Nothing here names another company or describes another company's product,
+pricing, security posture or infrastructure. We cannot substantiate claims
+like that.
+
+---
+
 ## Product Hunt
 
 **Tagline (60 chars):**
-130 AI agents. 39 models. $199/mo flat. The Agent Operating System.
+140 AI agents. Flat pricing. Runs on your own hardware.
 
 **Description:**
-Sovereign Matrix is an autonomous AI agent platform that replaces your entire marketing and sales tool stack.
+Sovereign Matrix is an agent platform for marketing and sales work: lead
+research, content, competitor analysis, outbound sequences, voice calls.
 
-130 specialized agents find leads, write content, scan competitors, make phone calls, and close deals — autonomously. 39+ AI models (NVIDIA NIM, Gemini 3.1, Claude, DeepSeek, Llama 4) are smart-routed per task. A 5-layer safety pipeline verifies every output.
+140 specialised agents and 29 one-click playbooks. Point the router at your
+own Ollama endpoint and inference runs on your hardware — the prompt, the
+retrieved context and the output never leave your network. Prefer hosted
+models and the router covers 20 models across 8 providers, choosing one per
+task and falling back Gemini → NVIDIA NIM → Groq if the default path fails.
 
 What makes it different:
-- $199/mo flat — no credits, no per-token fees, no surprises
-- 4-model consensus verification on every output
-- Voice agents that make real phone calls
-- Glasswing-grade safety (built for when AI can hack autonomously)
-- White-label for agencies — resell under your brand
-- Local execution via Ollama — your data never leaves your machine
 
-Try it free: scan any competitor's URL and get real intelligence in 15 seconds. No signup required.
+- Flat pricing. Sovereign Node is $199/mo for 2,000 runs; Enterprise is
+  $499/mo for 10,000 runs and the white-label dashboard. No credits, no
+  per-token bill on the open-model routes.
+- A 5-check pipeline on every output: jailbreak detection, PII scanning,
+  content safety, quality scoring, and a critic pass by a second model.
+- Consensus mode runs the same prompt through two or three different models
+  and synthesises the answer.
+- Four trust levels, from approve-everything to full auto with an audit trail.
+- Voice agents that place real phone calls and identify themselves as AI.
+- White-label for agencies: your logo, your domain, isolated client portals.
+
+Try it free: scan any competitor's URL and get a written brief back. No
+signup required.
 
 **First Comment:**
-Hey PH! I'm the builder behind Sovereign Matrix.
+Hey PH. I'm the builder behind Sovereign Matrix.
 
-The AI agent market has 120+ companies. Most charge per credit, per token, or per seat. CIOs underestimate AI costs by 1,000%.
+Most agent platforms bill per credit, per token or per seat, which means the
+bill scales with how useful the thing is. We went the other way: a flat
+monthly price and a router that prefers free open-model inference, so the
+marginal cost of one more run is close to nothing.
 
-We built the opposite: flat pricing, 130 pre-built agents, and a safety pipeline inspired by Anthropic's Project Glasswing (their model escaped its own sandbox during testing).
+The part I care most about is the local path. If you set an Ollama endpoint,
+the router sends work there ahead of every hosted provider. For anyone
+handling client records, case files or patient data, that turns "where does
+this prompt go" from a policy question into a network question you can answer
+yourself.
 
-Try the free competitor scan — paste any URL, get real intelligence. No signup, no credit card. Judge the output yourself.
+Try the free competitor scan — paste any URL, no signup, no card. Judge the
+output yourself.
 
-Happy to answer any questions about the architecture, pricing, or how we handle frontier model safety.
+Happy to answer questions about the architecture, the router, or the pricing.
 
 ---
 
 ## LinkedIn Post
 
-🚀 We just launched Sovereign Matrix — the Agent Operating System.
+We just launched Sovereign Matrix.
 
-Not another AI chatbot. Not another wrapper.
-
-130 autonomous AI agents that:
+140 autonomous agents that:
 → Find and qualify leads
-→ Write content (blog, social, email)
-→ Scan competitors in 15 seconds
-→ Make AI phone calls
+→ Write content for blog, social and email
+→ Produce a competitor brief from a URL
+→ Place AI phone calls
 → Build landing pages
-→ Run 24/7 without instructions
+→ Run on a schedule or a webhook, without you in the loop
 
-39+ models. $199/month. Flat.
+29 one-click playbooks across growth, content, intelligence and operations.
+Flat pricing: $199/mo for the Sovereign Node tier, $499/mo for Enterprise
+with the white-label dashboard.
 
-No credits. No per-token fees. No vendor lock-in.
+The reason we built it this way:
 
-Why now?
+Agent platforms are being handed real work — client lists, case files,
+patient records, unsigned contracts. Most of them send that content to a GPU
+somebody else owns, and the honest answer to "where did my data go" is a
+vendor's sub-processor list.
 
-Anthropic's Claude Mythos scored 100% on cybersecurity challenges and escaped its own sandbox during testing. When AI models are this powerful, the execution environment IS the product.
+Sovereign Matrix routes to your own Ollama endpoint first when you configure
+one. Nothing leaves your network on that path. Alongside it:
 
-Sovereign has:
-• 5-layer safety pipeline on every request
-• 4-level trust controls (supervised → full auto)
-• Immutable execution audit trails
-• Local execution — your data never leaves your machine
-
-The AI agent market is $7.8B and growing to $52B by 2030. Every company will become an agentic company (Jensen Huang said it, not us).
-
-We built the infrastructure for that world.
+• A 5-check pipeline on every output
+• Four trust levels, from approve-everything to full auto
+• An immutable execution audit trail
+• Data export at /api/me/export
 
 Try free: sovereignmatrix.agency/free/competitor-scan
-No signup required. Paste any URL. Get real intelligence.
+No signup required. Paste any URL. Get a real brief back.
 
 #AI #AgentOS #SovereignMatrix #AIAgents #Startup
 
@@ -76,60 +105,79 @@ No signup required. Paste any URL. Get real intelligence.
 
 1/ We just shipped Sovereign Matrix.
 
-130 AI agents. 39 models. $199/mo.
+140 agents. 29 playbooks. Flat pricing. Optional local-only execution.
 
-Not a chatbot. An operating system for autonomous business execution.
+Not a chatbot. Infrastructure for running business work autonomously.
 
 Here's what it does 🧵
 
-2/ Your current stack costs $715/mo:
-- Apollo.io $99
-- Clay $149
-- Jasper $59
-- SEMrush $140
-- Zapier $49
-- Outreach $100
-- Clearbit $99
-- n8n $20
+2/ Pricing is flat, not metered:
 
-Sovereign replaces all of them. For $199.
+Starter $19/mo — 200 runs
+Sovereign Node $199/mo — 2,000 runs, local execution
+Enterprise $499/mo — 10,000 runs, white-label dashboard
 
-3/ Every output passes through 5 independent safety checks:
+No credits to top up. No per-token bill on the open-model routes.
+
+3/ Every output passes 5 independent checks before you see it:
+
 - Jailbreak detection
-- PII scanning + auto-redaction
+- PII scanning and redaction
 - Content safety
-- Quality scoring (0-100)
-- Critic review by a second model
+- Quality scoring
+- A critic pass by a second model
 
-No other platform does this.
+4/ The routing:
 
-4/ Why safety matters now:
+20 models across 8 providers, selected per task.
 
-Anthropic's Mythos escaped its own sandbox during testing.
+If you set an Ollama endpoint, that path is tried before any hosted provider
+and your prompt never leaves your network.
 
-It found hundreds of Linux kernel bugs. Posted exploit details online. Emailed the researcher.
+If the default hosted path fails: Gemini → NVIDIA NIM → Groq.
 
-And it was reasoning about fooling its evaluators without showing it in responses.
+5/ Four trust levels, because "autonomous" should be a dial:
 
-5/ That's why we built 4 trust levels:
+L1 Supervised: you approve everything
+L2 Guided: auto for routine, approve anomalies (default)
+L3 Autonomous: auto, approve critical only
+L4 Full Auto: with an audit trail
 
-L1: Human approves everything
-L2: Auto routine, approve anomalies (default)
-L3: Auto all, approve critical only
-L4: Full auto with audit trail
+6/ Ask for a verified answer and consensus mode runs the same prompt through
+two or three different models and synthesises where they agree.
 
-You choose how much autonomy your agents have.
+Disagreement between models is a signal, and we surface it rather than
+picking a winner silently.
 
-6/ Try it yourself. Free. No signup.
+7/ Try it. Free, no signup.
 
-Paste any competitor URL → get weaknesses, market gaps, and a battle plan in 15 seconds.
+Paste a competitor URL, get weaknesses, market gaps and a plan.
 
 sovereignmatrix.agency/free/competitor-scan
 
-7/ Built on NVIDIA NIM (free inference), Gemini 3.1 Pro, Claude, DeepSeek, Llama 4 Maverick.
+8/ Built in South Africa 🇿🇦
 
-39+ models. Smart-routed per task. Failover chain 11 models deep.
-
-The models come and go. The infrastructure stays.
+The models will change. The routing, the safety pipeline and the audit trail
+are the parts that stay.
 
 sovereignmatrix.agency/launch
+
+---
+
+## Compliance language (use verbatim, do not upgrade)
+
+These are the only compliance statements cleared for launch copy. They match
+what /security and /for-healthcare say on the live site.
+
+- **SOC 2 Type II:** a readiness programme, not a certification we hold. The
+  Trust Services Criteria are mapped and self-assessed on /trust. No audit
+  firm has been engaged and we hold no report. Do not name a target date.
+- **HIPAA:** HIPAA-aware controls. The Ollama local path supports air-gapped
+  processing where patient data stays on the customer's infrastructure. A BAA
+  is available for enterprise deployments. Not "HIPAA-compliant", not
+  "HIPAA-certified".
+- **GDPR and POPIA:** designed to be compliant, with PII scanning and
+  redaction in the output pipeline and data export at /api/me/export. Say
+  "designed to be compliant", not "compliant".
+- **ISO 27001 and PCI DSS:** no claim. We hold neither and have no programme
+  in flight. Leave them out of the copy entirely.

@@ -2,34 +2,51 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Mail, MessageSquare, Building2, Zap } from "lucide-react";
+import { ArrowRight, CalendarDays, Mail, MessageSquare, Building2, Zap } from "lucide-react";
 import Link from "next/link";
+
+// Canonical Cal.com booking link (same slot as the ⌘K palette shortcut).
+const BOOKING_URL = "https://cal.com/sovereign-matrix/15min";
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", type: "general", message: "" });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.email || !form.message) return;
     setSending(true);
+    setError("");
 
     try {
-      // Store locally + attempt API
-      const contacts = JSON.parse(localStorage.getItem("sm-contacts") || "[]");
-      contacts.push({ ...form, timestamp: Date.now() });
-      localStorage.setItem("sm-contacts", JSON.stringify(contacts));
-
-      await fetch("/api/waitlist", {
+      // Everything the visitor typed goes to the lead table — we promise a
+      // 24-hour reply, so the message has to reach us, not the browser.
+      // /api/lead/capture (not /api/leads/capture) — the former emails the
+      // founder in real time; the latter is the per-customer CRM table that
+      // nothing on the operator side reads.
+      const res = await fetch("/api/lead/capture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.email.trim() }),
-      }).catch(() => {});
+        body: JSON.stringify({
+          name: form.name.trim() || form.email.trim().split("@")[0],
+          email: form.email.trim(),
+          message: form.message.trim(),
+          intent: `contact:${form.type}`,
+          source: "/contact",
+          website: "",
+        }),
+      });
+
+      if (!res.ok) {
+        setError("We couldn't send that message. Try again, or book a call instead.");
+        return;
+      }
 
       setSubmitted(true);
     } catch {
-      setSubmitted(true);
+      setError("Connection error. Check your network and try again.");
     } finally {
       setSending(false);
     }
@@ -70,6 +87,22 @@ export default function ContactPage() {
                 <p className="text-[10px] text-neutral-600">{item.desc}</p>
               </Link>
             ))}
+          </div>
+
+          {/* Booking CTA — the fastest path to a human, alongside the form */}
+          <div className="mb-6 p-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-white">Rather just talk?</p>
+              <p className="text-xs text-neutral-400">Pick any open slot — 15 minutes, no prep needed.</p>
+            </div>
+            <a
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15 text-sm font-semibold transition-colors"
+            >
+              <CalendarDays className="w-4 h-4" /> Book a Call
+            </a>
           </div>
 
           {/* Contact form */}
@@ -148,6 +181,10 @@ export default function ContactPage() {
               >
                 {sending ? "Sending..." : <>Send Message <ArrowRight className="w-4 h-4" /></>}
               </button>
+
+              {error && (
+                <p role="alert" className="text-xs text-red-400 text-center">{error}</p>
+              )}
 
               <p className="text-[10px] text-neutral-700 text-center">
                 We respond within 24 hours. Your data is handled per our <Link href="/privacy" className="text-neutral-500 hover:text-white">privacy policy</Link>.

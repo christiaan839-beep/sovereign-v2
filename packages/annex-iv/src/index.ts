@@ -37,6 +37,9 @@
  */
 
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+// Every receipt-derived string this module publishes goes through this.
+// SECURITY.md item 4: key material must not reach an exporter's output.
+import { redactKeyMaterial } from "@sovereign-matrix/verifiable-receipts";
 
 /**
  * Provider-level descriptors that no receipt set can supply — the
@@ -222,10 +225,10 @@ export function buildAnnexIv(opts: BuildAnnexIvOptions): AnnexIvReport {
     else if (r.overall === "warn") warnCount++;
     else if (r.overall === "block") blockCount++;
     if (typeof r.agentSlug === "string" && r.agentSlug) {
-      agentsObserved.add(r.agentSlug);
+      agentsObserved.add(redactKeyMaterial(r.agentSlug));
     }
     if (typeof r.pack === "string" && r.pack) {
-      packsExercised.add(r.pack);
+      packsExercised.add(redactKeyMaterial(r.pack));
     }
   }
   const total = receipts.length;
@@ -235,10 +238,10 @@ export function buildAnnexIv(opts: BuildAnnexIvOptions): AnnexIvReport {
     .filter((r) => r.overall === "block")
     .slice(0, sampleBlockedReceipts)
     .map((r) => ({
-      verdictId: String(r.verdictId),
-      issuedAt: String(r.issuedAt),
-      agentSlug: String(r.agentSlug ?? "unknown"),
-      pack: typeof r.pack === "string" ? r.pack : undefined,
+      verdictId: redactKeyMaterial(String(r.verdictId)),
+      issuedAt: redactKeyMaterial(String(r.issuedAt)),
+      agentSlug: redactKeyMaterial(String(r.agentSlug ?? "unknown")),
+      pack: typeof r.pack === "string" ? redactKeyMaterial(r.pack) : undefined,
       overall: r.overall as ReceiptSummary["overall"],
     }));
 

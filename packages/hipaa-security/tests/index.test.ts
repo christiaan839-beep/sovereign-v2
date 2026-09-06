@@ -8,7 +8,13 @@ import {
   toJSON,
   type HipaaScope,
 } from "../src/index.js";
-import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+import {
+  ALL_PACKS,
+  type ReceiptRecord,
+} from "@sovereign-matrix/verifiable-receipts";
+
+/** Every pack id a receipt can actually carry. */
+const ALL_REGISTRY_PACKS = ALL_PACKS.map((p) => p.id);
 
 const SCOPE: HipaaScope = {
   organizationName: "Acme Health AI Inc.",
@@ -29,7 +35,10 @@ function rec(
     overall: "pass",
     issuedAt: "2026-03-15T12:00:00Z",
     agentSlug: "triage-agent",
-    pack: "hipaa-iam",
+    // A pack id that exists in packs.ts. "iam-core" named nothing: it counted
+    // only under the catch-all prefix "hipaa", which every specification
+    // carried and which made one receipt evidence all 52.
+    pack: "owasp-agentic-top10-2026",
     ...overrides,
   } as ReceiptRecord;
 }
@@ -80,26 +89,35 @@ describe("buildHipaaSecurity — evidence counting", () => {
     const report = buildHipaaSecurity({
       scope: SCOPE,
       receipts: [
-        rec({ pack: "hipaa-iam-rbac" }),
-        rec({ pack: "hipaa-iam-mfa" }),
-        rec({ pack: "rbac-policy" }),
-        rec({ pack: "totally-unrelated" }),
+        rec({ pack: "owasp-agentic-top10-2026" }),
+        rec({ pack: "owasp-agentic-top10-2026" }),
+        rec({ pack: "owasp-agentic-top10-2026" }),
+        rec({ pack: "hipaa-2026" }),
       ],
     });
-    const access = report.specifications.find((s) => s.id === "164.312(a)(1)");
-    // 164.312(a)(1) prefixes: hipaa, iam, rbac — 3 of 4 match.
-    expect(access?.evidenceCount).toBe(3);
+    // Risk Analysis is the one specification a receipt can reach: it declares
+    // the "owasp" prefix, and 3 of the 4 receipts carry that pack.
+    const riskAnalysis = report.specifications.find(
+      (s) => s.id === "164.308(a)(1)(ii)(A)",
+    );
+    expect(riskAnalysis?.evidenceCount).toBe(3);
   });
 
-  it("vaos prefix maps to integrity controls", () => {
+  it("the Security Rule is almost entirely out of reach of this evidence", () => {
     const report = buildHipaaSecurity({
       scope: SCOPE,
-      receipts: [rec({ pack: "vaos-receipt" })],
+      // Every pack in the registry — the exporter's ceiling.
+      receipts: ALL_REGISTRY_PACKS.map((pack) => rec({ pack })),
     });
-    const integrity = report.specifications.find(
-      (s) => s.id === "164.312(c)(1)",
-    );
-    expect(integrity?.evidenceCount).toBeGreaterThan(0);
+    const evidenced = report.specifications.filter((s) => s.evidenceCount > 0);
+    // One specification, out of 52. That is the honest number and it is what
+    // this binder should say. The Security Rule governs workforce clearance,
+    // facility access, workstation use, device disposal and business-associate
+    // contracts; a guardrail verdict on a model's wording evidences none of
+    // them. Before the catch-all prefix was removed this was 52 of 52 from a
+    // single receipt, which is the reading that would have gone to an auditor.
+    expect(evidenced.map((s) => s.id)).toEqual(["164.308(a)(1)(ii)(A)"]);
+    expect(report.specifications.length).toBeGreaterThan(40);
   });
 });
 
@@ -162,26 +180,25 @@ describe("buildHipaaSecurity — summary stats", () => {
   it("counts required vs addressable evidenced", () => {
     const report = buildHipaaSecurity({
       scope: SCOPE,
-      receipts: [
-        rec({ pack: "hipaa-iam" }),
-        rec({ pack: "hipaa-audit-log" }),
-        rec({ pack: "hipaa-encryption" }),
-      ],
+      receipts: ALL_REGISTRY_PACKS.map((pack) => rec({ pack })),
     });
-    expect(report.summary.requiredEvidenced).toBeGreaterThan(0);
-    expect(report.summary.addressableEvidenced).toBeGreaterThan(0);
+    // Risk Analysis is a *required* implementation specification, so the
+    // required tally moves and the addressable one cannot: no addressable
+    // specification declares a reachable pack.
+    expect(report.summary.requiredEvidenced).toBe(1);
+    expect(report.summary.addressableEvidenced).toBe(0);
   });
 
   it("byCategory tallies non-zero categories", () => {
     const report = buildHipaaSecurity({
       scope: SCOPE,
-      receipts: [
-        rec({ pack: "hipaa-iam" }), // administrative + technical
-        rec({ pack: "hipaa-encryption" }), // technical
-      ],
+      receipts: ALL_REGISTRY_PACKS.map((pack) => rec({ pack })),
     });
-    expect(report.summary.byCategory.administrative).toBeGreaterThan(0);
-    expect(report.summary.byCategory.technical).toBeGreaterThan(0);
+    // Administrative only, via Risk Analysis. Physical and technical
+    // safeguards stay at zero whatever is fed in.
+    expect(report.summary.byCategory.administrative).toBe(1);
+    expect(report.summary.byCategory.physical).toBe(0);
+    expect(report.summary.byCategory.technical).toBe(0);
   });
 });
 
@@ -189,7 +206,7 @@ describe("toMarkdown", () => {
   it("emits required binder structure", () => {
     const report = buildHipaaSecurity({
       scope: SCOPE,
-      receipts: [rec({ pack: "hipaa-iam" })],
+      receipts: [rec({})],
     });
     const md = toMarkdown(report);
     expect(md).toContain("HIPAA Security Rule Evidence Binder");

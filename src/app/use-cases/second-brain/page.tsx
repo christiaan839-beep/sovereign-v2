@@ -163,6 +163,11 @@ export default function SecondBrainPage() {
             <h2 className="text-2xl md:text-4xl font-bold text-white tracking-tight mb-3">
               Ask anything. Get action.
             </h2>
+            <p className="text-sm text-neutral-500 max-w-lg mx-auto">
+              Illustrative examples. The runs below show how memory, retrieval,
+              and execution chain &mdash; outcomes and timings are hypothetical,
+              not measured averages or promised results.
+            </p>
           </div>
 
           <div className="space-y-8">

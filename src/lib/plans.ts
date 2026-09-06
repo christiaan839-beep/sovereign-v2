@@ -38,12 +38,15 @@ type LegacyPlanId = "pro" | "sniper" | "basic";
  * so a single getPlan() returns enough to enforce in code paths.
  */
 export interface PlanEnterpriseFlags {
-  /** SAML 2.0 / OIDC SSO via Clerk Organizations or WorkOS. */
+  /**
+   * SAML 2.0 / OIDC SSO. NOT IMPLEMENTED — there is no Clerk
+   * Organizations usage and no WorkOS dependency in this codebase, so
+   * this is `false` on every plan including Sovereign. Clerk is a real
+   * substrate for it, so the lever is kept rather than deleted (unlike
+   * dataResidency / dedicatedRegion, which had none). Flip it to true
+   * only in the same change that wires the auth path.
+   */
   samlEnabled: boolean;
-  /** Per-tenant data residency — pin a tenant to a specific Neon region. */
-  dataResidency: boolean;
-  /** Dedicated Vercel/Neon region (vs the multi-tenant pool). */
-  dedicatedRegion: boolean;
   /** SLA tier in basis points uptime (9970 = 99.70%, 9999 = 99.99%). */
   slaUptimeBps: number;
   /** Audit log streaming export — webhook + S3 sink. */
@@ -56,10 +59,14 @@ export interface PlanEnterpriseFlags {
   whiteLabel: boolean;
 }
 
+/**
+ * All levers off. Paid self-serve tiers spread this and re-declare the
+ * one commitment /sla already publishes to them (99.9% uptime, credits on
+ * request) — the SLA is an operational promise on record, so the registry
+ * must carry it rather than the page quietly withdrawing it.
+ */
 const DEFAULT_FLAGS: PlanEnterpriseFlags = {
   samlEnabled: false,
-  dataResidency: false,
-  dedicatedRegion: false,
   slaUptimeBps: 0,
   auditLogExport: false,
   byok: false,
@@ -133,7 +140,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     stripePriceEnvKey: "STRIPE_PRICE_STARTER",
     purchasable: true,
     description: "5 agents, 200 runs/month, email support",
-    enterprise: DEFAULT_FLAGS,
+    enterprise: { ...DEFAULT_FLAGS, slaUptimeBps: 9990 },
   },
   founder: {
     name: "Founder",
@@ -167,7 +174,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     stripePriceEnvKey: "STRIPE_PRICE_ARRAY",
     purchasable: true,
     description: "10 agents, 500 runs/month",
-    enterprise: DEFAULT_FLAGS,
+    enterprise: { ...DEFAULT_FLAGS, slaUptimeBps: 9990 },
   },
   node: {
     name: "Sovereign Node",
@@ -201,12 +208,14 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceDisplayZar: "R49,997/mo",
     stripePriceEnvKey: "STRIPE_PRICE_ENTERPRISE",
     purchasable: true,
-    description:
-      "SAML SSO · audit log export · 99.95% SLA · dedicated CSM · white-label",
+    // Only claims this codebase actually enforces: the audit-log
+    // entitlement gates /api/me/audit-bundle + /api/_misc/audit-logs,
+    // the white-label entitlement gates POST /api/_settings/whitelabel,
+    // and the run quota is enforced by plan-enforcement.ts. SAML has no
+    // implementation here, so it is not advertised.
+    description: "Audit log export · white-label dashboard · 10,000 runs/month",
     enterprise: {
-      samlEnabled: true,
-      dataResidency: true,
-      dedicatedRegion: false,
+      samlEnabled: false, // not implemented — see PlanEnterpriseFlags
       slaUptimeBps: 9995,
       auditLogExport: true,
       byok: false,
@@ -233,9 +242,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     description:
       "Dedicated region · BYOK encryption · 99.99% SLA · named architect",
     enterprise: {
-      samlEnabled: true,
-      dataResidency: true,
-      dedicatedRegion: true,
+      samlEnabled: false, // not implemented — see PlanEnterpriseFlags
       slaUptimeBps: 9999,
       auditLogExport: true,
       byok: true,
@@ -291,6 +298,25 @@ export function normalizePlanId(raw: string | null | undefined): PlanId {
     return LEGACY_MAP[lower as LegacyPlanId];
   }
   return "free";
+}
+
+/**
+ * Normalize a plan string that arrived from an untrusted checkout
+ * payload (Stripe `session.metadata.plan`, PayFast ITN, Coinbase
+ * charge metadata) before it is written to `subscriptions.plan`.
+ *
+ * `normalizePlanId` only guarantees the result is a *known* plan — it
+ * happily maps garbage to "free" and passes through contract-only tiers
+ * like "sovereign" that nobody can buy through self-serve checkout.
+ * This variant additionally requires the tier to be purchasable and
+ * returns null otherwise, so a caller can reject the event instead of
+ * silently provisioning a tier that was never paid for.
+ */
+export function normalizePurchasablePlanId(
+  raw: string | null | undefined,
+): PlanId | null {
+  const id = normalizePlanId(raw);
+  return PLANS[id].purchasable ? id : null;
 }
 
 /** Get the full plan definition. Safe for any input. */
@@ -356,14 +382,27 @@ export function getEnterpriseFlag<K extends keyof PlanEnterpriseFlags>(
   return getPlan(planId).enterprise[key];
 }
 
-/** True when the plan has SAML SSO enabled (Enterprise + Sovereign). */
-export function hasSamlSso(planId: string | null | undefined): boolean {
-  return getEnterpriseFlag(planId, "samlEnabled");
+/**
+ * Cheapest purchasable plan whose enterprise flag is truthy, or null
+ * when no self-serve tier carries it (contract-only). Drives the
+ * upgrade CTA on a denied entitlement so the paywall vocabulary and
+ * the entitlement flags can never quote different tiers.
+ */
+export function cheapestPlanWith(
+  flag: keyof PlanEnterpriseFlags,
+): PlanId | null {
+  const candidates = (Object.keys(PLANS) as PlanId[])
+    .filter(
+      (id) => PLANS[id].purchasable && Boolean(PLANS[id].enterprise[flag]),
+    )
+    .sort((a, b) => PLANS[a].priceUsdCents - PLANS[b].priceUsdCents);
+  return candidates[0] ?? null;
 }
 
-/** True when the plan can pin its data to a specific region. */
-export function hasDataResidency(planId: string | null | undefined): boolean {
-  return getEnterpriseFlag(planId, "dataResidency");
+/** True when the plan has SAML SSO enabled. Currently false on every
+ *  plan — see PlanEnterpriseFlags.samlEnabled; nothing implements it yet. */
+export function hasSamlSso(planId: string | null | undefined): boolean {
+  return getEnterpriseFlag(planId, "samlEnabled");
 }
 
 /** SLA uptime as a percentage string (eg "99.95%"), or null for no SLA. */

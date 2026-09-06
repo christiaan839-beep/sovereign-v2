@@ -8,7 +8,7 @@ const COMPARISON = [
   { feature: "Social media management", sovereign: true, competitor: true, note: "Both create and schedule social content" },
   { feature: "Copywriting", sovereign: true, competitor: true, note: "Both generate marketing copy" },
   { feature: "Lead generation + enrichment", sovereign: true, competitor: "partial" as const, note: "Sintra has basic lead tools, Sovereign has a full pipeline" },
-  { feature: "Multi-model routing (36+ models)", sovereign: true, competitor: false, note: "Sintra uses a single model" },
+  { feature: "Multi-model routing (20 models)", sovereign: true, competitor: false, note: "Sintra uses a single model" },
   { feature: "Voice calling (AI)", sovereign: true, competitor: false, note: "Sintra doesn&apos;t make autonomous calls" },
   { feature: "Competitive analysis", sovereign: true, competitor: false, note: "No competitor scanning in Sintra" },
   { feature: "SEO intelligence", sovereign: true, competitor: false, note: "Sovereign scans competitor keywords and optimizes content" },
@@ -48,7 +48,7 @@ export default function VsSintraPage() {
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
           className="text-neutral-400 max-w-xl mx-auto leading-relaxed">
           Sintra has built a friendly, approachable AI team.
-          But if you need 130 agents with multi-model intelligence — not 12 named helpers — here&apos;s how we compare.
+          But if you need 140 agents with multi-model intelligence — not 12 named helpers — here&apos;s how we compare.
         </motion.p>
       </section>
 
@@ -63,7 +63,7 @@ export default function VsSintraPage() {
           <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] text-center">
             <p className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-2">Sovereign Node</p>
             <p className="text-3xl font-black text-emerald-400">$199<span className="text-sm text-emerald-500/50">/mo</span></p>
-            <p className="text-xs text-neutral-500 mt-1">130 agents + 36 models + everything below</p>
+            <p className="text-xs text-neutral-500 mt-1">140 agents + 20 models + everything below</p>
           </div>
         </div>
       </section>
@@ -134,7 +134,7 @@ export default function VsSintraPage() {
           <div className="grid md:grid-cols-2 gap-4">
             {[
               { title: "130 vs 12 agents", desc: "Sovereign covers leads, content, SEO, voice, competitive intel, code, analytics, and more — 10x the agent coverage." },
-              { title: "Multi-model intelligence", desc: "36+ models across 6 providers with consensus verification. Sintra uses a single model for all tasks." },
+              { title: "Multi-model intelligence", desc: "20 models across 8 providers with consensus verification. Sintra uses a single model for all tasks." },
               { title: "Full lead gen pipeline", desc: "End-to-end lead generation, enrichment, and outreach — not just chat-based suggestions." },
               { title: "Voice calling + white-label", desc: "AI voice calls and full white-label branding for agencies. Sintra offers neither." },
             ].map((item) => (

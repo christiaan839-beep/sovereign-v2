@@ -10,12 +10,25 @@
  *   if (!check.allowed) return NextResponse.json({ error: check.message }, { status: 429 });
  *   // ... execute the run ...
  *   await incrementUsage(userId);
+ *
+ * This module is also the single entitlement authority: getUserEntitlements()
+ * resolves the caller's plan through the same subscriptions → founder → free
+ * path as the quota check (including period-end expiry) and returns the
+ * PlanEnterpriseFlags carried by that plan. requireEntitlement() is the guard
+ * API routes call. paywall.ts derives its feature-slug tiers from the same
+ * flags, so the two vocabularies cannot drift apart.
  */
 
 import { db } from "@/db";
 import { playbookRuns, subscriptions, usage } from "@/db/schema";
 import { eq, gte, and, sql } from "drizzle-orm";
-import { PLANS, normalizePlanId, type PlanId } from "@/lib/plans";
+import {
+  PLANS,
+  cheapestPlanWith,
+  normalizePlanId,
+  type PlanEnterpriseFlags,
+  type PlanId,
+} from "@/lib/plans";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("plan-enforcement");
@@ -226,4 +239,101 @@ export async function incrementUsage(userId: string): Promise<void> {
   } catch {
     // Non-critical — don't crash if logging fails
   }
+}
+
+// ── Entitlements ──
+
+/** A single enterprise lever carried on a PlanDefinition. */
+export type EntitlementFlag = keyof PlanEnterpriseFlags;
+
+export interface EntitlementCheck {
+  allowed: boolean;
+  flag: EntitlementFlag;
+  plan: PlanId;
+  planName: string;
+  /** Cheapest purchasable plan carrying the flag, or null if contract-only. */
+  requiredPlan: PlanId | null;
+  message?: string;
+  upgradeUrl?: string;
+}
+
+/**
+ * Resolve the caller's entitlement flags.
+ *
+ * Reuses getUserPlan() so there is exactly one plan resolution in the
+ * codebase — subscriptions (active, not past currentPeriodEnd) → founder
+ * allowlist → free. Fails CLOSED: any resolution failure yields the free
+ * tier's flags (all off), so a DB outage or a missing subscriptions table
+ * can never hand out an enterprise feature.
+ */
+export async function getUserEntitlements(
+  userId: string,
+): Promise<PlanEnterpriseFlags> {
+  try {
+    const planId = await getUserPlan(userId);
+    // Copy, never the registry's own object: free / starter / array all
+    // share the single DEFAULT_FLAGS instance, so handing the reference
+    // out would let one caller's mutation grant a flag to every user on
+    // this serverless instance.
+    return Object.freeze({ ...PLANS[planId].enterprise });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error("entitlement resolution failed — denying", {
+      error: msg,
+      userId,
+    });
+    return Object.freeze({ ...PLANS.free.enterprise });
+  }
+}
+
+/**
+ * Guard for an entitlement-gated route.
+ *
+ * Usage:
+ *   const gate = await requireEntitlement(userId, "whiteLabel");
+ *   if (!gate.allowed) {
+ *     return NextResponse.json({ error: gate.message, upgradeUrl: gate.upgradeUrl }, { status: 402 });
+ *   }
+ */
+export async function requireEntitlement(
+  userId: string,
+  flag: EntitlementFlag,
+): Promise<EntitlementCheck> {
+  let planId: PlanId = "free";
+  try {
+    planId = await getUserPlan(userId);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error("entitlement resolution failed — denying", {
+      error: msg,
+      userId,
+    });
+  }
+
+  const plan = PLANS[planId];
+  const requiredPlan = cheapestPlanWith(flag);
+
+  if (plan.enterprise[flag]) {
+    return {
+      allowed: true,
+      flag,
+      plan: planId,
+      planName: plan.name,
+      requiredPlan: null,
+    };
+  }
+
+  log.warn("entitlement denied", { userId, plan: planId, flag });
+  const requiredName = requiredPlan
+    ? `${PLANS[requiredPlan].name} plan (${PLANS[requiredPlan].priceDisplayUsd})`
+    : "a Sovereign contract";
+  return {
+    allowed: false,
+    flag,
+    plan: planId,
+    planName: plan.name,
+    requiredPlan,
+    message: `This feature requires ${requiredName}. You are on ${plan.name}.`,
+    upgradeUrl: "/pricing",
+  };
 }

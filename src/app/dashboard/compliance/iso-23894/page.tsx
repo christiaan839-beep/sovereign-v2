@@ -74,7 +74,6 @@ export default function Iso23894Dashboard() {
       framework="iso-23894"
       frameworkLabel="ISO/IEC 23894:2023 AI Risk Management"
       description="Generate the AI risk-management report from your tenant's signed receipts. Inherent risk scored via the 5×5 likelihood × impact matrix; residual risk attenuated by receipt evidence (10+ receipts → 1 band lower; 100+ → 2 bands lower). Operator-explainable arithmetic."
-      previewUrl="/compliance/iso-23894"
       npmPackage="@sovereign-matrix/iso-23894"
       fields={FIELDS}
       dataMode="sample"

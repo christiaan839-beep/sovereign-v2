@@ -19,7 +19,12 @@ import {
   GlowDivider,
   MagneticButton,
 } from "@/components/ui/ScrollAnimations";
-import { getMarketingPlans, PLANS, type PlanId } from "@/lib/plans";
+import {
+  getMarketingPlans,
+  slaUptimePercent,
+  PLANS,
+  type PlanId,
+} from "@/lib/plans";
 
 const fadeIn = (d: number) => ({
   initial: { opacity: 0, y: 20 },
@@ -62,7 +67,7 @@ const TIERS = [
       { name: "5-layer safety pipeline (default-on)", included: true },
       { name: "50 verified agent runs / month", included: true },
       { name: "HMAC-signed receipts (VAOS 1.0)", included: true },
-      { name: "BYOK (Bring Your Own Key)", included: true },
+      { name: "Bring your own model API keys", included: true },
       { name: "Public verifier API", included: true },
       { name: "Priority support", included: false },
     ],
@@ -110,16 +115,62 @@ const TIERS = [
 ];
 
 /**
- * Legacy plans (Starter $19, Sovereign Node high-volume, Enterprise)
- * remain configured in plans.ts and Stripe — existing subscribers stay
- * on them. New visitors see the simplified 3-tier card grid above and
+ * Legacy plans (Starter $19, Sovereign Node high-volume) remain
+ * configured in plans.ts and Stripe — existing subscribers stay on
+ * them. New visitors see the simplified 3-tier card grid above and
  * the Enterprise strip below.
  */
+
+/* ─── Enterprise strip ───
+ * Enterprise is the highest self-serve tier: `purchasable: true` in
+ * plans.ts against STRIPE_PRICE_ENTERPRISE, so it takes a card through
+ * the same checkout() path as Pro and Team. It renders as a full-width
+ * strip instead of a fourth card: Enterprise has to carry a price, a
+ * positioning line, a CTA and the Sovereign upsell footer, and a grid
+ * cell cannot hold four blocks without the card growing taller than the
+ * three beside it.
+ *
+ * Every number and entitlement below is read from the plan registry —
+ * only the phrasing is copy, so a flag flipped in plans.ts flips the
+ * row here rather than leaving the card advertising something we no
+ * longer ship.
+ */
+const ENTERPRISE_PLAN = PLANS.enterprise;
+const ENTERPRISE_SLA = slaUptimePercent("enterprise");
+const SOVEREIGN_SLA = slaUptimePercent("sovereign");
+
+const ENTERPRISE_FEATURES = [
+  { name: "Everything in Team", included: true },
+  {
+    name: `${ENTERPRISE_PLAN.runsPerMonth.toLocaleString("en-US")} verified runs / month`,
+    included: true,
+  },
+  {
+    name: "Audit-log export (webhook + S3 sink)",
+    included: ENTERPRISE_PLAN.enterprise.auditLogExport,
+  },
+  {
+    name: "White-label dashboard on your domain",
+    included: ENTERPRISE_PLAN.enterprise.whiteLabel,
+  },
+  {
+    name: `${ENTERPRISE_SLA ?? "Best-effort"} uptime SLA with service credits`,
+    included: !!ENTERPRISE_SLA,
+  },
+  {
+    name: "Dedicated Slack channel + named CSM",
+    included: ENTERPRISE_PLAN.enterprise.dedicatedSupport,
+  },
+  {
+    name: "Customer-managed encryption keys (KMS / HSM)",
+    included: ENTERPRISE_PLAN.enterprise.byok,
+  },
+];
 
 const FAQS = [
   {
     q: "What AI tools are included?",
-    a: "140 autonomous agents across lead generation, content creation, SEO, competitor intelligence, voice calls, and code review. Every agent routes to the best of 39+ models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra for throughput, Gemini 3.1 Pro for grounded search, and more) via our smart-router.",
+    a: "140 autonomous agents across lead generation, content creation, SEO, competitor intelligence, voice calls, and code review. Every agent routes to the best of 20 models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra for throughput, Gemini 3.1 Pro for grounded search, and more) via our smart-router.",
   },
   {
     q: "Do I need technical skills?",
@@ -131,7 +182,7 @@ const FAQS = [
   },
   {
     q: "What counts as a 'run'?",
-    a: "One playbook execution = one run. A playbook can chain multiple agents internally (a lead-blitz playbook might run 5 agents), but we count it as one run. Free: 50 runs/mo. Pro $49: 500/mo. Team $199: 2,000/mo. Enterprise: 10,000+/mo (custom).",
+    a: "One playbook execution = one run. A playbook can chain multiple agents internally (a lead-blitz playbook might run 5 agents), but we count it as one run. Free: 50 runs/mo. Pro $49: 500/mo. Team $199: 2,000/mo. Enterprise $499: 10,000/mo. Sovereign (contract tier): custom.",
   },
   {
     q: "What is BYOK (Bring Your Own Key)?",
@@ -186,10 +237,12 @@ export default function PricingPage() {
       window.location.assign("/signup");
       return;
     }
-    if (plan === "enterprise") {
-      window.location.assign(
-        "mailto:hello@sovereignmatrix.agency?subject=Enterprise%20Inquiry",
-      );
+    // Contract tiers (Sovereign) are price-on-application — there is no
+    // Stripe price to charge, so they route to /sales instead of
+    // checkout. Enterprise is `purchasable: true` and falls through to
+    // the card path below like every other paid tier.
+    if (!PLANS[plan as PlanId]?.purchasable) {
+      window.location.assign("/sales");
       return;
     }
 
@@ -331,7 +384,7 @@ export default function PricingPage() {
                 color: "#8F8576",
               }}
             >
-              Three tiers · Flat pricing · No per-token fees
+              Four tiers · Flat pricing · No per-token fees
             </p>
 
             <h1
@@ -453,16 +506,16 @@ export default function PricingPage() {
                   {t.features.map((f, j) => (
                     <li
                       key={j}
-                      className={`flex items-center gap-2 text-sm ${f.included ? "text-neutral-300" : "text-neutral-500"}`}
+                      className={`flex items-start gap-2 text-sm leading-snug ${f.included ? "text-neutral-300" : "text-neutral-500"}`}
                     >
                       {f.included ? (
                         <CheckCircle2
-                          className="w-4 h-4 text-cyan-400/80 shrink-0"
+                          className="w-4 h-4 mt-0.5 text-cyan-400/80 shrink-0"
                           aria-hidden="true"
                         />
                       ) : (
                         <XIcon
-                          className="w-4 h-4 text-neutral-500 shrink-0"
+                          className="w-4 h-4 mt-0.5 text-neutral-500 shrink-0"
                           aria-hidden="true"
                         />
                       )}
@@ -504,6 +557,97 @@ export default function PricingPage() {
               </motion.div>
             ))}
           </div>
+
+          {/* Enterprise — self-serve, same checkout path, wider strip. */}
+          <motion.div
+            {...fadeIn(0.3)}
+            className="mt-4 rounded-2xl bg-white/[0.02] backdrop-blur-xl border border-cyan-500/25 p-7 relative overflow-hidden"
+          >
+            <div
+              aria-hidden="true"
+              className="absolute top-0 left-0 right-0 h-px bg-cyan-500/60"
+            />
+            <div className="flex flex-col lg:flex-row lg:items-start gap-8">
+              <div className="lg:w-[240px] shrink-0">
+                <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[10px] font-mono uppercase tracking-[0.15em] mb-3">
+                  <Shield className="w-2.5 h-2.5" /> Procurement-ready
+                </span>
+                <p className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-1">
+                  {ENTERPRISE_PLAN.name}
+                </p>
+                <p className="text-4xl font-bold text-white mb-1">
+                  {ENTERPRISE_PLAN.priceDisplayZar.replace("/mo", "")}
+                  <span className="text-base text-neutral-500 font-normal">
+                    /mo
+                  </span>
+                </p>
+                <p className="text-[11px] font-mono text-neutral-500 mb-3">
+                  ≈ {ENTERPRISE_PLAN.priceDisplayUsd} · invoicing on request
+                </p>
+                <p className="text-xs text-neutral-400">
+                  For regulated teams whose security review comes before their
+                  first run. Card checkout, no sales call required.
+                </p>
+              </div>
+              <ul className="flex-1 grid sm:grid-cols-2 gap-x-5 gap-y-2.5">
+                {ENTERPRISE_FEATURES.map((f, j) => (
+                  <li
+                    key={j}
+                    className={`flex items-center gap-2 text-sm ${f.included ? "text-neutral-300" : "text-neutral-500"}`}
+                  >
+                    {f.included ? (
+                      <CheckCircle2
+                        className="w-4 h-4 text-cyan-400/80 shrink-0"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <XIcon
+                        className="w-4 h-4 text-neutral-500 shrink-0"
+                        aria-hidden="true"
+                      />
+                    )}
+                    {f.name}
+                  </li>
+                ))}
+              </ul>
+              <div className="lg:w-[190px] shrink-0 lg:self-center">
+                <button
+                  onClick={() => checkout("enterprise")}
+                  className="w-full py-3 font-medium rounded-[3px] transition-colors flex items-center justify-center gap-2 bg-white/5 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10"
+                >
+                  Get Enterprise <ArrowRight className="w-4 h-4" />
+                </button>
+                <p className="mt-3 text-[11px] text-neutral-500 leading-relaxed">
+                  DPA, sub-processor list and SBOM are published up front on{" "}
+                  <Link
+                    href="/trust"
+                    className="text-cyan-300 underline underline-offset-4 decoration-cyan-500/40 hover:decoration-cyan-400"
+                  >
+                    /trust
+                  </Link>
+                  .
+                </p>
+              </div>
+            </div>
+
+            {/* Sovereign is price-on-application (`purchasable: false`) —
+                a link to /sales, never a checkout button, never a price. */}
+            <div className="mt-7 pt-5 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-xs text-neutral-400">
+                Need BYOK encryption keys, a named architect or a{" "}
+                {SOVEREIGN_SLA ?? "custom"} SLA?{" "}
+                <span className="text-neutral-500">
+                  Sovereign is a contract tier, priced on application.
+                </span>
+              </p>
+              <Link
+                href="/sales"
+                className="inline-flex items-center justify-center gap-2 shrink-0 px-5 py-2.5 rounded-[3px] border border-white/[0.06] text-xs font-medium text-white hover:bg-white/5 transition-colors"
+              >
+                Talk to sales <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </motion.div>
         </section>
 
         <GlowDivider />

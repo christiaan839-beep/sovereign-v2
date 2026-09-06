@@ -29,10 +29,16 @@
  *      source — see packages/vaos-verifier for the JS impl)
  *   3. Asserting the recomputed root matches chainRoot.envelope.root
  *
- * Auth: requires the caller's session. Receipts in the bundle are
+ * Auth: requires the caller's session AND the `auditLogExport`
+ * entitlement (Node tier and above). Receipts in the bundle are
  * scoped to the caller. Bundle generation is audit-logged so the
  * call itself becomes a receipt of the caller having pulled their
  * own history.
+ *
+ * The entitlement gates the *signed evidence pack* — a commercial
+ * compliance artifact — not the data-subject access right. The
+ * statutory right of access stays ungated at /api/data-export and
+ * /api/dsar for every user on every plan; do not gate those.
  */
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
@@ -40,6 +46,7 @@ import { db } from "@/db";
 import { agentRuns } from "@/db/schema";
 import { and, asc, eq, gte, lte } from "drizzle-orm";
 import { buildSignedChainRoot } from "@/lib/receipt-chain";
+import { requireEntitlement } from "@/lib/plan-enforcement";
 import { auditLog } from "@/lib/audit-log";
 import { createLogger } from "@/lib/logger";
 
@@ -65,6 +72,19 @@ export async function GET(req: Request) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const gate = await requireEntitlement(userId, "auditLogExport");
+  if (!gate.allowed) {
+    return NextResponse.json(
+      {
+        error: gate.message,
+        requiredPlan: gate.requiredPlan,
+        upgradeUrl: gate.upgradeUrl,
+        dataSubjectAccess: "/api/data-export",
+      },
+      { status: 402 },
+    );
   }
 
   const url = new URL(req.url);

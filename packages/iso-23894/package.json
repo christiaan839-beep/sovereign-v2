@@ -1,7 +1,7 @@
 {
   "name": "@sovereign-matrix/iso-23894",
   "version": "0.1.0",
-  "description": "ISO/IEC 23894:2023 AI risk management guidance exporter. Takes a set of VAOS receipts and emits the auditor-ready risk-assessment report aligned to ISO 31000 + AI-specific clauses. Apache-2.0; closed-source GRC vendors charge $30-100K+/yr.",
+  "description": "ISO/IEC 23894:2023 AI risk management report generator. Renders operator-supplied risk scenarios against a set of VAOS receipts, scored on an ISO 31000 likelihood/impact matrix (Markdown + JSON). Apache-2.0.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

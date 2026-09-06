@@ -34,14 +34,6 @@ export function VsPage({ data }: { data: VsPageData }) {
       />
 
       <main className="relative max-w-6xl mx-auto px-6 md:px-10 py-20 md:py-28">
-        <div className="mb-12">
-          <Link
-            href="/compliance"
-            className="text-[12px] font-mono text-neutral-500 hover:text-neutral-300 transition-colors tracking-tight"
-          >
-            ← All compliance exporters
-          </Link>
-        </div>
 
         <div className="max-w-3xl">
           <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C] mb-5">
@@ -178,12 +170,6 @@ export function VsPage({ data }: { data: VsPageData }) {
             >
               Start free
               <span aria-hidden="true">→</span>
-            </Link>
-            <Link
-              href="/compliance"
-              className="inline-flex items-center gap-2 px-5 py-3 border border-white/[0.12] text-neutral-300 font-mono text-[13px] rounded-[3px] hover:text-white hover:border-white/25 transition-colors"
-            >
-              See all 6 exporters
             </Link>
           </div>
         </section>

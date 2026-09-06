@@ -23,9 +23,23 @@
  * enhanced, fair (with bias managed).
  *
  * This package consumes a set of VAOS Guardian receipts and emits a
- * Profile-style report mapping evidence to each subcategory. Closed-
- * source GRC vendors ship the equivalent for $50K-200K+/year; this is
- * the Apache-2.0 open-source reference implementation.
+ * Profile-style report mapping evidence to each subcategory.
+ *
+ * ## What a receipt can evidence here
+ *
+ * A receipt is a Guardian verdict on the wording of one model output (see
+ * the module docstring of `packs.ts`). It is signed, timestamped and
+ * re-verifiable, so it is good evidence of what it actually records — and
+ * that is a narrow thing. This framework is at least in the same domain as the receipts —
+ * they are checks on AI output, and several subcategories are about exactly
+ * that — so all four functions are reachable. Most subcategories still are
+ * not: an output-wording check says nothing about how a team was trained,
+ * how a dataset was sourced or how an incident was handled.
+ *
+ * So this binder is a partial input to an AI RMF profile, not a coverage claim
+ * for it. Controls the receipts cannot reach carry no prefix mapping and
+ * report as unevidenced, which is the honest reading and the one an auditor
+ * would reach anyway.
  *
  * Output formats:
  *   - Markdown (auditor-readable, archive-friendly)
@@ -37,6 +51,9 @@
  */
 
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
+// Every receipt-derived string this module publishes goes through this.
+// SECURITY.md item 4: key material must not reach an exporter's output.
+import { redactKeyMaterial } from "@sovereign-matrix/verifiable-receipts";
 
 /**
  * Profile-level descriptors that no receipt set can supply — the
@@ -200,7 +217,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Legal and regulatory requirements involving AI are understood, managed, and documented.",
     characteristic: "accountable-and-transparent",
-    evidencePackPrefixes: ["nist-ai-rmf", "euaiact", "eu-ai-act", "iso42001"],
+    evidencePackPrefixes: ["eu-ai-act", "iso-42001", "us-nist-ai-rmf"],
   },
   {
     id: "GOVERN-1.2",
@@ -209,7 +226,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "The characteristics of trustworthy AI are integrated into organizational policies.",
     characteristic: "accountable-and-transparent",
-    evidencePackPrefixes: ["nist-ai-rmf", "iso42001"],
+    evidencePackPrefixes: ["iso-42001"],
   },
   {
     id: "GOVERN-1.3",
@@ -218,7 +235,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Processes, procedures, and practices for AI risks are defined and documented.",
     characteristic: "accountable-and-transparent",
-    evidencePackPrefixes: ["nist-ai-rmf", "iso42001"],
+    evidencePackPrefixes: ["iso-42001"],
   },
   {
     id: "GOVERN-2.1",
@@ -227,7 +244,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Roles and responsibilities related to AI risks are documented and communicated.",
     characteristic: "accountable-and-transparent",
-    evidencePackPrefixes: ["nist-ai-rmf", "iso42001"],
+    evidencePackPrefixes: ["iso-42001"],
   },
   {
     id: "GOVERN-3.2",
@@ -236,7 +253,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Policies and procedures are in place to define and differentiate roles for human-AI configurations.",
     characteristic: "accountable-and-transparent",
-    evidencePackPrefixes: ["nist-ai-rmf", "human-in-loop"],
+    evidencePackPrefixes: [],
   },
   {
     id: "GOVERN-4.1",
@@ -245,7 +262,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Organizational practices are in place to foster a critical thinking and safety-first mindset.",
     characteristic: "safe",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "GOVERN-4.2",
@@ -254,7 +271,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Organizational teams document the risks and potential impacts of the AI technology they design.",
     characteristic: "safe",
-    evidencePackPrefixes: ["nist-ai-rmf", "iso42001", "euaiact", "eu-ai-act"],
+    evidencePackPrefixes: ["iso-42001", "eu-ai-act"],
   },
   {
     id: "GOVERN-5.1",
@@ -263,7 +280,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Mechanisms are in place to collect, consider, and prioritize input from AI actors.",
     characteristic: "accountable-and-transparent",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "GOVERN-6.1",
@@ -272,7 +289,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Policies and procedures are in place to address AI risks and benefits arising from third-party software and data.",
     characteristic: "secure-and-resilient",
-    evidencePackPrefixes: ["nist-ai-rmf", "supply-chain", "owasp"],
+    evidencePackPrefixes: ["owasp"],
   },
 
   // ── MAP ──────────────────────────────────────────────────────────
@@ -283,7 +300,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Intended purposes, potentially beneficial uses, context-specific laws, norms and expectations are understood and documented.",
     characteristic: "accountable-and-transparent",
-    evidencePackPrefixes: ["nist-ai-rmf", "iso42001", "euaiact", "eu-ai-act"],
+    evidencePackPrefixes: ["iso-42001", "eu-ai-act"],
   },
   {
     id: "MAP-1.5",
@@ -291,7 +308,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     category: "MAP-1",
     outcome: "Organizational risk tolerances are determined and documented.",
     characteristic: "accountable-and-transparent",
-    evidencePackPrefixes: ["nist-ai-rmf", "iso42001"],
+    evidencePackPrefixes: ["iso-42001"],
   },
   {
     id: "MAP-2.1",
@@ -300,7 +317,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "The specific task and the methods used to implement the task are defined.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MAP-2.2",
@@ -309,7 +326,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Information about the AI system's knowledge limits and how outputs may be utilized is documented.",
     characteristic: "explainable-and-interpretable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MAP-3.1",
@@ -318,7 +335,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Potential benefits of intended AI system functionality and performance are examined and documented.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MAP-3.4",
@@ -327,7 +344,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Processes for operator and practitioner proficiency with AI system performance and trustworthiness are defined.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MAP-4.1",
@@ -336,7 +353,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Approaches for mapping AI technology and legal risks of components are defined.",
     characteristic: "accountable-and-transparent",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MAP-5.1",
@@ -345,7 +362,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Likelihood and magnitude of each identified impact (positive and negative) are identified.",
     characteristic: "safe",
-    evidencePackPrefixes: ["nist-ai-rmf", "owasp"],
+    evidencePackPrefixes: ["owasp"],
   },
 
   // ── MEASURE ──────────────────────────────────────────────────────
@@ -355,7 +372,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     category: "MEASURE-1",
     outcome: "Approaches and metrics for measurement of AI risks are selected.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MEASURE-2.1",
@@ -364,7 +381,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Test sets, metrics, and details about the tools used during test, evaluation, validation, and verification are documented.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf", "owasp", "red-team"],
+    evidencePackPrefixes: ["owasp"],
   },
   {
     id: "MEASURE-2.2",
@@ -373,7 +390,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Evaluations involving human subjects meet applicable requirements and are representative of the relevant population.",
     characteristic: "fair-with-bias-managed",
-    evidencePackPrefixes: ["nist-ai-rmf", "fairness"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MEASURE-2.3",
@@ -382,7 +399,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "AI system performance or assurance criteria are measured qualitatively or quantitatively.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MEASURE-2.4",
@@ -391,7 +408,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "The functionality and behavior of the AI system are monitored when in production.",
     characteristic: "safe",
-    evidencePackPrefixes: ["nist-ai-rmf", "iso42001"],
+    evidencePackPrefixes: ["iso-42001"],
   },
   {
     id: "MEASURE-2.5",
@@ -400,7 +417,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "The AI system to be deployed is demonstrated to be valid and reliable.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MEASURE-2.6",
@@ -408,7 +425,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     category: "MEASURE-2",
     outcome: "The AI system is evaluated regularly for safety risks.",
     characteristic: "safe",
-    evidencePackPrefixes: ["nist-ai-rmf", "owasp"],
+    evidencePackPrefixes: ["owasp"],
   },
   {
     id: "MEASURE-2.7",
@@ -416,7 +433,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     category: "MEASURE-2",
     outcome: "AI system security and resilience are evaluated and documented.",
     characteristic: "secure-and-resilient",
-    evidencePackPrefixes: ["nist-ai-rmf", "owasp", "red-team"],
+    evidencePackPrefixes: ["owasp"],
   },
   {
     id: "MEASURE-2.8",
@@ -425,7 +442,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Risks associated with transparency and accountability are measured.",
     characteristic: "accountable-and-transparent",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MEASURE-2.9",
@@ -434,7 +451,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "The AI model is explained, validated, and documented, and AI system output is interpreted within its context.",
     characteristic: "explainable-and-interpretable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MEASURE-2.10",
@@ -442,7 +459,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     category: "MEASURE-2",
     outcome: "Privacy risk of the AI system is examined and documented.",
     characteristic: "privacy-enhanced",
-    evidencePackPrefixes: ["nist-ai-rmf", "gdpr", "popia", "hipaa"],
+    evidencePackPrefixes: ["hipaa"],
   },
   {
     id: "MEASURE-2.11",
@@ -451,7 +468,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Fairness and bias — as identified in MAP function — are evaluated and results are documented.",
     characteristic: "fair-with-bias-managed",
-    evidencePackPrefixes: ["nist-ai-rmf", "fairness"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MEASURE-2.12",
@@ -460,7 +477,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Environmental impact and sustainability of AI model training and management activities are assessed and documented.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MEASURE-2.13",
@@ -469,7 +486,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Effectiveness of the employed TEVV metrics and processes is evaluated.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MEASURE-3.1",
@@ -478,7 +495,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Approaches, personnel, and documentation are in place to regularly identify and track existing, unanticipated, and emergent AI risks.",
     characteristic: "safe",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MEASURE-3.2",
@@ -487,7 +504,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Risk tracking approaches are considered for settings where AI risks are difficult to assess using currently available measurement techniques.",
     characteristic: "safe",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MEASURE-3.3",
@@ -496,7 +513,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Feedback processes for end users and impacted communities to report problems and appeal system outcomes are established and integrated into AI system evaluation metrics.",
     characteristic: "accountable-and-transparent",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MEASURE-4.1",
@@ -505,7 +522,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Measurement approaches for identifying AI risks are connected to deployment context(s) and informed through consultation with domain experts and other end users.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MEASURE-4.2",
@@ -514,7 +531,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Measurement results regarding AI system trustworthiness in deployment context(s) and across the AI lifecycle are informed by input from domain experts and relevant AI actors to validate whether the system is performing consistently.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MEASURE-4.3",
@@ -523,7 +540,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Measurable performance improvements or declines based on consultations with relevant AI actors, including affected communities, and field data are identified and documented.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
 
   // ── MANAGE ───────────────────────────────────────────────────────
@@ -534,7 +551,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "A determination is made as to whether the AI system achieves its intended purposes and stated objectives and whether its development or deployment should proceed.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MANAGE-1.2",
@@ -543,7 +560,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Treatment of documented AI risks is prioritized based on impact, likelihood, and available resources or methods.",
     characteristic: "safe",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MANAGE-1.3",
@@ -552,7 +569,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Responses to the AI risks deemed high priority, as identified by the MAP function, are developed, planned, and documented.",
     characteristic: "safe",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MANAGE-1.4",
@@ -561,7 +578,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Negative residual risks (defined as risks remaining after risk treatment) to both downstream acquirers of AI systems and end users are documented.",
     characteristic: "safe",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MANAGE-2.1",
@@ -569,7 +586,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     category: "MANAGE-2",
     outcome: "Resources required to manage AI risks are taken into account.",
     characteristic: "safe",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MANAGE-2.2",
@@ -578,7 +595,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Mechanisms are in place and applied to sustain the value of deployed AI systems.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MANAGE-2.3",
@@ -587,7 +604,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Procedures are followed to respond to and recover from a previously unknown risk when it is identified.",
     characteristic: "secure-and-resilient",
-    evidencePackPrefixes: ["nist-ai-rmf", "incident-response"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MANAGE-2.4",
@@ -596,7 +613,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Mechanisms are in place and applied, and responsibilities are assigned and understood, to supersede, disengage, or deactivate AI systems that demonstrate performance or outcomes inconsistent with intended use.",
     characteristic: "safe",
-    evidencePackPrefixes: ["nist-ai-rmf", "kill-switch"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MANAGE-3.1",
@@ -605,7 +622,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "AI risks and benefits from third-party resources are regularly monitored.",
     characteristic: "secure-and-resilient",
-    evidencePackPrefixes: ["nist-ai-rmf", "supply-chain"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MANAGE-3.2",
@@ -614,7 +631,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Pre-trained models which are used for development are monitored as part of AI system regular monitoring and maintenance.",
     characteristic: "secure-and-resilient",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MANAGE-4.1",
@@ -623,7 +640,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Post-deployment AI system monitoring plans are implemented, including mechanisms for capturing and evaluating input from users and other relevant AI actors.",
     characteristic: "safe",
-    evidencePackPrefixes: ["nist-ai-rmf", "iso42001"],
+    evidencePackPrefixes: ["iso-42001"],
   },
   {
     id: "MANAGE-4.2",
@@ -632,7 +649,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Measurable activities for continual improvements are integrated into AI system updates and include regular engagement with interested parties.",
     characteristic: "valid-and-reliable",
-    evidencePackPrefixes: ["nist-ai-rmf"],
+    evidencePackPrefixes: [],
   },
   {
     id: "MANAGE-4.3",
@@ -641,7 +658,7 @@ const RMF_SUBCATEGORY_CATALOG: Array<{
     outcome:
       "Incidents and errors are communicated to relevant AI actors including affected communities.",
     characteristic: "accountable-and-transparent",
-    evidencePackPrefixes: ["nist-ai-rmf", "incident-response"],
+    evidencePackPrefixes: [],
   },
 ];
 
@@ -682,7 +699,7 @@ export function buildNistAiRmf(opts: BuildRmfOptions): RmfReport {
   const subcategories: RmfSubcategory[] = RMF_SUBCATEGORY_CATALOG.map((cat) => {
     let evidenceCount = 0;
     for (const r of receipts) {
-      const pack = typeof r.pack === "string" ? r.pack.toLowerCase() : "";
+      const pack = typeof r.pack === "string" ? redactKeyMaterial(r.pack).toLowerCase() : "";
       if (!pack) continue;
       if (
         cat.evidencePackPrefixes.some((prefix) =>

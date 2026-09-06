@@ -8,9 +8,13 @@ import {
   HeadsetIcon,
   Puzzle,
   BadgeDollarSign,
+  CalendarDays,
   CheckCircle,
   Loader2,
 } from "lucide-react";
+
+// Canonical Cal.com booking link (same slot as the ⌘K palette shortcut).
+const BOOKING_URL = "https://cal.com/sovereign-matrix/15min";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -70,16 +74,19 @@ export default function EnterprisePage() {
     e.preventDefault();
     setStatus("submitting");
     try {
-      const res = await fetch("/api/leads/capture", {
+      // /api/lead/capture emails the founder in real time; /api/leads/capture
+      // is the per-customer CRM table and would file this under the sender.
+      const res = await fetch("/api/lead/capture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
           company: formData.company,
-          companySize: formData.size,
-          useCase: formData.useCase,
-          source: "enterprise-page",
+          message: `Company size: ${formData.size}\n\nUse case: ${formData.useCase}`,
+          intent: "enterprise-demo",
+          source: "/enterprise",
+          website: "",
         }),
       });
       if (!res.ok) throw new Error("Failed to submit");
@@ -313,20 +320,29 @@ export default function EnterprisePage() {
                 </button>
 
                 {status === "error" && (
-                  <p className="text-sm text-red-400 text-center">
-                    Something went wrong. Please try again or email us directly.
+                  <p role="alert" className="text-sm text-red-400 text-center">
+                    We couldn&apos;t send that request. Try again, or book a
+                    call directly with the link below.
                   </p>
                 )}
               </motion.form>
             )}
           </AnimatePresence>
 
-          <p className="text-sm text-neutral-400 text-center mt-6">
-            Or{" "}
-            <Link href="/partner" className="text-white hover:underline">
-              book a call directly
-            </Link>
-          </p>
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <a
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-6 py-3 text-sm font-semibold text-white hover:bg-white/[0.06] transition-colors"
+            >
+              <CalendarDays className="w-4 h-4" />
+              Book a 15-minute call
+            </a>
+            <p className="text-xs text-neutral-500">
+              Prefer to skip the form? Pick a slot and talk to us directly.
+            </p>
+          </div>
         </motion.div>
 
         <motion.div

@@ -16,8 +16,18 @@ const RATE_LIMIT_MS = 60_000; // 1 per minute per IP
 
 export async function POST(req: Request) {
   try {
-    // Rate limit by IP
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    // Rate limit by IP. The LEFT-most X-Forwarded-For entry is
+    // attacker-controlled (Vercel appends the real client IP), so keying
+    // on it lets one caller mint a fresh bucket per request by rotating
+    // the header. Same precedence as getClientId() in @/lib/rate-limit:
+    // x-real-ip, then the right-most XFF, then the left-most for local dev.
+    const forwarded = req.headers.get("x-forwarded-for");
+    const parts = forwarded?.split(",").map((v) => v.trim()).filter(Boolean);
+    const ip =
+      req.headers.get("x-real-ip")?.trim() ||
+      parts?.at(-1) ||
+      parts?.[0] ||
+      "unknown";
     const lastCapture = recentCaptures.get(ip);
     if (lastCapture && Date.now() - lastCapture < RATE_LIMIT_MS) {
       return NextResponse.json({ ok: true }); // Silent success to not reveal rate limiting

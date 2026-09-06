@@ -13,7 +13,7 @@ const COMPARISON = [
   { feature: "Competitive analysis", sovereign: true, competitor: false, note: "No built-in competitor scanning or monitoring" },
   { feature: "Voice calling (AI)", sovereign: true, competitor: false, note: "Clay doesn&apos;t make calls — it enriches data" },
   { feature: "Email sequences", sovereign: true, competitor: "partial", note: "Clay triggers sequences via integrations (Instantly, Smartlead)" },
-  { feature: "Multi-model routing (36+ models)", sovereign: true, competitor: false, note: "Clay uses a single AI model for enrichment formulas" },
+  { feature: "Multi-model routing (20 models)", sovereign: true, competitor: false, note: "Clay uses a single AI model for enrichment formulas" },
   { feature: "Local/offline execution", sovereign: true, competitor: false, note: "Cloud-only platform" },
   { feature: "White-label for agencies", sovereign: true, competitor: false, note: "No white-label offering" },
   { feature: "Workflow automation", sovereign: true, competitor: true, note: "Both automate multi-step workflows" },
@@ -63,7 +63,7 @@ export default function VsClayPage() {
           <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] text-center">
             <p className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-2">Sovereign Node</p>
             <p className="text-3xl font-black text-emerald-400">$199<span className="text-sm text-emerald-500/50">/mo</span></p>
-            <p className="text-xs text-neutral-500 mt-1">130 agents + 36 models + everything below</p>
+            <p className="text-xs text-neutral-500 mt-1">140 agents + 20 models + everything below</p>
           </div>
         </div>
       </section>
@@ -133,9 +133,9 @@ export default function VsClayPage() {
           <h2 className="text-xl font-bold text-white mb-4 text-center">Where Sovereign wins</h2>
           <div className="grid md:grid-cols-2 gap-4">
             {[
-              { title: "130 agents vs 1 tool", desc: "Clay enriches data. Sovereign enriches, writes content, runs SEO audits, makes voice calls, monitors competitors, and 120 more capabilities." },
+              { title: "140 agents vs 1 tool", desc: "Clay enriches data. Sovereign enriches, writes content, runs SEO audits, makes voice calls, monitors competitors, and 120 more capabilities." },
               { title: "Autonomous execution", desc: "Sovereign agents don&apos;t just fetch data — they plan multi-step strategies, execute them, and self-correct without babysitting." },
-              { title: "Multi-model intelligence", desc: "36+ models with consensus verification. Every output is checked by 4 independent models. Clay uses a single AI model." },
+              { title: "Multi-model intelligence", desc: "20 models with consensus verification. Every output is checked by 4 independent models. Clay uses a single AI model." },
               { title: "10x more capabilities, similar price", desc: "Clay Pro is $149/mo for enrichment. Sovereign Node is $199/mo for enrichment + content + SEO + voice + competitive intel + everything else." },
             ].map((item) => (
               <div key={item.title} className="p-5 rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02]">

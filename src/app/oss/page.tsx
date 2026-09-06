@@ -141,12 +141,6 @@ export default function OssPage() {
           </Link>
           <div className="flex items-center gap-6">
             <Link
-              href="/readiness"
-              className="text-xs text-neutral-400 hover:text-white transition-colors"
-            >
-              Readiness
-            </Link>
-            <Link
               href="/investors"
               className="text-xs text-neutral-400 hover:text-white transition-colors"
             >
@@ -348,9 +342,6 @@ export default function OssPage() {
         <div className="max-w-6xl mx-auto text-[11px] text-neutral-500 flex flex-wrap gap-6">
           <Link href="/spec" className="hover:text-neutral-300">
             Receipts spec
-          </Link>
-          <Link href="/readiness" className="hover:text-neutral-300">
-            Vertical readiness
           </Link>
           <Link href="/investors" className="hover:text-neutral-300">
             Investors

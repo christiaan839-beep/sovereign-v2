@@ -46,7 +46,7 @@ export async function GET() {
   return NextResponse.json({
     platform: "Sovereign Matrix",
     version: "2.1.0",
-    description: "Autonomous AI agent platform — 130+ specialized agents, 39+ AI models, zero per-token cost",
+    description: "Autonomous AI agent platform — 140 specialized agents, 20 AI models, zero per-token cost",
 
     stats: {
       totalAgents: AGENT_CATALOG.length,

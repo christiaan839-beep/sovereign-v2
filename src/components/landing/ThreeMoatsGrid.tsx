@@ -199,7 +199,7 @@ export function ThreeMoatsGrid() {
     {
       id: "sovereignty",
       title: "Model Sovereignty",
-      desc: "39+ models. Best-in-class routing. Sovereign Mode routes zero traffic through Chinese providers. Your data never trains anything.",
+      desc: "20 models. Best-in-class routing. Sovereign Mode routes zero traffic through Chinese providers. Your data never trains anything.",
       icon: (
         <svg
           width="36"

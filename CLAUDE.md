@@ -97,7 +97,7 @@ This is how the engineering memory survives context resets.
 
 ### Key Architecture
 
-- Unified AI router: `src/lib/ai.ts` — single entry point for all AI calls, 39+ models across 8 providers
+- Unified AI router: `src/lib/ai.ts` — single entry point for all AI calls. `src/lib/model-registry.ts` is the source of truth for the catalogue (20 entries across 8 providers); count it rather than quoting a number from memory, and never publish a figure this repo cannot produce
 - AI routing priority: Ollama (local $0) → Cerebras (fast) → NIM (free) → Claude/Gemini (BYOK or global key)
 - Consensus engine: `src/lib/consensus.ts` — verifiedAi() uses generate→critique→revise with 2 different models
 - 5-layer output verifier: LlamaGuard + PII + content policy + quality + trust gate (parallel)

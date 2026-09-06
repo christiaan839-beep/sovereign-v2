@@ -235,3 +235,9 @@ export {
   composePacks,
   type GuardianPack,
 } from "./packs.js";
+
+// ── Redaction at the publication boundary ─────────────────────────────────
+//
+// Used by the compliance exporters on every receipt-derived string they copy
+// into a document. See SECURITY.md item 4.
+export { redactKeyMaterial, containsKeyMaterial, REDACTED } from "./redact.js";

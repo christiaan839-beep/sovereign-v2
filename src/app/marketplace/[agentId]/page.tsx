@@ -21,7 +21,7 @@ import { AGENT_SLUG_SET } from "@/lib/agent-slugs";
  * capabilities, example workflow, models used, safety info.
  *
  * Detail copy is hand-curated for flagship agents in KNOWN_AGENTS. Every
- * other slug that exists in AGENT_REGISTRY (130+ agents) gets a generic
+ * other slug that exists in AGENT_REGISTRY (140 agents) gets a generic
  * detail page derived from the registry — never "Coming Soon" for a real
  * agent. Only truly unknown slugs hit the not-found state.
  */
@@ -165,7 +165,7 @@ function buildGenericDetail(slug: string): AgentDetail {
     name,
     category,
     categoryColor: palette,
-    description: `${name} is one of the 130+ specialized agents in the Sovereign Matrix platform. It runs through the same 5-layer safety pipeline as every other agent — jailbreak detection, content safety, PII scanning, quality scoring, and critic review — and is callable via the unified agent API at /api/agents/${slug}.`,
+    description: `${name} is one of the 140 specialized agents in the Sovereign Matrix platform. It runs through the same 5-layer safety pipeline as every other agent — jailbreak detection, content safety, PII scanning, quality scoring, and critic review — and is callable via the unified agent API at /api/agents/${slug}.`,
     capabilities: [
       "Callable via the unified agent API: POST /api/agents/" + slug,
       "Routes through the multi-provider AI gateway (Ollama → Cerebras → NIM → Claude/Gemini)",
@@ -180,7 +180,7 @@ function buildGenericDetail(slug: string): AgentDetail {
         "A typed response with the agent's output, model attribution, run id, and a quality score.",
     },
     models: [
-      "Auto-routed across Sovereign's 39+ model registry",
+      "Auto-routed across Sovereign's 20 model registry",
       "Defaults to the cheapest model that meets the quality bar for this task class",
     ],
     tags: [category, "API-callable", "Sovereign Matrix"],

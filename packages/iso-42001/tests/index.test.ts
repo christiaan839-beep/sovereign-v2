@@ -43,7 +43,9 @@ function rec(
     overall: "pass",
     issuedAt: new Date().toISOString(),
     agentSlug: "loan-underwriter",
-    pack: "iso42001-aims",
+    // A pack id from packs.ts. "ai-policy-review" named nothing in the
+    // registry; it counted only under the catch-all prefix.
+    pack: "eu-ai-act-2026",
     ...overrides,
   } as ReceiptRecord;
 }
@@ -100,9 +102,9 @@ describe("buildIso42001 — Clause 8 Operation", () => {
     const report = buildIso42001({
       scope: SCOPE,
       receipts: [
-        rec({ agentSlug: "loan-underwriter", pack: "iso42001-aims" }),
-        rec({ agentSlug: "credit-analyst", pack: "gdpr-2026" }),
-        rec({ agentSlug: "loan-underwriter", pack: "euAiActPack" }),
+        rec({ agentSlug: "loan-underwriter", pack: "iso-42001-2023" }),
+        rec({ agentSlug: "credit-analyst", pack: "hipaa-2026" }),
+        rec({ agentSlug: "loan-underwriter", pack: "eu-ai-act-2026" }),
       ],
     });
     expect(report.clause8Operation.agentsOperated).toEqual([
@@ -110,9 +112,9 @@ describe("buildIso42001 — Clause 8 Operation", () => {
       "loan-underwriter",
     ]);
     expect(report.clause8Operation.packsApplied).toEqual([
-      "euAiActPack",
-      "gdpr-2026",
-      "iso42001-aims",
+      "eu-ai-act-2026",
+      "hipaa-2026",
+      "iso-42001-2023",
     ]);
   });
 });
@@ -204,19 +206,26 @@ describe("buildIso42001 — Annex A reference controls", () => {
     const report = buildIso42001({
       scope: SCOPE,
       receipts: [
-        rec({ pack: "iso42001-aims" }),
-        rec({ pack: "iso42001-other" }),
-        rec({ pack: "gdpr-2026" }),
-        rec({ pack: "totally-unrelated-pack" }),
+        rec({ pack: "eu-ai-act-2026" }),
+        rec({ pack: "eu-ai-act-2026" }),
+        rec({ pack: "hipaa-2026" }),
+        rec({ pack: "dscsa-2024" }),
       ],
     });
-    // A.2.2 (AI policy) evidencePackPrefixes includes "iso42001" — matches 2.
+    // A.5.2 (AI system impact assessment process) declares the "eu-ai-act"
+    // prefix — 2 of the 4 receipts match. A.2.2 (AI policy) declares nothing
+    // reachable: no pack in the registry evidences that an organisation has
+    // an AI policy, and the control now reports that honestly instead of
+    // counting every receipt through the catch-all.
+    const a52 = report.annexAControls.find((c) => c.id === "A.5.2");
+    expect(a52?.evidenceCount).toBe(2);
     const a22 = report.annexAControls.find((c) => c.id === "A.2.2");
-    expect(a22?.evidenceCount).toBe(2);
-    // A.7.3 (Acquisition of data) includes "iso42001" + "gdpr" + "popia" — matches 3.
+    expect(a22?.evidenceCount).toBe(0);
+    // A.7.3 (Acquisition of data) used to declare "iso42001", "gdpr" and
+    // "popia". None of the three names a pack the registry can produce, so
+    // the control reaches nothing and now says so.
     const a73 = report.annexAControls.find((c) => c.id === "A.7.3");
-    expect(a73?.evidenceCount).toBe(3);
-    // Pack "totally-unrelated-pack" never matches.
+    expect(a73?.evidenceCount).toBe(0);
   });
 
   it("defaults all controls to applicable=true", () => {

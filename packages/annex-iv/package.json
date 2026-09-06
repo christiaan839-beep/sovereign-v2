@@ -1,7 +1,7 @@
 {
   "name": "@sovereign-matrix/annex-iv",
   "version": "0.1.0",
-  "description": "EU AI Act Annex IV technical-documentation exporter. Takes a set of VAOS receipts and emits the Article 11 regulator-ready report (Markdown + JSON). First-of-its-kind Apache-2.0 OSS — closed-source vendors charge $50-200K+/yr.",
+  "description": "EU AI Act Annex IV technical-documentation exporter. Takes a set of VAOS receipts and emits the Article 11 report as Markdown and JSON, naming a gap where the receipts do not support a section rather than filling it in.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

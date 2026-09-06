@@ -11,8 +11,7 @@ set of VAOS Guardian receipts and emits the auditor-ready clause
 ISO/IEC 42001:2023 is the world's first AI-management-system
 standard. Most organizations seeking AIMS certification have to
 assemble clause 9 (performance evaluation) + Annex A control
-evidence by hand. Closed-source GRC vendors (Credo AI / Holistic
-AI / IBM watsonx.governance) ship this for $50K-200K+/year.
+evidence by hand. That assembly is the work this package removes.
 
 This package consumes VAOS receipts and assembles the §7 / §8 / §9 /
 §10 clauses + the Annex A control matrix (the parts the receipt

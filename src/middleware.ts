@@ -130,6 +130,33 @@ const ALLOWED_ORIGINS = buildAllowedOrigins();
  * Returns null if the request passes CSRF/origin policy, or a 403
  * NextResponse if it should be blocked. Exported for unit tests.
  */
+/**
+ * The rate-limit bucket key for a request to the agent gateway.
+ *
+ * Exported so the property below is testable: it is a security boundary, and a
+ * boundary nothing can assert against is a boundary nobody can keep.
+ *
+ * The key is the client IP and nothing else. It was once
+ * `x-api-key || clientIp`, with no validation of the header, which made the
+ * limiter opt-out — a different random key per request put each one in a fresh
+ * bucket, so the counter never reached the limit. This gateway fronts every
+ * agent in AGENT_REGISTRY, so that was an unmetered path to a paid model.
+ *
+ * A verified key may raise a limit in future. Verifying requires a lookup this
+ * edge path does not perform, so until then no caller-supplied header
+ * influences the key at all.
+ */
+export function rateLimitBucketKey(request: NextRequest): string {
+  // Vercel injects x-forwarded-for; the rightmost entry is the platform's own
+  // value rather than anything the caller prepended.
+  const forwardedFor = request.headers.get("x-forwarded-for") || "";
+  return (
+    forwardedFor.split(",").pop()?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "anonymous"
+  );
+}
+
 export function enforceCsrfOrigin(request: NextRequest): NextResponse | null {
   if (!STATE_CHANGING_METHODS.has(request.method)) return null;
   if (isCookieIndependentRoute(request.nextUrl.pathname)) return null;
@@ -360,16 +387,8 @@ async function sovereignMiddleware(request: NextRequest) {
     url.pathname.startsWith("/api/agents") ||
     url.pathname.startsWith("/api/_agents")
   ) {
-    // Extract client identifier (API key or IP)
-    // On Vercel, x-forwarded-for is platform-injected and trusted.
-    // Use the LAST IP in the chain (rightmost = Vercel's value, not user-supplied).
-    const apiKey = request.headers.get("x-api-key") || "";
-    const forwardedFor = request.headers.get("x-forwarded-for") || "";
-    const clientIp =
-      forwardedFor.split(",").pop()?.trim() ||
-      request.headers.get("x-real-ip") ||
-      "anonymous";
-    const clientId = apiKey || clientIp;
+    const clientIp = rateLimitBucketKey(request);
+    const clientId = clientIp;
 
     // Log the incoming request
     apiLogger.log({

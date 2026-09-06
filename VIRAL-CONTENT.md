@@ -1,96 +1,119 @@
 # Sovereign Matrix — Viral Content Strategy
 
-## Demo Video Script (60 seconds — screen record /demo/mission)
+All numbers below are drawn from the repository and re-derivable. See
+"Verified numbers" at the bottom for the command or file behind each one.
+Do not publish a number that is not on that list.
 
-```
-[0-5s]  Black screen → "SOVEREIGN MATRIX" fades in with emerald glow
-[5-10s] Text types: "Find 50 fintech companies in London and draft outreach"
-[10-15s] Step 1 lights up: "Finding prospects..." → completes → ✅
-[15-20s] Step 2 lights up: "Analyzing market..." → completes → ✅
-[20-25s] Step 3 lights up: "Drafting emails..." → completes → ✅
-[25-30s] Summary: "3/3 succeeded • 17.6s • 35+ AI models"
-[30-35s] Cut to: "What Manus does in 10 minutes, we do in 17 seconds"
-[35-45s] Show: Mission Control with a different goal executing
-[45-55s] Show: "First 10 users get LIFETIME free access"
-[55-60s] CTA: "sovereignmatrix.agency — built in South Africa 🇿🇦"
-```
+**No competitor claims.** Nothing in this file names another company or
+characterises how another company handles customer data, prices its product,
+or performs. We cannot substantiate claims like that, and a comparison we
+cannot defend is worth less than a capability we can demonstrate. Lead with
+what the platform does.
 
 ---
 
-## LinkedIn Post — "The Manus Killer" (copy this)
+## Demo Video Script (screen record /demo/mission)
 
-Everyone's talking about Manus — the AI agent that browses the web for you.
+```
+[open]  Black screen → "SOVEREIGN MATRIX" fades in with emerald glow
+        Text types: "Find 50 fintech companies in London and draft outreach"
+        Step 1 lights up: "Finding prospects..." → completes → ✅
+        Step 2 lights up: "Analyzing market..." → completes → ✅
+        Step 3 lights up: "Drafting emails..." → completes → ✅
+        Summary card: read the elapsed time and step counts off the actual run
+        Cut to: "Point it at your own Ollama instance and the prompt never
+                 leaves your network."
+        Show: Mission Control with a second goal executing
+        Show: "First 10 users get the Founder plan free"
+        CTA: "sovereignmatrix.agency — built in South Africa 🇿🇦"
+```
 
-Cool demo. But here's what they don't show you:
-→ It takes 10+ minutes per task
-→ You pay per execution
-→ Your data goes through Chinese servers
-→ It can't run automatically (you prompt it every time)
+Record the run before writing the caption. Whatever duration and result
+counts the run prints on the summary card are the numbers that go in the
+post. Do not pre-write a timing and then hunt for a run that matches it.
 
-I built Sovereign Matrix. Here's what's different:
+---
 
-One goal. Multiple specialized agents. 17 seconds.
+## LinkedIn Post (copy this)
 
-"Find 50 fintech companies in London and draft outreach emails"
-→ Lead agent finds real companies (Tavily web research)
-→ Competitor agent analyzes positioning
-→ Email agent drafts personalized sequences
-→ 4 AI models verify the output
+Most AI agent tools send your prompt to somebody else's GPU. That is fine
+until the prompt contains a client list, a patient record, or an unsigned
+contract.
 
-130 agents. 35+ models. $0 per token.
-The first 10 users get lifetime enterprise access for free.
+Sovereign Matrix runs the same agents against inference you control.
+
+Set an Ollama endpoint in settings and the router sends work there first.
+The prompt, the retrieved context, and the output stay inside your network.
+No provider key required for that path, and nothing to redact after the fact
+because nothing left.
+
+When you do want hosted models, the router covers 20 models across 8
+providers and picks one per task. If the default path fails it falls back
+Gemini → NVIDIA NIM → Groq before it gives up.
+
+What the platform ships with:
+
+→ 140 specialised agents
+→ 29 one-click playbooks across growth, content, intelligence and operations
+→ A 5-check output pipeline on every response: jailbreak detection, PII
+scanning, content safety, quality scoring, and a critic pass by a second
+model
+→ Four trust levels, from approve-everything to full auto with an audit trail
+
+One goal in. The system picks the agents, runs the pipeline, returns the work.
+
+The first 10 users get the Founder plan free: 10,000 runs a month, every
+playbook, no card.
 
 Watch the demo: [link to screen recording]
 Sign up: sovereignmatrix.agency
 
-#AI #SaaS #Manus #AIAgents #BuildInPublic
+#AI #SaaS #AIAgents #BuildInPublic
 
 ---
 
-## X/Twitter Thread — "Manus Killer" (copy this)
+## X/Twitter Thread (copy this)
 
 Tweet 1:
-Everyone's hyped about Manus.
+Your AI agent stack has a data question nobody asks out loud: where does the
+prompt go?
 
-I built something that does what Manus does in 10 minutes — in 17 seconds.
+I built one where the answer can be "nowhere".
 
 Thread 🧵
 
 Tweet 2:
-Manus: One general-purpose agent that browses the web.
-Mine: 130 specialized agents that execute business tasks.
+Sovereign Matrix routes to a local Ollama endpoint first when you set one.
 
-Think hospital vs GP.
-A heart surgeon beats a general doctor. Every time.
+Prompt, context, output — all on your hardware. Air-gapped runs are a
+configuration, not a special edition.
 
 Tweet 3:
-The demo:
+When you want hosted inference instead, the router covers 20 models across
+8 providers and selects per task.
 
-"Find 50 fintech companies in London and draft outreach"
-
-→ Leads agent: 7 companies found ✅ (8.2s)
-→ Competitor scan: 3 positioning angles ✅ (5.1s)
-→ Email sequence: 5 personalized emails ✅ (4.3s)
-
-Total: 17.6 seconds.
+Default path falls back Gemini → NVIDIA NIM → Groq before it errors.
 
 Tweet 4:
-The tech nobody else has:
+What's in the box:
 
-• 35+ AI models — auto-routed per task ($0/token)
-• 4-model consensus — answers verified by independent AIs
-• 11-deep failover — if one model dies, 10 more take over
-• Webhook triggers — agents run while you sleep
+• 140 specialised agents
+• 29 one-click playbooks
+• 5-check output pipeline on every response
+• 2-3 model consensus when you ask for a verified answer
+• Webhook triggers, so agents run without you in the loop
 
 Tweet 5:
-The cost comparison:
+Pricing is flat, not metered.
 
-Manus: Pay per task (undisclosed pricing)
-ChatGPT: $0.01-0.06/1K tokens
-Jasper: Credits that run out
+Sovereign Node: $199/mo, 2,000 runs, local execution.
+Enterprise: $499/mo, 10,000 runs, white-label dashboard.
+Starter: $19/mo, 200 runs.
 
-Sovereign Matrix: $0 per token. Flat rate.
-First 10 users get lifetime free enterprise access.
+No credits. No per-token bill on the open-model routes.
+
+Tweet 6:
+First 10 users get the Founder plan free — 10,000 runs a month, no card.
 
 sovereignmatrix.agency
 
@@ -101,11 +124,11 @@ Built in South Africa 🇿🇦
 ## TikTok/Reels Script (15 seconds)
 
 [Screen recording of Mission Control]
-Voiceover: "Everyone's talking about Manus."
-[Step 1 completes] "But what if 130 AI agents..."
-[Step 2 completes] "...could do the same thing..."
-[Step 3 completes] "...in 17 seconds?"
-[Summary appears] "Sovereign Matrix. First 10 users get it free."
+Voiceover: "Where does your AI agent send your data?"
+[Step 1 completes] "This one can send it nowhere."
+[Step 2 completes] "Local inference. 140 agents."
+[Step 3 completes] "One goal in, finished work out."
+[Summary appears] "Sovereign Matrix. First 10 users free."
 Text overlay: sovereignmatrix.agency
 
 ---
@@ -113,25 +136,42 @@ Text overlay: sovereignmatrix.agency
 ## Reddit Posts
 
 r/SaaS:
-"I built an AI platform with 130 agents that outperforms Manus on business tasks — giving 10 people lifetime free access"
+"I built an agent platform with 140 agents that can run entirely on your own
+hardware — giving 10 people the Founder plan free"
 
 r/Entrepreneur:
-"Manus takes 10 minutes to browse the web. My platform chains 3 specialized AI agents to deliver leads + outreach in 17 seconds."
+"I got tired of not knowing where my AI tools send client data, so I built a
+platform that routes to local inference first"
 
 r/ArtificialIntelligence:
-"Built a multi-agent platform with 35+ models, 4-model consensus verification, and 11-deep failover — here's how it works"
+"20 models, 8 providers, a 5-check output pipeline and a local-first router —
+here's the architecture"
+
+r/selfhosted:
+"Multi-agent platform that routes to your Ollama endpoint before it touches a
+hosted provider"
 
 ---
 
-## Key Numbers for All Posts
-- 130 specialized agents
-- 25 one-click playbooks (4 industries)
-- 35+ AI models across 6 providers
-- $0 per token (NVIDIA NIM free tier)
-- 17.6 seconds for a 3-agent pipeline
-- 4-model consensus verification
-- 11-model failover chain
-- 488 automated tests
-- 91K lines of TypeScript
-- 10 founder slots (lifetime free)
-- Built in Cape Town, South Africa 🇿🇦
+## Verified numbers (the only ones cleared for publication)
+
+| Claim                                     | Where it comes from                                                                        |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 140 agents                                | `npm run check:registry` prints "registry up to date — 140 agents"                         |
+| 29 playbooks, 4 categories                | `PLAYBOOKS` array in `src/lib/playbooks.ts`                                                |
+| 20 models across 8 providers              | entries and distinct `provider` values in the `MODELS` record, `src/lib/model-registry.ts` |
+| Fallback order Gemini → NVIDIA NIM → Groq | the nested catch chain in `_aiInternal`, `src/lib/ai.ts`                                   |
+| Local path routed first                   | `if (userKeys.ollama)` branch ahead of every hosted provider, `src/lib/ai.ts`              |
+| 5-check output pipeline                   | `src/lib/output-verifier.ts`                                                               |
+| 2-3 model consensus                       | `models?: 2 \| 3` in `consensusAi` options, `src/lib/consensus.ts`                         |
+| 4 trust levels                            | `type TrustLevel = 1 \| 2 \| 3 \| 4`, `src/lib/trust-levels.ts`                            |
+| 4,510 passing tests across 295 files      | `npm test` on this tree (4 additional tests skipped)                                       |
+| 252,000 non-blank lines of TypeScript     | non-blank line count over `src/**/*.ts{,x}`                                                |
+| Prices and run quotas                     | `PLANS` in `src/lib/plans.ts`                                                              |
+| Founder plan free, 10,000 runs/month      | `founder` entry in `src/lib/plans.ts`                                                      |
+| Built in South Africa 🇿🇦                  | —                                                                                          |
+
+Claims deliberately absent, because the repository cannot support them:
+pipeline timings, competitor pricing, market-size forecasts, failover depth
+beyond the three-step chain above, and any statement about another company's
+product or infrastructure.

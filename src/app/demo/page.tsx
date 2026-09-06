@@ -119,7 +119,7 @@ export default function DemoPage() {
             <Zap className="w-3 h-3" /> Live Sandbox — No Login Required
           </motion.div>
           <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">Try it. Live. Right now.</h1>
-          <p className="text-neutral-500 max-w-xl mx-auto">5 queries. 3 minutes. Real agents powered by 39+ models. No signup. No credit card.</p>
+          <p className="text-neutral-500 max-w-xl mx-auto">5 queries. 3 minutes. Real agents powered by 20 models. No signup. No credit card.</p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
@@ -172,7 +172,7 @@ export default function DemoPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">
             <Lock className="w-12 h-12 text-neutral-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-white serif-text mb-3">Sandbox Expired</h2>
-            <p className="text-neutral-500 mb-8 max-w-md mx-auto">You&apos;ve seen what 5 queries can do. Imagine 130 agents running 24/7 for $199/mo.</p>
+            <p className="text-neutral-500 mb-8 max-w-md mx-auto">You&apos;ve seen what 5 queries can do. Imagine 140 agents running 24/7 for $199/mo.</p>
             <Link href="/pricing" className="inline-flex items-center gap-2 px-10 py-5 rounded-2xl bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-neutral-200 transition-gpu shadow-[0_0_40px_rgba(255,255,255,0.15)] group">
               Deploy Your Node <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>

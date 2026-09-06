@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 const PROOF = [
-  "145 agent endpoints across 8 LLM providers",
+  "140 agent endpoints across 8 LLM providers",
   "2,400+ tests passing · 0 type errors · 0 lint errors",
   "7 cryptographic primitives nobody else has",
   "22 vertical landings mapped to specific regulators",

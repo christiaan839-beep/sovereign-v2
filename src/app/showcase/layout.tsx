@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { JsonLd, breadcrumbSchema } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
-  title: "Agent Showcase — 130+ Specialized AI Agents | Sovereign Matrix",
-  description: "Browse the complete catalog of 130+ autonomous agents across sales, marketing, content, SEO, voice, and operations. Each with specific capabilities and outputs.",
+  title: "Agent Showcase — 140 Specialized AI Agents | Sovereign Matrix",
+  description: "Browse the complete catalog of 140 autonomous agents across sales, marketing, content, SEO, voice, and operations. Each with specific capabilities and outputs.",
   alternates: { canonical: "https://sovereignmatrix.agency/showcase" },
   openGraph: {
-    title: "130+ AI Agents Showcase",
+    title: "140 AI Agents Showcase",
     description: "Specialized autonomous agents for sales, marketing, content, SEO, voice.",
     url: "https://sovereignmatrix.agency/showcase",
     type: "website",

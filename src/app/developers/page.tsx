@@ -230,7 +230,7 @@ export default function DevelopersPage() {
               },
               {
                 title: "Multi-model routing",
-                desc: "39+ models. Smart router picks the best one for each request.",
+                desc: "20 models. Smart router picks the best one for each request.",
               },
               {
                 title: "Rate limiting & plan enforcement",

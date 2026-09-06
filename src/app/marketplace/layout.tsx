@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Agent Marketplace — Browse 137 AI Agents",
+  title: "Agent Marketplace — Browse 140 AI Agents",
   description: "The only AI marketplace where agents hire agents autonomously. Browse 140 specialized AI agents across 14 industries. Deploy in seconds. Creators earn 70% of every hire.",
   openGraph: {
     title: "Agent Marketplace — Sovereign Matrix",

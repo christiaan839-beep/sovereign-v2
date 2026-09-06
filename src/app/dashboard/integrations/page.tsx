@@ -91,7 +91,7 @@ const CATEGORIES: Category[] = [
     name: "AI Models",
     icon: "🧠",
     integrations: [
-      { id: "nvidia-nim",       name: "NVIDIA NIM",        description: "39 models — Nemotron Ultra, Llama 4, DeepSeek, Qwen 3",   healthKey: "nim",    color: "#76B900", connectType: "native" },
+      { id: "nvidia-nim",       name: "NVIDIA NIM",        description: "20 models — Nemotron Ultra, Llama 4, DeepSeek, Qwen 3",   healthKey: "nim",    color: "#76B900", connectType: "native" },
       { id: "google-gemini",    name: "Google Gemini",     description: "Gemini 2.5 Pro, Gemma 4, multimodal reasoning",             healthKey: "gemini", color: "#4285F4", connectType: "native" },
       { id: "anthropic-claude", name: "Anthropic Claude",  description: "Claude Sonnet/Haiku — consensus critic + extended thinking", healthKey: "claude", color: "#D97706", connectType: "native" },
       { id: "groq",             name: "Groq",              description: "Sub-100ms Llama 4 Scout and Mixtral inference",              healthKey: "groq",   color: "#F55036", connectType: "native" },

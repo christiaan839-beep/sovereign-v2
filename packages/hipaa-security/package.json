@@ -1,7 +1,7 @@
 {
   "name": "@sovereign-matrix/hipaa-security",
   "version": "0.1.0",
-  "description": "HIPAA Security Rule (45 CFR § 164.308-318) evidence-binder exporter. Takes a set of VAOS receipts and emits the auditor-ready administrative / physical / technical safeguards report (Markdown + JSON). Apache-2.0; HITRUST / Compliancy Group charge $20-100K/yr for the same.",
+  "description": "HIPAA Security Rule (45 CFR \u00a7 164.308-318) binder generator. Renders a set of VAOS receipts into the administrative / physical / technical safeguards table (Markdown + JSON), marking each implementation specification evidenced or unevidenced. A receipt is a guardrail verdict on model output, so most specifications are reported as gaps for the operator to evidence elsewhere. Apache-2.0.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

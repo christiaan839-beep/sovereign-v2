@@ -10,23 +10,26 @@ import { buildScorecard } from "@/lib/compliance-mappings";
 import type { Metadata } from "next";
 
 /**
- * /trust — Live trust posture page (Cook 89).
+ * /trust — Trust control model page (Cook 89).
  *
- * Pulls the same baseline indicator readings used by the Cook 73 cron
- * (in-memory snapshot until /api/_cron/soc2-indicators persists them)
- * and renders the SOC 2 posture + compliance framework coverage for
- * sales + procurement teams.
+ * Renders the SOC 2 control model + compliance framework mapping for
+ * sales + procurement teams. The indicator values below are the target
+ * thresholds each control is designed against — they are NOT live
+ * telemetry, and nothing on this page should imply that they are until
+ * /api/_cron/soc2-indicators persists real readings.
  */
 
 export const metadata: Metadata = {
   title:
-    "Trust Posture · Live SOC 2 + EU AI Act + NIST + ISO · Sovereign Matrix",
+    "Trust Control Model · SOC 2 + EU AI Act + NIST + ISO · Sovereign Matrix",
   description:
-    "Continuous control posture, cryptographic receipts, replayable audit trail. Live framework coverage across SOC 2 / EU AI Act / NIST AI RMF / ISO 42001.",
+    "Self-assessed control model with representative target values, cryptographic receipts, replayable audit trail. Framework mapping across SOC 2 / EU AI Act / NIST AI RMF / ISO 42001.",
   alternates: { canonical: "/trust" },
 };
 
-const BASELINE_READINGS: IndicatorReading[] = [
+// Representative target values per indicator — the threshold each
+// control is designed to hold, not a measurement of production state.
+const TARGET_READINGS: IndicatorReading[] = [
   { id: "encryption-at-rest-coverage", value: 1.0 },
   { id: "mfa-admin-fraction", value: 1.0 },
   { id: "failed-deploy-rate", value: 0.97 },
@@ -236,7 +239,7 @@ const TRUST_PRIMITIVES: TrustPrimitive[] = [
 ];
 
 export default function TrustPage() {
-  const posture = buildPosture(BASELINE_READINGS);
+  const posture = buildPosture(TARGET_READINGS);
   const frameworks = (
     ["eu-ai-act-annex-iv", "nist-ai-rmf", "iso-42001"] as const
   ).map((f) => buildScorecard(f));
@@ -273,29 +276,48 @@ export default function TrustPage() {
 
       <header className="max-w-5xl mx-auto px-6 pt-20 pb-12">
         <p className="text-[10px] uppercase tracking-[0.4em] text-emerald-400 mb-4 inline-flex items-center gap-2">
-          <ShieldCheck className="w-3.5 h-3.5" /> Live posture
+          <ShieldCheck className="w-3.5 h-3.5" /> Self-assessed control model
         </p>
         <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white max-w-3xl">
-          Continuous control posture, on-demand replay.
+          The control model, and the receipts to check it.
         </h1>
         <p className="mt-6 text-neutral-400 text-base leading-relaxed max-w-2xl">
           Every SOC 2 Trust Services Criterion that powers our enterprise
-          assurance is monitored continuously — not at audit time. Pass / warn /
-          fail per control, mapped to the platform capabilities that enforce
-          each one. Procurement teams can request the underlying receipt id and
+          assurance is written down here, mapped to the platform capability that
+          enforces it and to the target threshold each control is designed to
+          hold. Procurement teams can request the underlying receipt id and
           replay any decision from the last 365 days.
         </p>
         <p className="text-[11px] text-neutral-500 mt-3">
-          Posture generated at{" "}
+          Page rendered at{" "}
           <code className="text-neutral-400">{posture.generatedAt}</code>
         </p>
       </header>
 
       <section className="max-w-5xl mx-auto px-6 py-8">
+        {/* Non-dismissable disclaimer. It sits directly above the numbers
+            because the numbers are design targets, not measurements —
+            anyone reading a percentage on this page must read this first. */}
+        <div className="mb-6 p-4 rounded-2xl border border-amber-500/25 bg-amber-500/[0.05] flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <p className="text-[12px] text-amber-200/90 leading-relaxed">
+            <span className="font-semibold text-amber-200">
+              The figures below are illustrative targets, not live telemetry.
+            </span>{" "}
+            Each percentage is the threshold the control is designed to hold,
+            self-assessed by us. They are not measurements of production
+            systems, not continuously monitored, and not attested by a third
+            party — we hold no SOC 2 report today. For measured evidence, replay
+            a receipt at{" "}
+            <code className="text-amber-100/80">/api/replay/&lt;id&gt;</code> or
+            request the audit bundle below.
+          </p>
+        </div>
+
         <div className="grid sm:grid-cols-3 gap-3 mb-8">
           <div className="p-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/5">
             <p className="text-[10px] uppercase tracking-wider text-emerald-400 mb-1">
-              Overall pass fraction
+              Targets met (self-assessed)
             </p>
             <p className="text-2xl font-black text-white">
               {(posture.overallPassFraction * 100).toFixed(1)}%
@@ -303,7 +325,7 @@ export default function TrustPage() {
           </div>
           <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
             <p className="text-[10px] uppercase tracking-wider text-neutral-400 mb-1">
-              Controls evaluated
+              Controls in model
             </p>
             <p className="text-2xl font-black text-white">
               {posture.controls.length}
@@ -323,7 +345,7 @@ export default function TrustPage() {
         </div>
 
         <h2 className="text-sm uppercase tracking-[0.3em] text-neutral-500 mb-4">
-          SOC 2 control posture
+          SOC 2 control model · self-assessed
         </h2>
         <div className="space-y-2">
           {posture.controls.map((c) => {
@@ -354,7 +376,10 @@ export default function TrustPage() {
                   </p>
                 </div>
                 {c.reading && (
-                  <span className="text-[11px] font-mono text-neutral-400">
+                  <span className="text-[11px] font-mono text-neutral-500">
+                    <span className="uppercase tracking-wider text-amber-400/80">
+                      target
+                    </span>{" "}
                     {(c.reading.value * 100).toFixed(1)}%
                   </span>
                 )}
@@ -366,7 +391,7 @@ export default function TrustPage() {
 
       <section className="max-w-5xl mx-auto px-6 py-12">
         <h2 className="text-sm uppercase tracking-[0.3em] text-neutral-500 mb-4">
-          Framework coverage
+          Framework coverage · self-mapped
         </h2>
         <div className="grid md:grid-cols-3 gap-3">
           {frameworks.map((sc) => (
@@ -441,8 +466,8 @@ export default function TrustPage() {
             Procurement-ready in one paste.
           </h2>
           <p className="text-sm text-neutral-300 max-w-2xl mb-6">
-            Hand this URL to your customer&rsquo;s assurance team. They can see
-            the live posture, paste any receipt id at{" "}
+            Hand this URL to your customer&rsquo;s assurance team. They can read
+            the control model, paste any receipt id at{" "}
             <code className="text-neutral-200">/api/replay/&lt;id&gt;</code>,
             and verify reproducibility — without you sending a single
             spreadsheet.

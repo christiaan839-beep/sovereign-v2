@@ -1,7 +1,7 @@
 {
   "name": "@sovereign-matrix/eu-cra",
   "version": "0.1.0",
-  "description": "EU Cyber Resilience Act (Regulation (EU) 2024/2847) essential cybersecurity requirements exporter for products with digital elements — including AI software. Annex I + technical documentation per Article 15. Apache 2.0; enforcement begins 2027.",
+  "description": "EU Cyber Resilience Act (Regulation (EU) 2024/2847) Annex I report generator for products with digital elements. Renders a set of VAOS receipts into the essential-cybersecurity-requirements table plus Article 15 technical documentation (Markdown + JSON). A receipt is a guardrail verdict on model output, so most Annex I requirements are reported as gaps for the operator to evidence elsewhere. Apache-2.0.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

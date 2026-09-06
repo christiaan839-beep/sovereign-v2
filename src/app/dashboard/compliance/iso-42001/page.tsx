@@ -56,7 +56,6 @@ export default function Iso42001Dashboard() {
       framework="iso-42001"
       frameworkLabel="ISO/IEC 42001:2023 AIMS"
       description="Generate the AI management system report from your tenant's signed receipts. Clauses 7-10 (Support / Operation / Performance evaluation / Improvement) + Annex A's 38-control matrix derive directly from receipts; clauses 4-6 emit as operator-authored stubs."
-      previewUrl="/compliance/iso-42001"
       npmPackage="@sovereign-matrix/iso-42001"
       fields={FIELDS}
       dataMode="sample"
