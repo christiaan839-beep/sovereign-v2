@@ -17,6 +17,7 @@
 import { NextResponse } from "next/server";
 import { guardRoute, errorResponse, sanitizeString, validateRequired } from "@/lib/api-guard";
 import { createLogger } from "@/lib/logger";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 const log = createLogger("integration:webhook");
 
@@ -56,20 +57,6 @@ export async function POST(req: Request) {
       parsedUrl = new URL(url);
     } catch {
       return errorResponse("Invalid URL", 400, "VALIDATION_ERROR");
-    }
-
-    // Block private/local URLs to prevent SSRF
-    const hostname = parsedUrl.hostname.toLowerCase();
-    if (
-      hostname === "localhost" ||
-      hostname === "127.0.0.1" ||
-      hostname === "0.0.0.0" ||
-      hostname.startsWith("10.") ||
-      hostname.startsWith("192.168.") ||
-      hostname.startsWith("172.") ||
-      hostname === "metadata.google.internal"
-    ) {
-      return errorResponse("Cannot send webhooks to private/local addresses", 400, "SSRF_BLOCKED");
     }
 
     if (!ALLOWED_METHODS.has(method)) {
@@ -115,17 +102,32 @@ export async function POST(req: Request) {
       fetchOpts.body = payloadBody;
     }
 
-    const res = await fetch(url, fetchOpts);
+    let res;
+    try {
+      res = await outboundFetch(
+        url,
+        fetchOpts,
+        {
+          ruleId: "integration.webhook",
+          userId: auth.userId,
+          maxResponseBytes: 100_000,
+        }
+      );
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "EgressBlockedError") {
+        return errorResponse("Cannot send webhooks to private/local addresses or DNS resolution failed", 400, "SSRF_BLOCKED");
+      }
+      throw err;
+    }
 
     // Try to capture the response body (but don't fail if we can't)
     let responseBody: unknown = null;
     try {
-      const contentType = res.headers.get("content-type") ?? "";
+      const contentType = res.contentType ?? "";
       if (contentType.includes("json")) {
-        responseBody = await res.json();
+        responseBody = JSON.parse(res.body);
       } else {
-        const text = await res.text();
-        responseBody = text.slice(0, 2000); // Cap response size
+        responseBody = res.body.slice(0, 2000); // Cap response size
       }
     } catch {
       responseBody = null;
