@@ -26,6 +26,12 @@ Key endpoints:
 
 ## Important Commands
 
+- **Verify (every gate, one command)**: `npm run verify` — the single
+  definition of "verified" for this repo. `scripts/verify.mjs` owns the gate
+  list; CI calls it per gate (`--only=`) and the pre-push hook calls it as
+  `--profile=quick`, so a laptop and CI cannot enforce different things. See
+  the list with `node scripts/verify.mjs --list`. A gate that can't run here
+  reports as **skipped**, never as passed.
 - **Development**: `npm run dev`
 - **Compiling**: `npm run build`
 - **Testing**: `npm run test` (vitest)
@@ -139,7 +145,7 @@ This is how the engineering memory survives context resets.
 
 - **MCP servers** (`.mcp.json`): `sovereign-matrix` (custom, exposes sovereign_run_agent/playbook/health/api_catalog against production) + `context7` (live library API docs — use it instead of guessing signatures for Drizzle, Clerk, Stripe, Vercel AI SDK, etc.)
 - **Agents** (`.claude/agents/`): `sovereign-optimizer` (broad quality), `design-slop-blocker` (UI), `security-reviewer` (API/auth/payment audits — triggers automatically on API route changes)
-- **Skills** (`.claude/skills/`): `/deploy-check` (pre-push verification gate, catches the 6 build gotchas), `/ship` (full dev→prod pipeline with security gate, user-invocation only)
+- **Skills** (`.claude/skills/`): `/deploy-check` (runs `npm run verify`, then interprets failures against the build gotchas — it does NOT carry its own check list), `/ship` (full dev→prod pipeline with security gate, user-invocation only)
 - **Hooks** (`.claude/settings.json`): PreToolUse blocks `.env*` edits (exit 2), PostToolUse auto-formats `.ts/.tsx/.js/.jsx/.json/.md/.css` via Prettier — do NOT override or duplicate these
 - **Env config** in `.env.local` (30+ keys: AI providers, Stripe, Clerk, Twilio, ElevenLabs, Sentry, etc.)
 
