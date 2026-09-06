@@ -5,7 +5,77 @@
 > updates this. If something is shipped, move it to the bottom log; if
 > something new is discovered, add it under the right severity band.
 
-Last refreshed: **2026-07-08** after wave 121 (deferred-flaw closeout + dependency hardening).
+Last refreshed: **2026-09-06** after wave 122 (playbook DAG executor + step-reference correctness).
+
+---
+
+## Wave 122 — playbook DAG executor + step-reference correctness (2026-09-06)
+
+Closes **M5** (the last 0%-complete dimension) and fixes a silent
+data-loss bug underneath it. Typecheck + full suite + lint + production
+build all green.
+
+**`{{step_N}}` was off by one — 33 of 37 references resolved to "".**
+Playbook definitions address steps the way humans write them
+(`{{step_1}}` = the first step), but the executor resolved
+`{{step_N}}` → `stepOutputs[N]`, i.e. 0-indexed. So on step index 1,
+`{{step_1}}` read _its own_ not-yet-written output and interpolated an
+empty string. Across the 25 playbooks that use references: **33 refs
+resolved to the referencing step's own output, 4 resolved to the wrong
+earlier step. Zero were correct.** The bug was masked because the
+executor also injected `params.context = stepOutputs[i-1]`, so _some_
+context always flowed and runs looked healthy — while every
+author-labelled input (`"Competitor data: {{step_1}} SEO data:
+{{step_2}}"`) silently arrived blank. Proof the 1-indexed reading is the
+intended one: under it, **all 37 shipped references are valid backward
+edges with zero warnings** (pinned by a test over `PLAYBOOKS`).
+
+**The dependency graph already existed — it just wasn't used.** New
+`src/lib/playbook-dag.ts` derives the DAG from those same `{{step_N}}`
+references and schedules it:
+
+- Independent steps now run **concurrently** (bounded, default 4, env
+  `PLAYBOOK_MAX_CONCURRENCY`, hard ceiling 16) instead of queueing in a
+  `for`-loop.
+- A step whose dependency failed is **skipped**, not run against empty
+  input — that used to burn a full model call synthesising nothing.
+  Skips propagate transitively; independent branches still run.
+  (`skipped` was already a documented `playbook_run_steps` status and
+  was simply never emitted — no migration needed.)
+- Malformed references (self, forward, out-of-range, `{{step_0}}`) are
+  dropped with a logged warning rather than throwing — a bad definition
+  can't take down a user's run.
+- Cycles fail closed. `buildPlaybookDag` can't construct one, but the
+  scheduler still refuses to spin if a future caller hand-builds one.
+- Steps that declare no references keep the historical implicit
+  "previous step becomes context" edge, so existing playbooks behave
+  exactly as before.
+
+The scheduler takes an injected `runStep`, so it is unit-tested with no
+DB or network. 25 new tests.
+
+**`_misc/projects` tenancy fixed (latent, not live).** All four handlers
+keyed their queries on a caller-supplied `x-user-id` header with an
+`|| "anonymous"` fallback — the exact pattern that shipped as a real
+cross-tenant read/write in `_misc/inbox` and `_misc/scheduled-runs`.
+Here it is **not currently reachable**: `src/app/api/projects/route.ts`
+shadows it with the Clerk-guarded `/api/clients` handlers. But that
+shadow only re-exports GET and POST, so adding a PUT/DELETE re-export or
+removing the shadow would arm it instantly. Identity now comes from the
+Clerk session only; `PUT` can no longer reassign a row's `userId`, and
+`PUT`/`DELETE` return 404 instead of `success: true` when nothing
+matched. 7 tests pin it.
+
+**Deferred (documented, not shipped):**
+
+- **M1's codemod needs a carve-out, not a blanket sweep.** The playbook
+  runner's `fetch()` is a **loopback dispatch to this app's own API**.
+  `outboundFetch` always enforces the SSRF guard (by design, in every
+  mode), which blocks localhost/private hosts — so mechanically
+  converting this callsite would break every playbook in dev and on any
+  self-hosted deployment. Left as a bare `fetch()` with a scoped
+  `eslint-disable` and the reason inline. The remaining callsites still
+  want the codemod; it is not uniformly mechanical.
 
 ---
 
@@ -195,7 +265,7 @@ These percentages are anchored in code I read this session, not marketing.
 | **UI / Landing** (brand-correct, glass, motion, telemetry)                                                        | **~80%**   | All 26 /for-\* pages brand-correct (10 shell + 14 bespoke-corrected wave 109.7 + 2 already-clean). VerticalPageShell + scroll rail + LiveReceiptFeed live.              |
 | **Agent layer — multi-step tool-use**                                                                             | **~1.4%**  | 2 of 140 (competitor-scan wave 110, site-assassin wave 113). Pattern proven on a second flagship. Per-flagship conversion is mechanical now but per-agent.              |
 | **Agent layer — memory-awareness**                                                                                | **~15.0%** | 21 of 140 opted in via wave-111 factory hooks (18 prior + competitor, threat-hunt, supply-chain from batch 6). 119 are one ~25-line config block away.                  |
-| **DAG executor for playbooks**                                                                                    | **0%**     | Still a for-loop in `src/app/api/playbooks/run/route.ts`. swarm-protocol.ts (299 LOC) has zero callers.                                                                 |
+| **DAG executor for playbooks**                                                                                    | **~90%**   | Wave 122. `playbook-dag.ts` derives the graph from `{{step_N}}` refs; parallel fanout + dependency-aware skipping live. Conditional edges not yet modelled.             |
 | **Marketing claims vs actual compliance certifications**                                                          | **~30%**   | Platform infrastructure addresses HIPAA/FERPA/SOC 2 architecturally, but no signed certifications. Marketing language needs softening OR certifications need acquiring. |
 
 **Composite (weighted by user-visible impact):** ~55-60% from "production-deployable with every marketing claim true."
@@ -246,16 +316,16 @@ The platform is production-deployable RIGHT NOW for: agency operators automating
 
 ### MEDIUM — quality/cost/architecture improvements that aren't blockers
 
-| ID     | Item                                                                                                                                                                                                                                                                                                                                                                 | Effort                   | Notes                                                                                                                     |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| M1     | **Bulk `fetch()` → `outboundFetch()` codemod** across 121 callsites in `src/app/api/**`. ESLint warns on every site since wave 107; codemod replaces them uniformly. Most are hardcoded provider URLs (Resend, NVIDIA, Anthropic) so the security upgrade is incremental, but the codemod is the structural fix.                                                     | 1 session                | Mechanical. Per-site verify shape (provider URLs are safe; user-supplied URLs need the SSRF allowlist). Wave 107.5.       |
-| M2     | **Convert 4 more flagship agents to wave-110 multi-step pattern**: `lead-blitz`, `closer`, `site-assassin`, `deep-think`, `content-machine`, `super-agent`. Each ~300 LOC with 5-tool registry + tests + security review.                                                                                                                                            | 1 session each           | Pattern proven by competitor-scan. Per-flagship work. Bring "% multi-step agentic" from 0.7% → 4% per flagship converted. |
-| M3     | **Memory opt-in across remaining 137 agents.** Wave-111 made this a 1-config-block change. Each agent: decide what to search (input-derived query) + what to store (1 line of `extract`) + metadata. Now at 3 of 140 (~2.1%) — leads + email-sequence + ad-report.                                                                                                   | ~30 min each, batch-able | Mechanical. Brings "% memory-aware" from 2.1% → ~50% in a focused session.                                                |
-| ~~M4~~ | ~~14 bespoke `/for-*` pages still ship `bg-[#010101]` + white-pill CTA~~ — **SHIPPED in wave 109.7.** All 14 pages now use `bg-[#030303]` + glass-chrome nav (`bg-white/[0.04] border border-white/[0.08]`) preserving each page's bespoke content (compliance grids, ISR/metadata, per-vertical accent). for-recruiting hero CTA also swapped to copper PrimaryCTA. | DONE                     | Net: all 26 /for-\* pages brand-correct.                                                                                  |
-| M5     | **DAG executor for playbooks.** Replace the `for`-loop in `src/app/api/playbooks/run/route.ts:109-184` with a real DAG using `swarm-protocol.ts` (299 LOC currently unused). Enables actual parallel agent fanout + conditional edges. Wave 112.                                                                                                                     | 2-3 sessions             | Architectural. Closes the "multi-agent OS" marketing gap.                                                                 |
-| M6     | **Vector-memory storage growth audit + LRU/TTL strategy.** Beyond per-user cap (H2), need a backstop retention policy for `agent_memories`. Tie into wave-105 retention if appropriate.                                                                                                                                                                              | 1 session                | Schema change + audit-log integration.                                                                                    |
-| M7     | **Trace cap in `claudeToolUse` internal trace** + tool-result truncation older than N turns. Wave-110 review L1 + M3 findings. Costs scale with token count on long loops.                                                                                                                                                                                           | 2-3 hours                | Inside `claudeToolUse` in ai.ts. Truncate tool_result older than 2 turns to a one-line summary.                           |
-| M8     | **Performance benchmarks** — measure + publish actual P50/P99 latency, model-failover hit rate, kill-switch trip rate. Replace "trust us" with measured numbers in `/spec` or `/explorer`.                                                                                                                                                                           | 1 session                | Add metrics-collection module + a public dashboard.                                                                       |
+| ID     | Item                                                                                                                                                                                                                                                                                                                                                                                                                      | Effort                   | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1     | **Bulk `fetch()` → `outboundFetch()` codemod** across 121 callsites in `src/app/api/**`. ESLint warns on every site since wave 107; codemod replaces them uniformly. Most are hardcoded provider URLs (Resend, NVIDIA, Anthropic) so the security upgrade is incremental, but the codemod is the structural fix.                                                                                                          | 1 session                | **NOT uniformly mechanical — see wave 122.** Internal loopback self-calls (playbook runner, goal-executor, swarm-protocol) MUST stay bare `fetch()`: `outboundFetch` always enforces the SSRF guard, which blocks localhost/private hosts, so converting them breaks dev + self-hosted. Carve those out with a scoped `eslint-disable` + reason. Per-site verify shape (provider URLs are safe; user-supplied URLs need the SSRF allowlist). Wave 107.5. |
+| M2     | **Convert 4 more flagship agents to wave-110 multi-step pattern**: `lead-blitz`, `closer`, `site-assassin`, `deep-think`, `content-machine`, `super-agent`. Each ~300 LOC with 5-tool registry + tests + security review.                                                                                                                                                                                                 | 1 session each           | Pattern proven by competitor-scan. Per-flagship work. Bring "% multi-step agentic" from 0.7% → 4% per flagship converted.                                                                                                                                                                                                                                                                                                                                |
+| M3     | **Memory opt-in across remaining 137 agents.** Wave-111 made this a 1-config-block change. Each agent: decide what to search (input-derived query) + what to store (1 line of `extract`) + metadata. Now at 3 of 140 (~2.1%) — leads + email-sequence + ad-report.                                                                                                                                                        | ~30 min each, batch-able | Mechanical. Brings "% memory-aware" from 2.1% → ~50% in a focused session.                                                                                                                                                                                                                                                                                                                                                                               |
+| ~~M4~~ | ~~14 bespoke `/for-*` pages still ship `bg-[#010101]` + white-pill CTA~~ — **SHIPPED in wave 109.7.** All 14 pages now use `bg-[#030303]` + glass-chrome nav (`bg-white/[0.04] border border-white/[0.08]`) preserving each page's bespoke content (compliance grids, ISR/metadata, per-vertical accent). for-recruiting hero CTA also swapped to copper PrimaryCTA.                                                      | DONE                     | Net: all 26 /for-\* pages brand-correct.                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ~~M5~~ | ~~**DAG executor for playbooks.**~~ — **SHIPPED (wave 122).** `src/lib/playbook-dag.ts` derives the DAG from the `{{step_N}}` references playbooks already declare, runs independent steps concurrently, and skips steps whose inputs failed. Also fixed the 1-vs-0-indexed off-by-one that made 33 of 37 references resolve to "". Built as a dedicated scheduler rather than on `swarm-protocol.ts` — see decision log. | DONE                     | 25 tests; scheduler is DB/network-free via injected `runStep`.                                                                                                                                                                                                                                                                                                                                                                                           |
+| M6     | **Vector-memory storage growth audit + LRU/TTL strategy.** Beyond per-user cap (H2), need a backstop retention policy for `agent_memories`. Tie into wave-105 retention if appropriate.                                                                                                                                                                                                                                   | 1 session                | Schema change + audit-log integration.                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| M7     | **Trace cap in `claudeToolUse` internal trace** + tool-result truncation older than N turns. Wave-110 review L1 + M3 findings. Costs scale with token count on long loops.                                                                                                                                                                                                                                                | 2-3 hours                | Inside `claudeToolUse` in ai.ts. Truncate tool_result older than 2 turns to a one-line summary.                                                                                                                                                                                                                                                                                                                                                          |
+| M8     | **Performance benchmarks** — measure + publish actual P50/P99 latency, model-failover hit rate, kill-switch trip rate. Replace "trust us" with measured numbers in `/spec` or `/explorer`.                                                                                                                                                                                                                                | 1 session                | Add metrics-collection module + a public dashboard.                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ### LOW — cleanup and polish that doesn't change behavior
 
@@ -311,6 +381,16 @@ These are the load-bearing contracts. If any wave breaks one, the wave failed.
 8. **`pastContextAsPrompt()` auto-prepends `PAST_MEMORY_DIRECTIVE`** in front of wrapped content. Don't strip the directive in a future "cleanup" PR — it closes the 140x prompt-injection-via-memory blast radius.
 9. **`neutraliseInjectionPatterns()` runs before `storeMemory`** in the factory store hook. Layer-2 defense.
 10. **`runWithBudgetAndAudit` captures stats INSIDE the budget scope.** Outside the scope, AsyncLocalStorage has torn down and `getExecutionStats()` returns null.
+11. **`{{step_N}}` in a playbook definition is 1-INDEXED.** `{{step_1}}`
+    is the first step; the dependency is `N - 1`. This is the contract
+    playbook authors already write to, and `playbook-dag.ts` is the only
+    place it is interpreted. A future "cleanup" that makes it 0-indexed
+    silently re-breaks cross-step context in 25 playbooks — the failure
+    mode is an empty string, not an error. The test over `PLAYBOOKS`
+    ("every reference points at an earlier step") is the guard.
+12. **A playbook step whose dependency did not succeed is SKIPPED.**
+    Never fall back to running it against empty input — it costs a model
+    call and returns confident nonsense.
 
 ---
 
@@ -322,6 +402,27 @@ These are the load-bearing contracts. If any wave breaks one, the wave failed.
 - **Wave 111 chose `leads` as the first memory opt-in** because the memory pattern (compound past lead signals on same niche) has obvious user value vs other agents.
 - **DNS-rebinding fix scope decision in wave 110.1**: per-caller defense in `fetch_page` only (the only NEW SSRF surface wave 110 added) rather than promoting to `outboundFetch` itself. The architectural fix is deferred to wave 107.2.
 - **Per-user memory write cap deferred twice** (wave 110 + wave 111 reviews). Real gap. Track as H2 above. Don't defer a third time.
+- **Wave 122 did NOT build the DAG on `swarm-protocol.ts`,** which the
+  backlog had suggested. Reading it, the two solve different problems:
+  swarm-protocol runs N agents against the **same** goal and merges them
+  with a consensus mode (best/merge/vote/debate). That is a consensus
+  primitive, not a dependency scheduler — it has no notion of an edge,
+  an ordering, or one step consuming another's output. Force-fitting it
+  would have meant gutting it. Built `playbook-dag.ts` instead and left
+  swarm-protocol untouched (still zero callers, still marked
+  ahead-of-consumers).
+- **Parallelism is earned by declaring a reference, not assumed.** Steps
+  that declare no `{{step_N}}` keep the implicit previous-step edge, so
+  they stay sequential. Inferring independence from "no references"
+  would silently reorder every playbook written before wave 122 — a
+  correctness risk taken on the author's behalf. Parallelism therefore
+  shows up exactly where a playbook says what it actually needs.
+- **The `_misc/projects` fix shipped even though the route is
+  unreachable.** It is shadowed by `src/app/api/projects/route.ts`, so
+  this is a latent landmine rather than a live IDOR — stated plainly
+  rather than counted as a vulnerability closed. Fixed anyway because
+  the shadow covers only GET/POST and the two unshadowed siblings shipped
+  this exact bug for real.
 
 ---
 
