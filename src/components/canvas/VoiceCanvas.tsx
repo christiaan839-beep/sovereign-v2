@@ -72,6 +72,7 @@ export function VoiceCanvas({ onResult, disabled }: VoiceCanvasProps) {
   return (
     <div className="relative">
       <button
+        aria-label={listening ? "Stop voice input" : "Start voice input"}
         onClick={listening ? stopListening : startListening}
         disabled={disabled}
         className={`p-2.5 rounded-xl transition-gpu shrink-0 ${
@@ -81,7 +82,7 @@ export function VoiceCanvas({ onResult, disabled }: VoiceCanvasProps) {
         } disabled:opacity-30`}
         title={listening ? "Stop listening" : "Voice input"}
       >
-        {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+        {listening ? <MicOff aria-hidden="true" className="w-4 h-4" /> : <Mic aria-hidden="true" className="w-4 h-4" />}
       </button>
 
       {/* Live transcript tooltip */}
