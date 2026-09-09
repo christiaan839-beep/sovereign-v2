@@ -1,0 +1,3 @@
+## 2024-05-24 - Interactive Elements Hidden Behind Hover States
+**Learning:** Elements visually hidden with `opacity-0 group-hover:opacity-100` are completely inaccessible to keyboard navigation users unless focus states are explicitly handled. Tabbing to them leaves them invisible.
+**Action:** Always add `focus-within:opacity-100` to the parent container when using `opacity-0 group-hover:opacity-100`. Furthermore, interactive elements inside must have explicit `focus-visible` utility classes (e.g., `focus-visible:ring-1 focus-visible:ring-[color]`) applied to ensure clear focus indication for keyboard users.
