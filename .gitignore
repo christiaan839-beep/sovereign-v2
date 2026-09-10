@@ -70,3 +70,5 @@ next-env.d.ts
 .idea/
 .vscode/
 .playwright-mcp/
+test-results/
+playwright-report/
