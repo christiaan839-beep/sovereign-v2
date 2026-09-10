@@ -32,7 +32,7 @@ export function NoteNode({ id, data }: NodeProps) {
           <button
             onClick={() => d.onDelete?.(id)}
             aria-label="Delete note"
-            className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 p-0.5 rounded-md hover:bg-white/10 text-neutral-600 hover:text-red-400 transition-gpu focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-electric-blue)]"
+            className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 p-0.5 rounded-md hover:bg-white/10 text-neutral-600 hover:text-red-400 transition-gpu focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
           >
             <X className="w-3 h-3" aria-hidden="true" />
           </button>
