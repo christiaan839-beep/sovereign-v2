@@ -29,8 +29,12 @@ export function NoteNode({ id, data }: NodeProps) {
       <div className="w-[200px] rounded-xl border border-amber-500/10 bg-amber-500/[0.04] backdrop-blur-xl p-3 shadow-lg">
         <div className="flex items-center justify-between mb-2">
           <StickyNote className="w-3 h-3 text-amber-500/60" />
-          <button onClick={() => d.onDelete?.(id)} className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-white/10 text-neutral-600 hover:text-red-400 transition-gpu">
-            <X className="w-3 h-3" />
+          <button
+            onClick={() => d.onDelete?.(id)}
+            aria-label="Delete note"
+            className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 p-0.5 rounded-md hover:bg-white/10 text-neutral-600 hover:text-red-400 transition-gpu focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            <X className="w-3 h-3" aria-hidden="true" />
           </button>
         </div>
         {editing ? (
