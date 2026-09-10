@@ -230,7 +230,7 @@ export function NotificationCenter() {
                           <button
                             onClick={() => handleMarkRead(n.id)}
                             aria-label="Mark as read"
-                            className="p-1 rounded-md text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
+                            className="p-1 rounded-md text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-electric-blue)]"
                           >
                             <Check className="w-3 h-3" aria-hidden="true" />
                           </button>
@@ -238,7 +238,7 @@ export function NotificationCenter() {
                         <button
                           onClick={() => handleRemove(n.id)}
                           aria-label="Dismiss notification"
-                          className="p-1 rounded-md text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]"
+                          className="p-1 rounded-md text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-electric-blue)]"
                         >
                           <X className="w-3 h-3" aria-hidden="true" />
                         </button>
