@@ -106,9 +106,9 @@ jobs:
       - name: Build application
         run: npm run build
         env:
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_dGVzdC5jbGVyay5hY2NvdW50cy5kZXYk' }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_smoke_dummy' }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://x:y@localhost:5432/test' }}
 
   test:
     name: Test
@@ -304,13 +304,13 @@ jobs:
         # so NEXT_PUBLIC_* keys aren't compiled as undefined.
         run: npm run build
         env:
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_smoke_dummy' }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_dGVzdC5jbGVyay5hY2NvdW50cy5kZXYk' }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_smoke_dummy' }}
           DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://x:y@localhost:5432/test' }}
 
       - name: Start next server in background
         run: |
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_smoke_dummy' }}" \
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_dGVzdC5jbGVyay5hY2NvdW50cy5kZXYk' }}" \
           CLERK_SECRET_KEY="${{ secrets.CLERK_SECRET_KEY || 'sk_test_smoke_dummy' }}" \
           DATABASE_URL="${{ secrets.DATABASE_URL || 'postgresql://x:y@localhost:5432/test' }}" \
           PORT=3000 npm start > /tmp/next.log 2>&1 &
