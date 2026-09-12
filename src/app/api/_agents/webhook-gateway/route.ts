@@ -1,6 +1,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 import { getBaseUrl } from "@/lib/base-url";
+import crypto from "node:crypto";
 
 /**
  * WEBHOOK GATEWAY — External trigger point for Zapier, Make, n8n,
@@ -36,8 +37,15 @@ async function _postHandler(request: Request) {
     const apiKey = request.headers.get("x-api-key");
     const expectedKey = process.env.WEBHOOK_API_KEY;
 
-    if (expectedKey && apiKey !== expectedKey) {
-      return NextResponse.json({ error: "Invalid API key. Set x-api-key header." }, { status: 401 });
+    if (expectedKey) {
+      if (!apiKey) {
+        return NextResponse.json({ error: "Invalid API key. Set x-api-key header." }, { status: 401 });
+      }
+      const apiKeyBuf = Buffer.from(apiKey, "utf8");
+      const expectedBuf = Buffer.from(expectedKey, "utf8");
+      if (apiKeyBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(apiKeyBuf, expectedBuf)) {
+        return NextResponse.json({ error: "Invalid API key. Set x-api-key header." }, { status: 401 });
+      }
     }
 
     const { agent, payload } = await request.json();
