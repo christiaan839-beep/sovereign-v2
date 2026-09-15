@@ -17,6 +17,7 @@
 import { NextResponse } from "next/server";
 import { guardRoute, errorResponse, sanitizeString, validateRequired } from "@/lib/api-guard";
 import { createLogger } from "@/lib/logger";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 const log = createLogger("integration:webhook");
 
@@ -115,17 +116,19 @@ export async function POST(req: Request) {
       fetchOpts.body = payloadBody;
     }
 
-    const res = await fetch(url, fetchOpts);
+    const res = await outboundFetch(url, fetchOpts, {
+      ruleId: "integration:webhook",
+      userId: auth.userId,
+    });
 
     // Try to capture the response body (but don't fail if we can't)
     let responseBody: unknown = null;
     try {
-      const contentType = res.headers.get("content-type") ?? "";
+      const contentType = res.contentType ?? "";
       if (contentType.includes("json")) {
-        responseBody = await res.json();
+        responseBody = JSON.parse(res.body);
       } else {
-        const text = await res.text();
-        responseBody = text.slice(0, 2000); // Cap response size
+        responseBody = res.body.slice(0, 2000); // Cap response size
       }
     } catch {
       responseBody = null;
