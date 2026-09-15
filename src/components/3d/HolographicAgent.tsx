@@ -6,7 +6,8 @@ import { OrbitControls, Sphere, MeshDistortMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 
 function AgentCore({ isSpeaking }: { isSpeaking: boolean }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const meshRef = useRef<any>(null);
   
   useFrame((state) => {
     if (meshRef.current) {
