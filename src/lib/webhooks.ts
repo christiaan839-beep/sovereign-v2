@@ -9,6 +9,7 @@ import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 const log = createLogger("webhooks");
 
@@ -35,16 +36,20 @@ export async function fireUserWebhook(agent: string, task: string, payload: unkn
     if (!webhookUrl || !webhookUrl.startsWith("http")) return false;
 
     // Fire and forget
-    fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        event: "umbra.agent.completed",
-        timestamp: new Date().toISOString(),
-        userEmail: user.primaryEmailAddress.emailAddress,
-        data: { agent, task, payload }
-      })
-    }).catch(e => log.error("Webhook delivery error:", e));
+    outboundFetch(
+      webhookUrl,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "umbra.agent.completed",
+          timestamp: new Date().toISOString(),
+          userEmail: user.primaryEmailAddress.emailAddress,
+          data: { agent, task, payload }
+        })
+      },
+      { ruleId: "webhook.fire" }
+    ).catch(e => log.error("Webhook delivery error:", e));
 
     return true;
   } catch (err) {
@@ -100,15 +105,19 @@ export async function triggerWebhook(event: "hot_lead" | "new_sale" | "campaign_
   await Promise.allSettled(
     activeHooks.map(async (hook) => {
       try {
-        const res = await fetch(hook.url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "User-Agent": "SOVEREIGN-Webhook-Engine/1.0",
-            "X-SOVEREIGN-Event": event
+        const res = await outboundFetch(
+          hook.url,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "User-Agent": "SOVEREIGN-Webhook-Engine/1.0",
+              "X-SOVEREIGN-Event": event
+            },
+            body: JSON.stringify(payload)
           },
-          body: JSON.stringify(payload)
-        });
+          { ruleId: "webhook.trigger" }
+        );
 
         if (res.ok) delivered++;
         else failed++;
