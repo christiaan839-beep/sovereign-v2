@@ -1,0 +1,12 @@
+# Runtime
+python-dotenv>=1.0.0
+jsonschema>=4.20.0
+
+# Live transport to pipeboard-co/meta-ads-mcp (lazy-imported; only needed for non-dry-run runs)
+mcp>=1.2.0
+
+# Creative synthesis (lazy-imported; only used when ANTHROPIC_API_KEY is set)
+anthropic>=0.40.0
+
+# Dev / test
+pytest>=8.0.0

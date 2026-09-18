@@ -1,0 +1,95 @@
+{
+  "schema_version": "2026-05-28",
+  "generated_at": "2026-05-28",
+  "description": "Phase-1 deliverable: validation schema + current valid parameters for Meta Marketing API asset creation. Re-harvest before each run. Values reflect public Meta for Developers changelog research as of 2026-05; verify against a live API probe before trusting in production.",
+  "sources": [
+    "https://developers.facebook.com/docs/marketing-api/marketing-api-changelog/versions/",
+    "https://developers.facebook.com/docs/marketing-api/marketing-api-changelog/version24.0/",
+    "https://developers.facebook.com/docs/marketing-api/out-of-cycle-changes/occ-2025/"
+  ],
+  "api": {
+    "current_version": "v24.0",
+    "minimum_supported_version": "v24.0",
+    "graph_base_url": "https://graph.facebook.com",
+    "deprecations": [
+      {
+        "what": "All Marketing API versions earlier than v24.0",
+        "stops_working": "2026-06-09",
+        "action": "Pin every call to v24.0 or later."
+      },
+      {
+        "what": "Advantage+ Shopping Campaigns and Advantage+ App Campaigns (ASC/AAC)",
+        "stops_working": "2026-05-19",
+        "action": "No create/duplicate/update on any version. Migrate to standard Advantage+ campaigns."
+      },
+      {
+        "what": "Legacy detailed-targeting interests created before 2025-10-08",
+        "stopped_delivering": "2026-01-15",
+        "action": "Do not rely on narrow interest filters; treat detailed targeting as a suggestion only."
+      }
+    ]
+  },
+  "reporting": {
+    "max_unique_count_months": 13,
+    "max_frequency_breakdown_months": 6,
+    "removed_attribution_windows": ["7d_view", "28d_view"],
+    "removed_metrics_examples": ["unique_actions"],
+    "note": "100+ metrics were phased out starting 2026-01-12. Validate any insights 'fields' list against a live get_insights probe before trusting historical pulls."
+  },
+  "targeting": {
+    "model": "advantage_plus_audience_default",
+    "hard_controls": [
+      "geo_locations",
+      "locales",
+      "age_min",
+      "excluded_custom_audiences",
+      "special_ad_categories"
+    ],
+    "suggestions_only": [
+      "age_max",
+      "genders",
+      "flexible_spec_interests",
+      "custom_audiences",
+      "lookalike_audiences"
+    ],
+    "detailed_targeting_exclusions_supported": false,
+    "note": "Audience inputs are AI suggestions, not binding filters, in most campaign types. Programmatic >40% audience-overlap flagging is unreliable post-consolidation; use campaign-fragmentation heuristics instead."
+  },
+  "creative": {
+    "image": {
+      "formats": ["JPG", "PNG"],
+      "max_file_mb": 30,
+      "aspect_ratios": {
+        "1:1": { "w": 1080, "h": 1080, "placements": ["feed"] },
+        "4:5": { "w": 1080, "h": 1350, "placements": ["feed_mobile"] },
+        "9:16": { "w": 1080, "h": 1920, "placements": ["stories", "reels"] }
+      },
+      "recommended_minimum_set": ["1:1", "9:16"]
+    },
+    "video": { "max_seconds": 90, "performance_sweet_spot_seconds": [15, 30] },
+    "text_limits": {
+      "primary_text_recommended_chars": 125,
+      "headline_recommended_chars": 40,
+      "description_recommended_chars": 30
+    }
+  },
+  "status": {
+    "valid_values": ["ACTIVE", "PAUSED", "ARCHIVED", "DELETED"],
+    "agent_create_status": "PAUSED",
+    "active_forbidden_for_agent": true,
+    "note": "PLATFORM PROTECTION RULE: the agent must create every creative/ad as PAUSED. ACTIVE is operator-only."
+  },
+  "payload_validation": {
+    "required_fields": [
+      "target_campaign_id",
+      "target_adset_id",
+      "source_ad_id",
+      "angle",
+      "primary_text",
+      "headline",
+      "status"
+    ],
+    "status_must_equal": "PAUSED",
+    "non_empty_text_fields": ["primary_text", "headline"]
+  }
+}
