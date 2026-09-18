@@ -570,9 +570,9 @@ export function CommandPalette() {
                                 <span className="text-[10px] font-mono text-neutral-500 bg-white/5 px-2 py-0.5 rounded border border-white/5">⌘{action.shortcut}</span>
                               )}
                               {action.href ? (
-                                <ArrowRight className="w-4 h-4 text-neutral-600 opacity-0 group-hover:opacity-100 group-hover:text-[#00B7FF] transition-gpu" />
+                                <ArrowRight className="w-4 h-4 text-neutral-600 opacity-0 group-hover:opacity-100 group-focus:opacity-100 group-hover:text-[#00B7FF] group-focus:text-[#00B7FF] transition-gpu" />
                               ) : (
-                                <Play className="w-3.5 h-3.5 text-neutral-600 opacity-0 group-hover:opacity-100 group-hover:text-emerald-400 transition-gpu" />
+                                <Play className="w-3.5 h-3.5 text-neutral-600 opacity-0 group-hover:opacity-100 group-focus:opacity-100 group-hover:text-emerald-400 group-focus:text-emerald-400 transition-gpu" />
                               )}
                             </div>
                           </button>
