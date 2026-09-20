@@ -13,7 +13,11 @@ interface ExportButtonsProps {
  * Reusable export buttons for all AI tool results.
  * Copy to clipboard + Download as .txt file.
  */
-export function ExportButtons({ content, filename = "umbra-output", className = "" }: ExportButtonsProps) {
+export function ExportButtons({
+  content,
+  filename = "umbra-output",
+  className = "",
+}: ExportButtonsProps) {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = async () => {
@@ -82,15 +86,19 @@ export function ExportButtons({ content, filename = "umbra-output", className = 
     <div className={`flex items-center gap-2 ${className}`}>
       <button
         onClick={copyToClipboard}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-bold text-neutral-400 hover:text-white hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-gpu uppercase tracking-wider"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-bold text-neutral-400 hover:text-white hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-gpu uppercase tracking-wider focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         title="Copy to clipboard"
       >
-        {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+        {copied ? (
+          <Check className="w-3 h-3 text-emerald-400" />
+        ) : (
+          <Copy className="w-3 h-3" />
+        )}
         {copied ? "Copied" : "Copy"}
       </button>
       <button
         onClick={downloadAsText}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-bold text-neutral-400 hover:text-white hover:border-[#00B7FF]/30 hover:bg-[#00B7FF]/5 transition-gpu uppercase tracking-wider"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-bold text-neutral-400 hover:text-white hover:border-[#00B7FF]/30 hover:bg-[#00B7FF]/5 transition-gpu uppercase tracking-wider focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00B7FF]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         title="Download as text file"
       >
         <Download className="w-3 h-3" />
@@ -98,7 +106,7 @@ export function ExportButtons({ content, filename = "umbra-output", className = 
       </button>
       <button
         onClick={downloadAsHTML}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-bold text-neutral-400 hover:text-white hover:border-purple-500/30 hover:bg-purple-500/5 transition-gpu uppercase tracking-wider"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-xs font-bold text-neutral-400 hover:text-white hover:border-purple-500/30 hover:bg-purple-500/5 transition-gpu uppercase tracking-wider focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         title="Download as HTML file"
       >
         <FileText className="w-3 h-3" />
