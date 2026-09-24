@@ -1,8 +1,22 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, AlertTriangle, X, Info, Bot, ExternalLink } from "lucide-react";
+import {
+  CheckCircle2,
+  AlertTriangle,
+  X,
+  Info,
+  Bot,
+  ExternalLink,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 /* ── Types ─────────────────────────────────────────────────────── */
@@ -40,7 +54,13 @@ export function useToast() {
 }
 
 /* ── Progress bar sub-component ────────────────────────────────── */
-function ProgressBar({ duration, onComplete }: { duration: number; onComplete: () => void }) {
+function ProgressBar({
+  duration,
+  onComplete,
+}: {
+  duration: number;
+  onComplete: () => void;
+}) {
   const [progress, setProgress] = useState(100);
   const startRef = useRef(0);
 
@@ -80,7 +100,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addToast = useCallback(
-    (message: string, type: ToastType, opts?: { label?: string; href?: string }) => {
+    (
+      message: string,
+      type: ToastType,
+      opts?: { label?: string; href?: string },
+    ) => {
       const id = Math.random().toString(36).slice(2);
       const newToast: Toast = {
         id,
@@ -97,7 +121,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         return updated.slice(-MAX_VISIBLE);
       });
     },
-    []
+    [],
   );
 
   const toast = {
@@ -166,9 +190,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   e.stopPropagation();
                   removeToast(t.id);
                 }}
+                aria-label="Close notification"
                 className="text-neutral-500 hover:text-white transition-colors shrink-0 mt-0.5"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3 h-3" aria-hidden="true" />
               </button>
               <ProgressBar
                 duration={t.duration}

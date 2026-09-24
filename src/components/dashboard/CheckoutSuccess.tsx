@@ -62,9 +62,10 @@ export function CheckoutSuccess() {
           >
             <button
               onClick={dismiss}
+              aria-label="Close modal"
               className="absolute top-4 right-4 p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
 
             <div className="p-8 text-center">
