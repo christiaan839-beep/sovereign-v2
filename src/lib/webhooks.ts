@@ -9,6 +9,7 @@ import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 const log = createLogger("webhooks");
 
@@ -35,7 +36,7 @@ export async function fireUserWebhook(agent: string, task: string, payload: unkn
     if (!webhookUrl || !webhookUrl.startsWith("http")) return false;
 
     // Fire and forget
-    fetch(webhookUrl, {
+    outboundFetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -44,6 +45,9 @@ export async function fireUserWebhook(agent: string, task: string, payload: unkn
         userEmail: user.primaryEmailAddress.emailAddress,
         data: { agent, task, payload }
       })
+    }, {
+      ruleId: "agent.webhook",
+      userId: user.primaryEmailAddress.emailAddress
     }).catch(e => log.error("Webhook delivery error:", e));
 
     return true;
@@ -97,10 +101,11 @@ export async function triggerWebhook(event: "hot_lead" | "new_sale" | "campaign_
   let failed = 0;
 
   // Fire all webhooks in parallel
+  const user = await currentUser();
   await Promise.allSettled(
     activeHooks.map(async (hook) => {
       try {
-        const res = await fetch(hook.url, {
+        const res = await outboundFetch(hook.url, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -108,6 +113,9 @@ export async function triggerWebhook(event: "hot_lead" | "new_sale" | "campaign_
             "X-SOVEREIGN-Event": event
           },
           body: JSON.stringify(payload)
+        }, {
+          ruleId: "agent.webhook",
+          userId: user?.primaryEmailAddress?.emailAddress || "system"
         });
 
         if (res.ok) delivered++;
