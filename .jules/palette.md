@@ -1,4 +1,3 @@
-
-## 2026-08-26 - Keyboard Accessibility for Hover Actions in ScreenNode
-**Learning:** Interactive icon-only buttons hidden behind CSS hover states (`opacity-0 group-hover:opacity-100`) become inaccessible to keyboard users. To make them accessible, the parent container must include `focus-within:opacity-100`. Furthermore, to provide clear visual feedback without showing focus rings on mouse clicks, utility and icon-only buttons require `focus-visible:ring-2`, `focus-visible:outline-none`, and `aria-hidden="true"` on the internal SVG icon element to prevent screen reader clutter.
-**Action:** When creating action bars hidden on hover, always add `focus-within` to the parent container and `focus-visible` utility classes to the buttons to ensure clear focus indication for keyboard users.
+## 2024-10-25 - Fix keyboard accessibility for hover-hidden elements
+**Learning:** I found a recurring accessibility issue in this app's components: elements like notification actions and delete buttons are hidden behind CSS hover states (`opacity-0 group-hover:opacity-100`). This makes them invisible and inaccessible for keyboard users navigating via Tab, since they only appear on mouse hover.
+**Action:** Always add `focus-within:opacity-100` to the parent container, or `focus-visible:opacity-100` / `group-focus:opacity-100` directly to the elements, so that keyboard users can see the actions when they receive focus. This matches the app's standard accessibility practices.
