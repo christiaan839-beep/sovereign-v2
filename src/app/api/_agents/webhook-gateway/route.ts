@@ -1,33 +1,34 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 import { getBaseUrl } from "@/lib/base-url";
+import crypto from "crypto";
 
 /**
  * WEBHOOK GATEWAY — External trigger point for Zapier, Make, n8n,
  * and any HTTP client to invoke agents via webhooks.
- * 
+ *
  * Uses a simple API key in the x-api-key header for auth.
  * Routes to any agent by name.
  */
 
 const AGENT_MAP: Record<string, string> = {
-  "translate": "/api/_agents/translate",
+  translate: "/api/_agents/translate",
   "pii-redactor": "/api/_agents/pii-redactor",
   "gliner-pii": "/api/_agents/gliner-pii",
   "blog-gen": "/api/_agents/blog-gen",
   "page-builder": "/api/_agents/page-builder",
   "image-gen": "/api/_agents/image-gen",
   "voice-synth": "/api/_agents/voice-synth",
-  "voicechat": "/api/_agents/voicechat",
+  voicechat: "/api/_agents/voicechat",
   "cosmos-video": "/api/_agents/cosmos-video",
   "case-study": "/api/_agents/case-study",
-  "swarm": "/api/_agents/swarm",
+  swarm: "/api/_agents/swarm",
   "chain-reactor": "/api/_agents/chain-reactor",
   "doc-intel": "/api/_agents/doc-intel",
   "florence-ocr": "/api/_agents/florence-ocr",
   "abm-artillery": "/api/_agents/abm-artillery",
-  "nemoclaw": "/api/_agents/nemoclaw",
-  "marketplace": "/api/_agents/marketplace",
+  nemoclaw: "/api/_agents/nemoclaw",
+  marketplace: "/api/_agents/marketplace",
 };
 
 async function _postHandler(request: Request) {
@@ -36,25 +37,44 @@ async function _postHandler(request: Request) {
     const apiKey = request.headers.get("x-api-key");
     const expectedKey = process.env.WEBHOOK_API_KEY;
 
-    if (expectedKey && apiKey !== expectedKey) {
-      return NextResponse.json({ error: "Invalid API key. Set x-api-key header." }, { status: 401 });
+    if (expectedKey) {
+      if (!apiKey) {
+        return NextResponse.json(
+          { error: "Invalid API key. Set x-api-key header." },
+          { status: 401 },
+        );
+      }
+      const a = Buffer.from(apiKey);
+      const b = Buffer.from(expectedKey);
+      if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+        return NextResponse.json(
+          { error: "Invalid API key. Set x-api-key header." },
+          { status: 401 },
+        );
+      }
     }
 
     const { agent, payload } = await request.json();
 
     if (!agent) {
-      return NextResponse.json({
-        error: "agent is required.",
-        available_agents: Object.keys(AGENT_MAP),
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: "agent is required.",
+          available_agents: Object.keys(AGENT_MAP),
+        },
+        { status: 400 },
+      );
     }
 
     const endpoint = AGENT_MAP[agent];
     if (!endpoint) {
-      return NextResponse.json({
-        error: `Unknown agent: ${agent}`,
-        available_agents: Object.keys(AGENT_MAP),
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          error: `Unknown agent: ${agent}`,
+          available_agents: Object.keys(AGENT_MAP),
+        },
+        { status: 404 },
+      );
     }
 
     const baseUrl = getBaseUrl();
@@ -75,24 +95,30 @@ async function _postHandler(request: Request) {
       result,
     });
   } catch (error) {
-    return NextResponse.json({ error: "Webhook gateway error", details: String(error) }, { status: 500 });
+    return NextResponse.json(
+      { error: "Webhook gateway error", details: String(error) },
+      { status: 500 },
+    );
   }
 }
 
 export async function GET() {
   return NextResponse.json({
     status: "Webhook Gateway — Active",
-    description: "External trigger point for Zapier, Make, n8n, and HTTP clients.",
+    description:
+      "External trigger point for Zapier, Make, n8n, and HTTP clients.",
     auth: "Set x-api-key header with your WEBHOOK_API_KEY",
     available_agents: Object.keys(AGENT_MAP),
     example: {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": "YOUR_KEY" },
-      body: { agent: "translate", payload: { text: "Hello", target_lang: "es" } },
+      body: {
+        agent: "translate",
+        payload: { text: "Hello", target_lang: "es" },
+      },
     },
   });
 }
-
 
 // Factory wrapper for POST (adds safety pipeline)
 export const POST = createAgentRoute({
