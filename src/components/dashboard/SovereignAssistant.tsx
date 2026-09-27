@@ -33,18 +33,46 @@ import { detectContentType } from "@/components/chat/types";
 const STREAM_FLUSH_MS = 40;
 
 const SUGGESTIONS = [
-  { icon: Search, text: "Find 50 leads in SaaS", prompt: "find 50 leads in SaaS companies" },
-  { icon: FileText, text: "Write a blog post", prompt: "write a blog about AI agents for business" },
+  {
+    icon: Search,
+    text: "Find 50 leads in SaaS",
+    prompt: "find 50 leads in SaaS companies",
+  },
+  {
+    icon: FileText,
+    text: "Write a blog post",
+    prompt: "write a blog about AI agents for business",
+  },
   { icon: Globe, text: "Analyze hubspot.com", prompt: "audit hubspot.com" },
-  { icon: ImageIcon, text: "Build a landing page", prompt: "build a landing page for a SaaS startup" },
+  {
+    icon: ImageIcon,
+    text: "Build a landing page",
+    prompt: "build a landing page for a SaaS startup",
+  },
 ];
 
 const ALL_SUGGESTIONS = [
   ...SUGGESTIONS,
-  { icon: Code2, text: "Review code", prompt: "review code for security issues" },
-  { icon: Users, text: "Scan a competitor", prompt: "competitor scan stripe.com" },
-  { icon: Sparkles, text: "Generate an image", prompt: "generate image of a futuristic dashboard" },
-  { icon: Zap, text: "Run a workflow", prompt: "run a workflow: research, write blog, generate image" },
+  {
+    icon: Code2,
+    text: "Review code",
+    prompt: "review code for security issues",
+  },
+  {
+    icon: Users,
+    text: "Scan a competitor",
+    prompt: "competitor scan stripe.com",
+  },
+  {
+    icon: Sparkles,
+    text: "Generate an image",
+    prompt: "generate image of a futuristic dashboard",
+  },
+  {
+    icon: Zap,
+    text: "Run a workflow",
+    prompt: "run a workflow: research, write blog, generate image",
+  },
 ];
 
 // ── Markdown-lite renderer ──
@@ -68,7 +96,10 @@ function renderMarkdown(text: string) {
         continue;
       } else {
         elements.push(
-          <div key={`code-${i}`} className="my-2 rounded-lg overflow-hidden border border-white/5">
+          <div
+            key={`code-${i}`}
+            className="my-2 rounded-lg overflow-hidden border border-white/5"
+          >
             <div className="flex items-center justify-between px-3 py-1.5 bg-white/[0.03] border-b border-white/5">
               <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-mono">
                 {codeLang || "code"}
@@ -77,7 +108,7 @@ function renderMarkdown(text: string) {
             <pre className="text-xs text-neutral-300 bg-black/40 p-3 overflow-x-auto font-mono leading-relaxed">
               <code>{codeBlock.join("\n")}</code>
             </pre>
-          </div>
+          </div>,
         );
         codeBlock = null;
         codeLang = "";
@@ -99,9 +130,12 @@ function renderMarkdown(text: string) {
     // Headers
     if (line.startsWith("### ")) {
       elements.push(
-        <h4 key={`h3-${i}`} className="text-sm font-semibold text-white mt-3 mb-1">
+        <h4
+          key={`h3-${i}`}
+          className="text-sm font-semibold text-white mt-3 mb-1"
+        >
           {line.slice(4)}
-        </h4>
+        </h4>,
       );
       continue;
     }
@@ -109,15 +143,18 @@ function renderMarkdown(text: string) {
       elements.push(
         <h3 key={`h2-${i}`} className="text-sm font-bold text-white mt-3 mb-1">
           {line.slice(3)}
-        </h3>
+        </h3>,
       );
       continue;
     }
     if (line.startsWith("# ")) {
       elements.push(
-        <h2 key={`h1-${i}`} className="text-base font-bold text-white mt-3 mb-1">
+        <h2
+          key={`h1-${i}`}
+          className="text-base font-bold text-white mt-3 mb-1"
+        >
           {line.slice(2)}
-        </h2>
+        </h2>,
       );
       continue;
     }
@@ -128,7 +165,7 @@ function renderMarkdown(text: string) {
         <div key={`li-${i}`} className="flex gap-2 pl-1">
           <span className="text-emerald-400/60 mt-0.5 shrink-0">&#8226;</span>
           <span>{formatInline(line.slice(2))}</span>
-        </div>
+        </div>,
       );
       continue;
     }
@@ -142,23 +179,24 @@ function renderMarkdown(text: string) {
             {num}.
           </span>
           <span>{formatInline(line.replace(/^\d+\.\s/, ""))}</span>
-        </div>
+        </div>,
       );
       continue;
     }
 
     // Regular paragraph
-    elements.push(
-      <p key={`p-${i}`}>{formatInline(line)}</p>
-    );
+    elements.push(<p key={`p-${i}`}>{formatInline(line)}</p>);
   }
 
   // Unclosed code block
   if (codeBlock !== null) {
     elements.push(
-      <pre key="code-unclosed" className="text-xs text-neutral-300 bg-black/40 rounded-lg p-3 overflow-x-auto font-mono border border-white/5">
+      <pre
+        key="code-unclosed"
+        className="text-xs text-neutral-300 bg-black/40 rounded-lg p-3 overflow-x-auto font-mono border border-white/5"
+      >
         <code>{codeBlock.join("\n")}</code>
-      </pre>
+      </pre>,
     );
   }
 
@@ -182,7 +220,7 @@ function formatInline(text: string): React.ReactNode {
           className="px-1.5 py-0.5 bg-white/[0.06] border border-white/5 rounded text-[11px] font-mono text-emerald-300/80"
         >
           {codeMatch[2]}
-        </code>
+        </code>,
       );
       remaining = remaining.slice(codeMatch[0].length);
       continue;
@@ -203,11 +241,12 @@ function formatBoldItalic(text: string, baseKey: number): React.ReactNode {
     // Bold
     const boldMatch = remaining.match(/^(.*?)\*\*(.+?)\*\*/);
     if (boldMatch) {
-      if (boldMatch[1]) parts.push(<span key={`t-${key++}`}>{boldMatch[1]}</span>);
+      if (boldMatch[1])
+        parts.push(<span key={`t-${key++}`}>{boldMatch[1]}</span>);
       parts.push(
         <strong key={`b-${key++}`} className="font-semibold text-white">
           {boldMatch[2]}
-        </strong>
+        </strong>,
       );
       remaining = remaining.slice(boldMatch[0].length);
       continue;
@@ -215,7 +254,8 @@ function formatBoldItalic(text: string, baseKey: number): React.ReactNode {
     // Italic
     const italicMatch = remaining.match(/^(.*?)\*(.+?)\*/);
     if (italicMatch) {
-      if (italicMatch[1]) parts.push(<span key={`t-${key++}`}>{italicMatch[1]}</span>);
+      if (italicMatch[1])
+        parts.push(<span key={`t-${key++}`}>{italicMatch[1]}</span>);
       parts.push(<em key={`i-${key++}`}>{italicMatch[2]}</em>);
       remaining = remaining.slice(italicMatch[0].length);
       continue;
@@ -289,8 +329,13 @@ function CopyBtn({ text }: { text: string }) {
       }}
       className="p-1 rounded hover:bg-white/10 text-neutral-600 hover:text-white transition-colors"
       title="Copy"
+      aria-label="Copy to clipboard"
     >
-      {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+      {copied ? (
+        <Check className="w-3 h-3 text-emerald-400" aria-hidden="true" />
+      ) : (
+        <Copy className="w-3 h-3" aria-hidden="true" />
+      )}
     </button>
   );
 }
@@ -308,7 +353,9 @@ function AgentBadge({ label }: { label: string }) {
         <Zap className="w-2.5 h-2.5 text-emerald-400" />
       </div>
       <span className="text-[10px] text-emerald-400/80 font-medium">
-        Routed to <span className="text-emerald-300 font-semibold">{label}</span> via Smart Router
+        Routed to{" "}
+        <span className="text-emerald-300 font-semibold">{label}</span> via
+        Smart Router
       </span>
     </motion.div>
   );
@@ -410,7 +457,7 @@ function useWidgetChat() {
                   systemInstruction:
                     "You are Sovereign Assistant, a helpful AI colleague. Be direct, concise, and useful. Use markdown formatting (bold, lists, code blocks) when appropriate.",
                 }
-              : intent.params
+              : intent.params,
           ),
           signal: controller.signal,
         });
@@ -436,7 +483,7 @@ function useWidgetChat() {
           const flushBuffer = () => {
             const content = streamBufferRef.current;
             setMessages((prev) =>
-              prev.map((m) => (m.id === assistantId ? { ...m, content } : m))
+              prev.map((m) => (m.id === assistantId ? { ...m, content } : m)),
             );
             scrollToBottom();
           };
@@ -494,8 +541,8 @@ function useWidgetChat() {
                     agentLabel: intent.label,
                     responseTimeMs: elapsed,
                   }
-                : m
-            )
+                : m,
+            ),
           );
           setIsStreaming(false);
           setLoading(false);
@@ -513,7 +560,10 @@ function useWidgetChat() {
           data.redacted_text ||
           (typeof data === "string" ? data : JSON.stringify(data, null, 2));
 
-        if (content.length > 3000) content = content.slice(0, 3000) + "\n\n---\n*Response trimmed for display. Full output available via API.*";
+        if (content.length > 3000)
+          content =
+            content.slice(0, 3000) +
+            "\n\n---\n*Response trimmed for display. Full output available via API.*";
 
         const imageUrl =
           data.images?.[0]?.url || data.imageUrl || data.image_url || data.url;
@@ -533,8 +583,10 @@ function useWidgetChat() {
             contentType: detectContentType(finalContent),
             agentLabel: intent.label,
             responseTimeMs: Date.now() - startTime,
-            modelUsed: data.model || data.modelUsed || data.metadata?.model || undefined,
-            qualityScore: data.qualityScore ?? data.metadata?.qualityScore ?? undefined,
+            modelUsed:
+              data.model || data.modelUsed || data.metadata?.model || undefined,
+            qualityScore:
+              data.qualityScore ?? data.metadata?.qualityScore ?? undefined,
           },
         ]);
       } catch (error) {
@@ -557,7 +609,7 @@ function useWidgetChat() {
         setIsStreaming(false);
       }
     },
-    [loading, scrollToBottom]
+    [loading, scrollToBottom],
   );
 
   const clearHistory = useCallback(() => {
@@ -580,7 +632,11 @@ function useWidgetChat() {
 
 // ── Scroll-to-bottom button ──
 
-function ScrollToBottomBtn({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | null> }) {
+function ScrollToBottomBtn({
+  scrollRef,
+}: {
+  scrollRef: React.RefObject<HTMLDivElement | null>;
+}) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -608,8 +664,9 @@ function ScrollToBottomBtn({ scrollRef }: { scrollRef: React.RefObject<HTMLDivEl
         })
       }
       className="absolute bottom-2 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white/10 border border-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors z-10"
+      aria-label="Scroll to bottom"
     >
-      <ArrowDown className="w-3.5 h-3.5 text-neutral-400" />
+      <ArrowDown className="w-3.5 h-3.5 text-neutral-400" aria-hidden="true" />
     </motion.button>
   );
 }
@@ -681,7 +738,9 @@ export function SovereignAssistant() {
   // The last message -- used to determine if streaming is happening on it
   const lastMessage = messages[messages.length - 1];
   const isLastMessageStreaming =
-    isStreaming && lastMessage?.role === "assistant" && !lastMessage.responseTimeMs;
+    isStreaming &&
+    lastMessage?.role === "assistant" &&
+    !lastMessage.responseTimeMs;
 
   useEffect(() => {
     if (open && textareaRef.current) {
@@ -707,6 +766,7 @@ export function SovereignAssistant() {
             ? "bg-white/10 border border-white/20 backdrop-blur-xl"
             : "bg-white text-black hover:bg-neutral-200 hover:shadow-[0_0_30px_rgba(255,255,255,0.15)]"
         }`}
+        aria-label={open ? "Close assistant" : "Open assistant"}
       >
         <AnimatePresence mode="wait">
           {open ? (
@@ -717,7 +777,7 @@ export function SovereignAssistant() {
               exit={{ rotate: 90, opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <X className="w-5 h-5 text-white" />
+              <X className="w-5 h-5 text-white" aria-hidden="true" />
             </motion.div>
           ) : (
             <motion.div
@@ -727,7 +787,7 @@ export function SovereignAssistant() {
               exit={{ rotate: -90, opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <MessageSquare className="w-5 h-5" />
+              <MessageSquare className="w-5 h-5" aria-hidden="true" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -751,8 +811,12 @@ export function SovereignAssistant() {
                   <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#0A0A0A]" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Sovereign Assistant</h3>
-                  <p className="text-[10px] text-neutral-500">Routes to 123 AI agents</p>
+                  <h3 className="text-sm font-semibold text-white">
+                    Sovereign Assistant
+                  </h3>
+                  <p className="text-[10px] text-neutral-500">
+                    Routes to 123 AI agents
+                  </p>
                 </div>
               </div>
               {hasSentMessage && (
@@ -855,7 +919,7 @@ export function SovereignAssistant() {
                             <div className="space-y-1">
                               <div className="text-sm leading-relaxed">
                                 {renderMarkdown(
-                                  msg.content || (loading ? "" : "")
+                                  msg.content || (loading ? "" : ""),
                                 )}
                                 {isMsgStreaming && <StreamingCursor />}
                               </div>
@@ -866,11 +930,16 @@ export function SovereignAssistant() {
                                   <span className="text-[9px] text-neutral-600 font-mono">
                                     {[
                                       msg.modelUsed && msg.modelUsed,
-                                      msg.qualityScore != null && `quality: ${msg.qualityScore}/100`,
-                                      msg.responseTimeMs != null && msg.responseTimeMs > 0 && (
-                                        msg.responseTimeMs < 1000 ? `${msg.responseTimeMs}ms` : `${(msg.responseTimeMs / 1000).toFixed(1)}s`
-                                      ),
-                                    ].filter(Boolean).join(" · ") || ""}
+                                      msg.qualityScore != null &&
+                                        `quality: ${msg.qualityScore}/100`,
+                                      msg.responseTimeMs != null &&
+                                        msg.responseTimeMs > 0 &&
+                                        (msg.responseTimeMs < 1000
+                                          ? `${msg.responseTimeMs}ms`
+                                          : `${(msg.responseTimeMs / 1000).toFixed(1)}s`),
+                                    ]
+                                      .filter(Boolean)
+                                      .join(" · ") || ""}
                                   </span>
                                   <CopyBtn text={msg.content} />
                                 </div>
@@ -889,9 +958,9 @@ export function SovereignAssistant() {
 
                 {/* Thinking indicator (shown before first streaming token) */}
                 <AnimatePresence>
-                  {loading && !isLastMessageStreaming && lastMessage?.role === "user" && (
-                    <ThinkingIndicator />
-                  )}
+                  {loading &&
+                    !isLastMessageStreaming &&
+                    lastMessage?.role === "user" && <ThinkingIndicator />}
                 </AnimatePresence>
               </div>
 
@@ -942,8 +1011,9 @@ export function SovereignAssistant() {
                       onClick={() => sendMessage(input)}
                       disabled={loading}
                       className="w-8 h-8 mb-0.5 rounded-lg bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-400 disabled:opacity-30 transition-all shrink-0"
+                      aria-label="Send message"
                     >
-                      <Send className="w-3.5 h-3.5" />
+                      <Send className="w-3.5 h-3.5" aria-hidden="true" />
                     </motion.button>
                   )}
                 </AnimatePresence>
