@@ -367,7 +367,7 @@ function BadgePreview({
   // dashes inline below, theme/linkMode are typed unions, origin is
   // our own origin or the canonical host.
   const safeId = receiptId.replace(/[^a-zA-Z0-9-]/g, "");
-  const safeOrigin = origin.replace(/["']/g, "");
+  const safeOrigin = origin.replace(/["'<>]/g, "");
   const script = `<script src="${safeOrigin}/embed/verify.js" data-receipt="${safeId}" data-theme="${theme}" data-link="${linkMode}" async></script>`;
   return (
     <div
