@@ -14,10 +14,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: "bg-gradient-to-r from-[#00B7FF] to-[#0090CC] text-white hover:from-[#33C5FF] hover:to-[#00A3E0] shadow-lg shadow-[#00B7FF]/10",
-  secondary: "bg-white/[0.05] border border-white/[0.08] text-neutral-300 hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white",
+  primary:
+    "bg-gradient-to-r from-[#00B7FF] to-[#0090CC] text-white hover:from-[#33C5FF] hover:to-[#00A3E0] shadow-lg shadow-[#00B7FF]/10",
+  secondary:
+    "bg-white/[0.05] border border-white/[0.08] text-neutral-300 hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white",
   ghost: "text-neutral-400 hover:text-white hover:bg-white/[0.05]",
-  danger: "bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:border-red-500/30",
+  danger:
+    "bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:border-red-500/30",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -26,17 +29,32 @@ const sizeStyles: Record<ButtonSize, string> = {
   lg: "px-6 py-3 text-base rounded-2xl gap-2.5",
 };
 
-export function Button({ children, variant = "primary", size = "md", loading, icon, className = "", disabled, ...props }: ButtonProps) {
+export function Button({
+  children,
+  variant = "primary",
+  size = "md",
+  loading,
+  icon,
+  className = "",
+  disabled,
+  ...props
+}: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center font-medium transition-gpu duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+      className={`inline-flex items-center justify-center font-medium transition-gpu duration-200 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
       disabled={disabled || loading}
+      aria-busy={loading ? true : undefined}
       {...props}
     >
       {loading ? (
-        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        <span
+          className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+          aria-hidden="true"
+        />
       ) : icon ? (
-        <span className="shrink-0">{icon}</span>
+        <span className="shrink-0" aria-hidden="true">
+          {icon}
+        </span>
       ) : null}
       {children}
     </button>
