@@ -1,1 +1,0 @@
-Wait, let's verify if there is any other place where `pk_test_smoke_dummy` is used in `.github/workflows/ci.yml`.
