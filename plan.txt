@@ -1,0 +1,23 @@
+Let's request a plan review for fixing `src/app/badge/page.tsx` with specific blocks.
+
+The plan:
+1. Modify `src/app/badge/page.tsx` to properly sanitize the `origin` variable.
+   - Use the `replace_with_git_merge_diff` tool to update the regex.
+```
+<<<<<<< SEARCH
+  const safeId = receiptId.replace(/[^a-zA-Z0-9-]/g, "");
+  const safeOrigin = origin.replace(/["']/g, "");
+  const script = `<script src="${safeOrigin}/embed/verify.js" data-receipt="${safeId}" data-theme="${theme}" data-link="${linkMode}" async></script>`;
+=======
+  const safeId = receiptId.replace(/[^a-zA-Z0-9-]/g, "");
+  const safeOrigin = origin.replace(/["'<>]/g, "");
+  const script = `<script src="${safeOrigin}/embed/verify.js" data-receipt="${safeId}" data-theme="${theme}" data-link="${linkMode}" async></script>`;
+>>>>>>> REPLACE
+```
+2. Add a critical learning entry to the `.jules/sentinel.md` journal.
+   - Use bash `mkdir -p .jules && cat << 'EOF' >> .jules/sentinel.md` to append the required journal entry.
+```
+## 2025-05-15 - [Sanitize HTML string interpolation]
+**Vulnerability:** XSS vulnerability when rendering <script> tags dynamically using dangerouslySetInnerHTML, where only quotes were removed from the injected origin.
+**Learning:** When sanitizing data for HTML string interpolation or dangerouslySetInnerHTML, stripping only quotes is insufficient to prevent XSS. Attackers can use angle brackets to break out of the tag context.
+**Prevention:** Always ensure angle brackets (<, >) are also stripped or encoded to prevent breaking out of the tag context.
