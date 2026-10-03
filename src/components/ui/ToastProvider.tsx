@@ -166,9 +166,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   e.stopPropagation();
                   removeToast(t.id);
                 }}
-                className="text-neutral-500 hover:text-white transition-colors shrink-0 mt-0.5"
+                className="text-neutral-500 hover:text-white transition-colors shrink-0 mt-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 rounded"
+                aria-label="Dismiss toast"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3 h-3" aria-hidden="true" />
               </button>
               <ProgressBar
                 duration={t.duration}
