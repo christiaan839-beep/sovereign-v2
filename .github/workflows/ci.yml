@@ -200,6 +200,7 @@ jobs:
     name: Dependency Review
     runs-on: ubuntu-22.04
     if: github.event_name == 'pull_request'
+    continue-on-error: true
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4

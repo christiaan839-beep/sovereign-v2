@@ -78,11 +78,10 @@ export function VibeBar({ onGenerate, onAddNote, generating }: VibeBarProps) {
         {/* Note button */}
         <button
           onClick={onAddNote}
-          aria-label="Add note"
-          className="p-2.5 rounded-xl hover:bg-white/[0.05] text-neutral-500 hover:text-amber-400 focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-none transition-colors shrink-0"
+          className="p-2.5 rounded-xl hover:bg-white/[0.05] text-neutral-500 hover:text-amber-400 transition-colors shrink-0"
           title="Add note"
         >
-          <StickyNote aria-hidden="true" className="w-4 h-4" />
+          <StickyNote className="w-4 h-4" />
         </button>
 
         {/* Vibe button */}
@@ -113,14 +112,12 @@ export function VibeBar({ onGenerate, onAddNote, generating }: VibeBarProps) {
         <button
           onClick={handleSubmit}
           disabled={!prompt.trim() || generating}
-          aria-label="Send prompt"
-          aria-busy={generating ? true : undefined}
-          className="p-2.5 rounded-xl bg-[#00B7FF] text-white hover:bg-[#33C5FF] focus-visible:ring-2 focus-visible:ring-[#00B7FF] focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none disabled:opacity-30 transition-gpu shrink-0"
+          className="p-2.5 rounded-xl bg-[#00B7FF] text-white hover:bg-[#33C5FF] disabled:opacity-30 transition-gpu shrink-0"
         >
           {generating ? (
-            <div aria-hidden="true" className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
-            <Send aria-hidden="true" className="w-4 h-4" />
+            <Send className="w-4 h-4" />
           )}
         </button>
       </div>
