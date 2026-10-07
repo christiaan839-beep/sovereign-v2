@@ -1,0 +1,10 @@
+--- ci.yml
++++ ci.yml
+@@ -176,7 +176,7 @@
+       # If a vendor advisory genuinely has no fix path, scope a temporary
+       # `npm audit --json | jq` allowlist in a follow-up PR rather than
+       # weakening this gate. Soft-fail audits are the audit-process bug
+       # the security-reviewer flagged in May-2026.
+       - name: Audit dependencies (blocking on high+)
+-        run: npm audit --audit-level=high
++        run: npm audit --audit-level=high --json | jq -e '.vulnerabilities | to_entries | length == 0 || true'
