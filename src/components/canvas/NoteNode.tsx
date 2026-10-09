@@ -26,11 +26,15 @@ export function NoteNode({ id, data }: NodeProps) {
       <Handle type="target" position={Position.Left} className="!bg-amber-500/60 !w-2 !h-2 !border-2 !border-[#050505]" />
       <Handle type="source" position={Position.Right} className="!bg-amber-500/60 !w-2 !h-2 !border-2 !border-[#050505]" />
 
-      <div className="w-[200px] rounded-xl border border-amber-500/10 bg-amber-500/[0.04] backdrop-blur-xl p-3 shadow-lg">
+      <div className="w-[200px] rounded-xl border border-amber-500/10 bg-amber-500/[0.04] backdrop-blur-xl p-3 shadow-lg focus-within:border-amber-500/30 transition-colors">
         <div className="flex items-center justify-between mb-2">
-          <StickyNote className="w-3 h-3 text-amber-500/60" />
-          <button onClick={() => d.onDelete?.(id)} className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-white/10 text-neutral-600 hover:text-red-400 transition-gpu">
-            <X className="w-3 h-3" />
+          <StickyNote aria-hidden="true" className="w-3 h-3 text-amber-500/60" />
+          <button
+            onClick={() => d.onDelete?.(id)}
+            aria-label="Delete note"
+            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-0.5 rounded hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none text-neutral-600 hover:text-red-400 transition-gpu"
+          >
+            <X aria-hidden="true" className="w-3 h-3" />
           </button>
         </div>
         {editing ? (
@@ -40,13 +44,17 @@ export function NoteNode({ id, data }: NodeProps) {
             onChange={(e) => setText(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={(e) => e.key === "Escape" && handleBlur()}
-            className="w-full bg-transparent text-xs text-neutral-300 resize-none outline-none min-h-[40px]"
+            aria-label="Note content"
+            className="w-full bg-transparent text-xs text-neutral-300 resize-none outline-none min-h-[40px] focus-visible:ring-2 focus-visible:ring-amber-500/50 rounded"
             placeholder="Add a note..."
           />
         ) : (
-          <p className="text-xs text-neutral-400 cursor-text min-h-[20px]" onClick={() => setEditing(true)}>
+          <button
+            className="w-full text-left text-xs text-neutral-400 cursor-text min-h-[20px] focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none rounded"
+            onClick={() => setEditing(true)}
+          >
             {text || "Click to add note..."}
-          </p>
+          </button>
         )}
       </div>
     </div>
