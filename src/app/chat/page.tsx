@@ -296,8 +296,8 @@ export default function SovereignChat() {
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04] shrink-0 bg-[#010101]/95 backdrop-blur-xl z-10">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-all">
-            <ArrowLeft className="w-4 h-4" />
+          <Link href="/dashboard" aria-label="Back to dashboard" className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-all">
+            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           </Link>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -305,10 +305,10 @@ export default function SovereignChat() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setShowModelPicker(!showModelPicker)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-neutral-400 hover:text-white hover:bg-white/5 transition-all">
-            <currentModel.icon className={`w-3 h-3 ${currentModel.color}`} />
+          <button onClick={() => setShowModelPicker(!showModelPicker)} aria-expanded={showModelPicker} aria-haspopup="menu" aria-label="Select AI model" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-neutral-400 hover:text-white hover:bg-white/5 transition-all">
+            <currentModel.icon className={`w-3 h-3 ${currentModel.color}`} aria-hidden="true" />
             <span className="hidden sm:inline">{currentModel.name.split(" (")[0]}</span>
-            <ChevronDown className="w-3 h-3" />
+            <ChevronDown className="w-3 h-3" aria-hidden="true" />
           </button>
           <button onClick={() => setShowHistory(!showHistory)} aria-label="Toggle conversation history" className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-all">
             <Clock className="w-4 h-4" />
