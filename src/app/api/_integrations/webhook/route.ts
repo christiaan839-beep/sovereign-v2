@@ -102,7 +102,7 @@ export async function POST(req: Request) {
       fetchOpts.body = payloadBody;
     }
 
-    const res = await outboundFetch(url, fetchOpts);
+    const res = await outboundFetch(url, fetchOpts, { ruleId: "integration.webhook" });
 
     // Try to capture the response body (but don't fail if we can't)
     let responseBody: unknown = null;
