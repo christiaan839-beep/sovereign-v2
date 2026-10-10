@@ -24,8 +24,10 @@ export const INTERNAL_SECRET_HEADER = "x-sovereign-internal-secret";
 /** Constant-time compare to avoid timing-leak on the internal secret. */
 export function timingSafeStringEqual(a: string, b: string): boolean {
   if (typeof a !== "string" || typeof b !== "string") return false;
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
+  const bufA = Buffer.from(a, "utf8");
+  const bufB = Buffer.from(b, "utf8");
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
 }
 
 /**
